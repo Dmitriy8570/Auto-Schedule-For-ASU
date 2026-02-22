@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
-{
-    [ApiController]
-    [Route("[controller]")]
+namespace API.Controllers{
     public class LoginRequest
     {
         public string Login { get; set; }
@@ -15,6 +12,9 @@ namespace API.Controllers
     {
         public string Token { get; set; }
     }
+
+    [ApiController]
+    [Route("[controller]")]
     public class AuthenticationController : ControllerBase
     {
         private LoginResponse response = new LoginResponse { Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"};
