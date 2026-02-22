@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\controllers\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\controllers\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
@@ -26,37 +26,37 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Dockerfile",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Dockerfile",
-              "RelativeDocumentMoniker": "API\\Dockerfile",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Dockerfile",
-              "RelativeToolTip": "API\\Dockerfile",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAALAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-02-21T19:19:13.211Z",
+              "DocumentIndex": 1,
+              "Title": "AuthenticationController.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\AuthenticationController.cs",
+              "RelativeDocumentMoniker": "API\\Controllers\\AuthenticationController.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\AuthenticationController.cs",
+              "RelativeToolTip": "API\\Controllers\\AuthenticationController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-22T05:31:16.767Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "WeatherForecastController.cs",
               "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\WeatherForecastController.cs",
               "RelativeDocumentMoniker": "API\\Controllers\\WeatherForecastController.cs",
               "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\WeatherForecastController.cs",
               "RelativeToolTip": "API\\Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAqAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-21T14:32:23.23Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Program.cs",
               "RelativeDocumentMoniker": "API\\Program.cs",
