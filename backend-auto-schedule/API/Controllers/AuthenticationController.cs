@@ -24,6 +24,10 @@ namespace API.Controllers{
         [HttpPost]
         public IActionResult Post([FromBody] LoginRequest request)
         {
+            if (request == null)
+            {
+                return Unauthorized();
+            }
             if (request.Login == Login && request.Password == Password)
             {
                 return Ok(response);

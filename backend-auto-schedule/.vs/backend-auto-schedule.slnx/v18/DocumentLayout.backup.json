@@ -3,20 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\controllers\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\controllers\\authenticationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\entites\\lesson.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\entites\\lesson.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\controllers\\weatherforecastcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\entites\\classroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\entites\\classroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -31,53 +23,28 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "AuthenticationController.cs",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\AuthenticationController.cs",
-              "RelativeDocumentMoniker": "API\\Controllers\\AuthenticationController.cs",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\AuthenticationController.cs",
-              "RelativeToolTip": "API\\Controllers\\AuthenticationController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAABCAAAAAAAAAA==",
+              "Title": "Lesson.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Lesson.cs",
+              "RelativeDocumentMoniker": "API\\entites\\Lesson.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Lesson.cs",
+              "RelativeToolTip": "API\\entites\\Lesson.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-22T05:31:16.767Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "WeatherForecastController.cs",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\WeatherForecastController.cs",
-              "RelativeDocumentMoniker": "API\\Controllers\\WeatherForecastController.cs",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Controllers\\WeatherForecastController.cs",
-              "RelativeToolTip": "API\\Controllers\\WeatherForecastController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAASAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-21T14:32:23.23Z",
+              "WhenOpened": "2026-02-23T06:26:15.789Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Program.cs",
-              "RelativeDocumentMoniker": "API\\Program.cs",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Program.cs",
-              "RelativeToolTip": "API\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Title": "Classroom.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Classroom.cs",
+              "RelativeDocumentMoniker": "API\\entites\\Classroom.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Classroom.cs",
+              "RelativeToolTip": "API\\entites\\Classroom.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-20T04:12:47.066Z",
+              "WhenOpened": "2026-02-23T06:25:40.679Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "API.http",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\API.http",
-              "RelativeDocumentMoniker": "API\\API.http",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\API.http",
-              "RelativeToolTip": "API\\API.http",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAADAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2026-02-20T04:12:41.563Z"
             }
           ]
         }
