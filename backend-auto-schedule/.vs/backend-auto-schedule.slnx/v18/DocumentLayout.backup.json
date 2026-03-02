@@ -1,14 +1,10 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
+  "WorkspaceRootPath": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\entites\\lesson.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\entites\\lesson.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\entites\\classroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\entites\\classroom.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBFA08EA-AECE-205F-7B85-326FD0B81BAD}|API\\API.csproj|solutionrelative:api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -23,27 +19,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Lesson.cs",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Lesson.cs",
-              "RelativeDocumentMoniker": "API\\entites\\Lesson.cs",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Lesson.cs",
-              "RelativeToolTip": "API\\entites\\Lesson.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Program.cs",
+              "RelativeDocumentMoniker": "API\\Program.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\Program.cs",
+              "RelativeToolTip": "API\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-23T06:26:15.789Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Classroom.cs",
-              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Classroom.cs",
-              "RelativeDocumentMoniker": "API\\entites\\Classroom.cs",
-              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\API\\entites\\Classroom.cs",
-              "RelativeToolTip": "API\\entites\\Classroom.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-23T06:25:40.679Z",
+              "WhenOpened": "2026-02-24T02:48:10.767Z",
               "EditorCaption": ""
             }
           ]

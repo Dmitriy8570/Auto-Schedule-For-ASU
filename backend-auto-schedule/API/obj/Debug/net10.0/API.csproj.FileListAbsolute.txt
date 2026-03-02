@@ -68,3 +68,6 @@ C:\Users\barda\OneDrive\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\
 C:\Users\barda\OneDrive\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\API.pdb
 C:\Users\barda\OneDrive\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\API.genruntimeconfig.cache
 C:\Users\barda\OneDrive\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\ref\API.dll
+C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
