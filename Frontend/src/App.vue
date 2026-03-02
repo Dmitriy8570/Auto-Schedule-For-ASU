@@ -1,0 +1,1 @@
+<template>"Привет, я здесь!"</template>
