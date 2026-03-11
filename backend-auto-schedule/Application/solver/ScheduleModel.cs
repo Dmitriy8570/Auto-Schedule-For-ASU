@@ -7,21 +7,21 @@ namespace Application.solver
 {
     public class ScheduleModel
     {
-        public IReadOnlyList<SemesterWorkload> semesterWorkloads;
-        public IReadOnlyList<Classroom> classrooms;
-        public IReadOnlyList<TimeSlot> timeSlots;
+        public IReadOnlyList<SemesterWorkload> SemesterWorkloads { get; }
+        public IReadOnlyList<Classroom> Classrooms { get; }
+        public IReadOnlyList<TimeSlot> TimeSlots { get; }
 
-        public Dictionary<(int, int, int), BoolVar> lessons;
-        public CpModel model;
+        public BoolVar[,,] Lessons { get; }
+        public CpModel Model { get; }
 
         public ScheduleModel(IEnumerable<SemesterWorkload> semesterWorkloads, IEnumerable<Classroom> classrooms, IEnumerable<TimeSlot> timeSlots)
         {
-            semesterWorkloads = semesterWorkloads.ToList();
-            classrooms = classrooms.ToList();
-            timeSlots = timeSlots.ToList();
+            SemesterWorkloads = semesterWorkloads.ToList();
+            Classrooms = classrooms.ToList();
+            TimeSlots = timeSlots.ToList();
 
-            model = new CpModel();
-            lessons = new Dictionary<(int WorkloadId, int RoomId, int SlotId), BoolVar>();
+            Model = new CpModel();
+            Lessons = new BoolVar[SemesterWorkloads.Count, Classrooms.Count, TimeSlots.Count];
         }
     }
 }

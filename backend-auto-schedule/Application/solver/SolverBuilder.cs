@@ -8,88 +8,95 @@ namespace Application.solver
 {
     public class ScheduleModelBuilder
     {
-        private ScheduleModel _model;
-        private List<ILiteral> _literals; //List for creating constraints
+        private readonly ScheduleModel _model;
+
         public ScheduleModelBuilder(IEnumerable<SemesterWorkload> semesterWorkloads, IEnumerable<Classroom> classrooms, IEnumerable<TimeSlot> timeSlots)
         {
-            ScheduleModel _model = new ScheduleModel(semesterWorkloads, classrooms, timeSlots);
-            _literals = new List<ILiteral>();
+            _model = new ScheduleModel(semesterWorkloads, classrooms, timeSlots);
         }
 
-        // Populates the dictionary with boolean flags
         public ScheduleModelBuilder AddVariables()
         {
-            for (int workload = 0; workload < _model.semesterWorkloads.Count; workload++)
+            for (int workload = 0; workload < _model.SemesterWorkloads.Count; workload++)
             {
-                for (int classroom = 0; classroom < _model.classrooms.Count; classroom++)
+                for (int classroom = 0; classroom < _model.Classrooms.Count; classroom++)
                 {
-                    for (int timeslot = 0; timeslot < _model.timeSlots.Count; timeslot++)
+                    for (int timeslot = 0; timeslot < _model.TimeSlots.Count; timeslot++)
                     {
-                        _model.lessons[(workload, classroom, timeslot)] = _model.model.NewBoolVar($"lesson_{workload}_{classroom}_{timeslot}");
+                        _model.Lessons[workload, classroom, timeslot] = _model.Model.NewBoolVar($"lesson_{workload}_{classroom}_{timeslot}");
                     }
                 }
+            }
+            return this;
+        }
+
+        public ScheduleModelBuilder AddClassroomConstraint()
+        {
+            for (int classroom = 0; classroom < _model.Classrooms.Count; classroom++)
+            {
+                for (int timeslot = 0; timeslot < _model.TimeSlots.Count; timeslot++)
+                {
+                    var literals = new List<ILiteral>();
+                    for (int workload = 0; workload < _model.SemesterWorkloads.Count; workload++)
+                    {
+                        literals.Add(_model.Lessons[workload, classroom, timeslot]);
+                    }
+                    _model.Model.AddAtMostOne(literals);
+                }
+            }
+            return this;
+        }
+
+        public ScheduleModelBuilder AddTeacherConstraints()
+        {
+            var workloadsByTeacher = _model.SemesterWorkloads.GroupBy(w => w.Curriculum.Teacher);
+            foreach (var teacherGroup in workloadsByTeacher)
+            {
+                AddExclusivityConstraint(teacherGroup);
+            }
+            return this;
+        }
+
+        public ScheduleModelBuilder AddGroupConstraints()
+        {
+            var workloadsByGroup = _model.SemesterWorkloads.GroupBy(w => w.Curriculum.Stream);
+            foreach (var groupWorkloads in workloadsByGroup)
+            {
+                AddExclusivityConstraint(groupWorkloads);
             }
             return this;
         }
 
         private void AddExclusivityConstraint(IEnumerable<SemesterWorkload> workloadSubSet)
         {
-            foreach (var slot in _model.timeSlots)
+            var targetIndices = new List<int>();
+            for (int i = 0; i < _model.SemesterWorkloads.Count; i++)
             {
-                var literals = new List<BoolVar>();
-
-                foreach (var workload in workloadSubSet)
+                if (workloadSubSet.Contains(_model.SemesterWorkloads[i]))
                 {
-                    foreach (var room in _model.classrooms)
-                    {
-                        // Собираем все переменные для данного подмножества нагрузок в этот слот
-                        if (_model.lessons.TryGetValue((workload.Id, room.Id, slot.Id), out var variable))
-                        {
-                            literals.Add(variable);
-                        }
-                    }
+                    targetIndices.Add(i);
                 }
+            }
 
-                // Ключевое ограничение: только одна пара из списка может быть истинной
-                _model.model.AddAtMostOne(literals);
+            for (int slot = 0; slot < _model.TimeSlots.Count; slot++)
+            {
+                for (int room = 0; room < _model.Classrooms.Count; room++)
+                {
+                    var literals = new List<ILiteral>();
+
+                    foreach (int wIndex in targetIndices)
+                    {
+                        literals.Add(_model.Lessons[wIndex, room, slot]);
+                    }
+
+                    _model.Model.AddAtMostOne(literals);
+                }
             }
         }
 
-        // Adds a constraint to prevent scheduling conflicts (overlapping classes)
-        public ScheduleModelBuilder AddNoOverlapConstraint()
+        public ScheduleModel Build()
         {
-            for (int classroom = 0; classroom < _model.classrooms.Count; classroom++)
-            {
-                for (int timeslot = 0; timeslot < _model.timeSlots.Count; timeslot++)
-                {
-                    for (int workload = 0; workload < _model.semesterWorkloads.Count; workload++)
-                    {
-                        _literals.Add(_model.lessons[(workload, classroom, timeslot)]);
-                    }
-                    _model.model.AddAtMostOne(_literals);
-                    _literals.Clear();
-                }
-            }
-
-            foreach (Teacher teacher in _model.semesterWorkloads.Select(t => t.Curriculum.Teacher))
-            {
-                for (int workload = 0; workload < _model.semesterWorkloads.Count; workload++)
-                {
-                    if (teacher == _model.semesterWorkloads[workload].Curriculum.Teacher)
-                    {
-                        for (int timeslot = 0; timeslot < _model.timeSlots.Count; timeslot++)
-                        {
-                            for (int classroom = 0; classroom < _model.classrooms.Count; classroom++)
-                            {
-                                _literals.Add(_model.lessons[(workload, classroom, timeslot)]);
-                            }
-                            _model.model.AddAtMostOne(_literals);
-                            _literals.Clear();
-                        }
-                    }
-                }
-            }
-            return this;
+            return _model;
         }
     }
 }
