@@ -14,6 +14,8 @@ namespace Domain.constraints
         public Classroom Classroom { get; set; }
         public Guid ClassroomId { get; set; }
 
+        public int NumberLesson { get; set; }
+
         public DayOfWeek DayOfWeek { get; set; }
     }
 
@@ -24,6 +26,8 @@ namespace Domain.constraints
 
         public Teacher Teacher { get; set; }
         public Guid TeacherId { get; set; }
+
+        public int NumberLesson { get; set; }
 
         public DayOfWeek DayOfWeek { get; set; }
     }

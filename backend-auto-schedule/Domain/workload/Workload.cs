@@ -1,4 +1,5 @@
 ﻿using Domain.calendar;
+using Domain.workload.logs;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,7 +17,9 @@ namespace Domain.workload
         public Week Week { get; set; }
         public Guid WeekId { get; set; }
 
-        public List<WeekWorkload> WeekWorkloads { get; set; }
+        public SemesterWorkload SemesterWorkload { get; set; }
+        public Guid SemesterWorkloadId { get; set; }
+        public List<WeekLog> WeekLogs { get; set; }
     }
 
     public class SemesterWorkload
@@ -30,6 +33,7 @@ namespace Domain.workload
         public Semester Semester { get; set; }
         public Guid Semesterid { get; set; }
 
-        public List<SemesterWorkload> SemesterWorkloads { get; set; }
+        public List<SemesterLog> SemesterLogs { get; set; }
+        public List<WeekWorkload> WeekWorkloads { get; set; }
     }
 }
