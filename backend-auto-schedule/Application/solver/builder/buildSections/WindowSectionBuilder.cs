@@ -71,7 +71,6 @@ namespace Application.solver.builder.buildSections
                     int slotIdx = slots[i].Index;
                     busy[i] = model.Model.NewBoolVar($"busy_{prefix}_d{dayGroup.Key}_s{i}");
 
-                    // Все переменные Lessons для любой нагрузки из subset в данном слоте
                     var lessonsInSlot = targetIndices
                         .SelectMany(wIdx =>
                             Enumerable.Range(0, model.Data.Classrooms.Count)
