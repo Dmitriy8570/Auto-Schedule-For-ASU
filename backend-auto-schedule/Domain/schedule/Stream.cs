@@ -11,7 +11,7 @@ namespace Domain.schedule
         public int StudentsCount { get; set; }
 
 
-        List<StreamGroups> StreamGroups { get; set; }
+        public List<StreamGroups> StreamGroups { get; set; }
         List<Curriculum> Curriculums { get; set; }
         List<Lesson> Lessons { get; set; }
     }
