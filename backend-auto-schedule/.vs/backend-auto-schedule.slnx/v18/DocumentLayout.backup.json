@@ -7,8 +7,8 @@
       "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\varibalessectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\model\\scheduledata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\model\\scheduledata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\intersectionsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -17,6 +17,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\builderinterface\\imodelsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\builderinterface\\imodelsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\model\\scheduledata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\model\\scheduledata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\model\\schedulemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -30,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
@@ -40,9 +44,35 @@
               "RelativeDocumentMoniker": "Application\\solver\\builder\\builderInterface\\IModelSectionBuilder.cs",
               "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\builderInterface\\IModelSectionBuilder.cs",
               "RelativeToolTip": "Application\\solver\\builder\\builderInterface\\IModelSectionBuilder.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T04:36:42.908Z",
+              "WhenOpened": "2026-04-14T03:00:56.848Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ScheduleData.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleData.cs",
+              "RelativeDocumentMoniker": "Application\\solver\\model\\ScheduleData.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleData.cs",
+              "RelativeToolTip": "Application\\solver\\model\\ScheduleData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T08:29:56.76Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ScheduleModel.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleModel.cs",
+              "RelativeDocumentMoniker": "Application\\solver\\model\\ScheduleModel.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleModel.cs",
+              "RelativeToolTip": "Application\\solver\\model\\ScheduleModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T08:29:49.24Z",
               "EditorCaption": ""
             },
             {
@@ -53,9 +83,22 @@
               "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\IntersectionSectionBuilder.cs",
               "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\IntersectionSectionBuilder.cs",
               "RelativeToolTip": "Application\\solver\\builder\\buildSections\\IntersectionSectionBuilder.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE8AAAA5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T03:58:04.182Z",
+              "WhenOpened": "2026-03-12T07:35:20.42Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "WindowSectionBuilder.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "RelativeToolTip": "Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T06:53:03.184Z",
               "EditorCaption": ""
             },
             {
@@ -66,35 +109,9 @@
               "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
               "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
               "RelativeToolTip": "Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T03:50:28.631Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ScheduleData.cs",
-              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleData.cs",
-              "RelativeDocumentMoniker": "Application\\solver\\model\\ScheduleData.cs",
-              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleData.cs",
-              "RelativeToolTip": "Application\\solver\\model\\ScheduleData.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T03:36:38.191Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ScheduleModel.cs",
-              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleModel.cs",
-              "RelativeDocumentMoniker": "Application\\solver\\model\\ScheduleModel.cs",
-              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\model\\ScheduleModel.cs",
-              "RelativeToolTip": "Application\\solver\\model\\ScheduleModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-10T11:15:30.116Z",
+              "WhenOpened": "2026-03-12T07:35:17.02Z",
               "EditorCaption": ""
             }
           ]

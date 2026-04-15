@@ -8,6 +8,7 @@ namespace Application.solver.model
 
         public BoolVar[,,] Lessons { get; }
         public CpModel Model { get; }
+        public List<LinearExpr> Expr { get; }
 
         public ScheduleModel(ScheduleData data)
         {
@@ -15,6 +16,7 @@ namespace Application.solver.model
 
             Model = new CpModel();
             Lessons = new BoolVar[Data.SemesterWorkloads.Count, Data.Classrooms.Count, Data.TimeSlots.Count];
+            Expr = new List<LinearExpr>();
         }
     }
 }
