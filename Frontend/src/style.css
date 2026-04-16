@@ -1,0 +1,6 @@
+body {
+  margin: 0;
+  padding: 0;
+  /* Применяем шрифт Inter. Если он не загрузится, включится стандартный sans-serif */
+  font-family: 'Inter', sans-serif; 
+}

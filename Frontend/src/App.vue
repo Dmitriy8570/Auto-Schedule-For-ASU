@@ -1,12 +1,31 @@
+<script setup lang="ts">
+import TheHeader from './components/TheHeader.vue'
+import LoginCard from './components/LoginCard.vue'
+import TheFooter from './components/TheFooter.vue'
+</script>
+
 <template>
   <div class="app-layout">
-    <h1 style="color: white">Проверка связи!</h1>
+    
+    <TheHeader />
+    
+    <LoginCard />
+    
+    <TheFooter />
+    
   </div>
 </template>
 
 <style scoped>
 .app-layout {
-  min-height: 100vh; /* Говорим: растянись на 100% высоты экрана */
-  background-color: #1a56db; /* Красим в синий */
+  min-height: 100vh;
+  background-color: #1e56a8;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  gap: 40px;
 }
 </style>
