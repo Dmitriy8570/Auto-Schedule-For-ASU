@@ -79,7 +79,7 @@ namespace Application.solver.builder.buildSections
                     for (int room = 0; room < model.Data.Classrooms.Count; room++)
                         literals.Add(model.Lessons[wIndex, room, slot]);
 
-                model.Model.AddAtMostOne(literals); // один преподаватель — один слот
+                model.Model.AddAtMostOne(literals);
             }
         }
     }
