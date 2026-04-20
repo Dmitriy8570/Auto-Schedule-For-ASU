@@ -74,15 +74,12 @@ namespace Application.solver.builder.buildSections
 
             for (int slot = 0; slot < model.Data.TimeSlots.Count; slot++)
             {
-                for (int room = 0; room < model.Data.Classrooms.Count; room++)
-                {
-                    var literals = new List<ILiteral>();
-                    foreach (int wIndex in targetIndices)
-                    {
+                var literals = new List<ILiteral>();
+                foreach (int wIndex in targetIndices)
+                    for (int room = 0; room < model.Data.Classrooms.Count; room++)
                         literals.Add(model.Lessons[wIndex, room, slot]);
-                    }
-                    model.Model.AddAtMostOne(literals);
-                }
+
+                model.Model.AddAtMostOne(literals); // один преподаватель — один слот
             }
         }
     }

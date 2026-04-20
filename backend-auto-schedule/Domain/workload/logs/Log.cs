@@ -13,7 +13,7 @@ namespace Domain.workload.logs
     public class SemesterLog
     {
         public Guid Id { get; set; }
-        public Action Action { get; set; }
+        public Actions Action { get; set; }
         public int OldValue { get; set; }
         public int NewValue { get; set; }
 
@@ -26,7 +26,7 @@ namespace Domain.workload.logs
     public class WeekLog
     {
         public Guid Id { get; set; }
-        public Action Action { get; set; }
+        public Actions Action { get; set; }
         public int OldValue { get; set; }
         public int NewValue { get; set; }
 

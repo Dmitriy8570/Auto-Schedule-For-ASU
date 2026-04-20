@@ -17,6 +17,8 @@ namespace Domain.calendar
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
 
+        public WeekType WeekType { get; set; }
+
 
         public Guid SemesterId { get; set; }
         public Semester Semester { get; set; }

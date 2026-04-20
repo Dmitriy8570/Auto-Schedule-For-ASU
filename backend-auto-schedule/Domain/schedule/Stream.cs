@@ -12,7 +12,7 @@ namespace Domain.schedule
 
 
         public List<StreamGroups> StreamGroups { get; set; }
-        List<Curriculum> Curriculums { get; set; }
-        List<Lesson> Lessons { get; set; }
+        public List<Curriculum> Curriculums { get; set; }
+        public List<Lesson> Lessons { get; set; }
     }
 }
