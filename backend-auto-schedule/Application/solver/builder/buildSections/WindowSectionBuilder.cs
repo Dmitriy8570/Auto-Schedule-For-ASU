@@ -77,11 +77,8 @@ namespace Application.solver.builder.buildSections
                                 .Select(room => model.Lessons[wIdx, room, slotIdx]))
                         .ToList();
 
-                    // busy[i] = 0 => все lessons = 0
-                    // Эквивалентно: (lesson1 OR lesson2 OR ... OR NOT busy[i])
                     model.Model.AddBoolOr(lessonsInSlot.Append(busy[i].Not()).ToArray());
 
-                    // lesson_k = 1 => busy[i] = 1
                     foreach (var lesson in lessonsInSlot)
                         model.Model.AddImplication(lesson, busy[i]);
                 }
@@ -95,18 +92,14 @@ namespace Application.solver.builder.buildSections
                     hasLessonAfter[i] = model.Model.NewBoolVar($"after_{prefix}_d{dayGroup.Key}_s{i}");
                 }
 
-                // Граничные условия
-                model.Model.Add(hasLessonBefore[0] == 0); // до первого слота ничего нет
-                model.Model.Add(hasLessonAfter[D - 1] == 0); // после последнего тоже
+                model.Model.Add(hasLessonBefore[0] == 0); 
+                model.Model.Add(hasLessonAfter[D - 1] == 0);
 
-                // Прямой проход: hasLessonBefore[i] = busy[i-1] OR hasLessonBefore[i-1]
                 for (int i = 1; i < D; i++)
                 {
-                    // Если хоть что-то было раньше — флаг ставится и не снимается
                     model.Model.AddImplication(busy[i - 1], hasLessonBefore[i]);
                     model.Model.AddImplication(hasLessonBefore[i - 1], hasLessonBefore[i]);
 
-                    // Обратное: если hasLessonBefore[i]=0, то оба источника тоже 0
                     model.Model.AddBoolOr(new ILiteral[] {
                         busy[i - 1],
                         hasLessonBefore[i - 1],
@@ -114,7 +107,6 @@ namespace Application.solver.builder.buildSections
                     });
                 }
 
-                // Обратный проход: hasLessonAfter[i] = busy[i+1] OR hasLessonAfter[i+1]
                 for (int i = D - 2; i >= 0; i--)
                 {
                     model.Model.AddImplication(busy[i + 1], hasLessonAfter[i]);
@@ -127,32 +119,22 @@ namespace Application.solver.builder.buildSections
                     });
                 }
 
-                // ── Шаг 3: gap[i] = пустой слот ВНУТРИ рабочего дня ──
-                //
-                // gap[i] = NOT busy[i] AND hasLessonBefore[i] AND hasLessonAfter[i]
-                //
-                //  [пара] [пусто] [пусто] [пара]
-                //           gap=1   gap=1         => штраф = 2 * weight
-
                 for (int i = 1; i < D - 1; i++)
                 {
                     var gap = model.Model.NewBoolVar($"gap_{prefix}_d{dayGroup.Key}_s{i}");
 
-                    // gap=1 => все три условия выполнены
                     model.Model.AddBoolAnd(new ILiteral[] {
                         busy[i].Not(),
                         hasLessonBefore[i],
                         hasLessonAfter[i]
                     }).OnlyEnforceIf(gap);
 
-                    // gap=0 => хотя бы одно условие нарушено
                     model.Model.AddBoolOr(new ILiteral[] {
                         busy[i],
                         hasLessonBefore[i].Not(),
                         hasLessonAfter[i].Not()
                     }).OnlyEnforceIf(gap.Not());
 
-                    // Каждый пустой слот внутри дня добавляет штраф
                     objective.Add(Google.OrTools.Sat.LinearExpr.Term(gap, weight));
                 }
             }
