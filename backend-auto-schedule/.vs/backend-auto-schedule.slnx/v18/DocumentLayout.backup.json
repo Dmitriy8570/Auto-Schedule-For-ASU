@@ -1,14 +1,26 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
+  "WorkspaceRootPath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\monthlyhourslimitsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\monthlyhourslimitsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\varibalessectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\dailylessonslimitsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\dailylessonslimitsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2EE292E-1000-4646-87B4-41EB7EDF55DD}|Domain\\Domain.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\domain\\schedule\\stream.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2EE292E-1000-4646-87B4-41EB7EDF55DD}|Domain\\Domain.csproj|solutionrelative:domain\\schedule\\stream.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\varibalessectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\varibalessectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|Application\\Application.csproj|solutionrelative:application\\solver\\builder\\buildsections\\windowsectionbuilder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,30 +30,69 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Stream.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Domain\\schedule\\Stream.cs",
+              "RelativeDocumentMoniker": "Domain\\schedule\\Stream.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Domain\\schedule\\Stream.cs",
+              "RelativeToolTip": "Domain\\schedule\\Stream.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T19:05:29.392Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DailyLessonsLimitSectionBuilder.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\DailyLessonsLimitSectionBuilder.cs",
+              "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\DailyLessonsLimitSectionBuilder.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\DailyLessonsLimitSectionBuilder.cs",
+              "RelativeToolTip": "Application\\solver\\builder\\buildSections\\DailyLessonsLimitSectionBuilder.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T18:32:35.778Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "MonthlyHoursLimitSectionBuilder.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\MonthlyHoursLimitSectionBuilder.cs",
+              "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\MonthlyHoursLimitSectionBuilder.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\MonthlyHoursLimitSectionBuilder.cs",
+              "RelativeToolTip": "Application\\solver\\builder\\buildSections\\MonthlyHoursLimitSectionBuilder.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:44:11.32Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "WindowSectionBuilder.cs",
-              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
               "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
-              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
               "RelativeToolTip": "Application\\solver\\builder\\buildSections\\WindowSectionBuilder.cs",
-              "ViewState": "AgIAAC8AAAAAAAAAAAAIwEgAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACYAAAAAAAAAAAAwwEkAAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-15T09:37:12.156Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "VaribalesSectionBuilder.cs",
-              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
               "RelativeDocumentMoniker": "Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
-              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
               "RelativeToolTip": "Application\\solver\\builder\\buildSections\\VaribalesSectionBuilder.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAABdAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-15T09:37:08.456Z",
               "EditorCaption": ""
