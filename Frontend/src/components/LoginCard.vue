@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { User, Lock, Eye } from 'lucide-vue-next'
+
+const emit = defineEmits(['login'])
+
+const tryLogin = () => {
+  // Тут можно добавить проверку
+  emit('login')
+}
 </script>
 
 <template>
@@ -23,7 +30,7 @@ import { User, Lock, Eye } from 'lucide-vue-next'
       </div>
     </div>
 
-    <button class="submit-btn">Войти</button>
+    <button class="submit-btn" @click.prevent="tryLogin">Войти</button>
 </div>
 </template>
 
@@ -125,3 +132,4 @@ input::placeholder {
   background-color: #143c82; /* Чуть темнеет при наведении */
 }
 </style>
+
