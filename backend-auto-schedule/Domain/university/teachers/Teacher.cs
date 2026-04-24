@@ -1,20 +1,21 @@
-﻿using Domain.constraints;
+using Domain.constraints;
 using Domain.workload;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Domain.university.teachers
 {
+    /// <summary>Преподаватель университета.</summary>
     public class Teacher
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
 
         public Guid DepartmentId { get; set; }
-        public Departament Departament { get; set; }
+        public Department Department { get; set; }
 
-        public List<Curriculum> Currilumus { get; set; }
-        public List<TeacherAvailability> TeacherAvailabilitys { get; set; }
+        /// <summary>Учебные планы, которые ведёт данный преподаватель.</summary>
+        public List<Curriculum> Curriculums { get; set; }
+
+        /// <summary>Ограничения доступности преподавателя по дням и парам.</summary>
+        public List<TeacherAvailability> TeacherAvailabilities { get; set; }
     }
 }

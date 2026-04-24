@@ -1,10 +1,8 @@
-﻿using Domain.university.common;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Domain.university.common;
 
 namespace Domain.university.groups
 {
+    /// <summary>Ступень образования.</summary>
     public enum TypeDegree
     {
         Secondary = 0,
@@ -14,11 +12,14 @@ namespace Domain.university.groups
         Postgraduate = 4,
         Doctoral = 5
     }
+
+    /// <summary>Образовательная ступень внутри института (бакалавриат, магистратура и т.д.).</summary>
     public class Degree
     {
         public Guid Id { get; set; }
         public TypeDegree TypeDegree { get; set; }
 
+        /// <summary>Курсы (по годам обучения) данной ступени.</summary>
         public List<Course> Courses { get; set; }
 
         public Guid InstituteId { get; set; }

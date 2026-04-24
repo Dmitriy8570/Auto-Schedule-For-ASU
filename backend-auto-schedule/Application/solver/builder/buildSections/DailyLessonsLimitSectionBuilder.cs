@@ -1,23 +1,30 @@
-﻿using Application.solver.builder.builderInterface;
+using Application.solver.builder.builderInterface;
 using Application.solver.model;
 using Google.OrTools.Sat;
 
 namespace Application.solver.builder.buildSections
 {
-    public class DailyLessonsLimitSectionBuilder: IModelSectionBuilder
+    /*
+     *
+     *
+     *           НЕОБХОДИМО ИЗМЕНИТЬ НА СИСТЕМУ ШТРАФОВ
+     *
+     *
+     */
+
+    /// <summary>
+    /// Добавляет жёсткие ограничения на максимальное количество занятий в день
+    /// для преподавателей и студенческих групп.
+    /// </summary>
+    public class DailyLessonsLimitSectionBuilder : IModelSectionBuilder
     {
-        /*
-         *
-         *
-         *           НЕОБХОДИМО ИЗМЕНИТЬ НА СИСТЕМУ ШТРАФОВ
-         *
-         *
-         */
         public void Build(ScheduleModel model)
         {
             AddTeacherLimit(model, 7);
             AddGroupLimit(model, 4);
         }
+
+        /// <summary>Ограничивает количество пар преподавателя в один день.</summary>
         private void AddTeacherLimit(ScheduleModel model, int lessonLimit)
         {
             var workloadsByTeacher = model.Data.SemesterWorkloads
@@ -44,13 +51,14 @@ namespace Application.solver.builder.buildSections
             }
         }
 
-        private void AddGroupLimit(ScheduleModel model, int lessonLimit) 
+        /// <summary>Ограничивает количество пар студенческой группы в один день.</summary>
+        private void AddGroupLimit(ScheduleModel model, int lessonLimit)
         {
             var workloadsByGroup = model.Data.SemesterWorkloads
-            .Index()
-            .SelectMany(x => x.Item.Curriculum.Stream.StreamGroups
-                .Select(sg => (IndexedWorkload: x, Group: sg.Group)))
-            .GroupBy(x => x.Group, x => x.IndexedWorkload);
+                .Index()
+                .SelectMany(x => x.Item.Curriculum.Stream.StreamGroups
+                    .Select(sg => (IndexedWorkload: x, Group: sg.Group)))
+                .GroupBy(x => x.Group, x => x.IndexedWorkload);
 
             var slotsByDay = model.Data.TimeSlots
                 .Index()

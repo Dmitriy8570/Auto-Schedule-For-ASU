@@ -26,7 +26,6 @@ C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\De
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\swae.build.ex.cache
-C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\API.csproj.Up2Date
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\API.dll
 C:\Users\bardakov\Desktop\Auto-Schedule-For-ASU\backend-auto-schedule\API\obj\Debug\net10.0\refint\API.dll
