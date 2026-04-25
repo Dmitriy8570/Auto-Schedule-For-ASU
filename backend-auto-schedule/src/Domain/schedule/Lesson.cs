@@ -1,17 +1,19 @@
-﻿using Domain.calendar;
+using Domain.calendar;
 using Domain.university.buildings;
 using Domain.workload;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Domain.schedule
 {
-    public enum Version
+    /// <summary>Состояние версии расписания.</summary>
+    public enum ScheduleVersion
     {
+        /// <summary>Текущее (опубликованное) расписание.</summary>
         Current = 0,
+        /// <summary>Черновик расписания.</summary>
         Draft = 1
     }
+
+    /// <summary>Конкретное занятие в расписании: привязка нагрузки к аудитории и временному слоту.</summary>
     public class Lesson
     {
         public Guid Id { get; set; }
@@ -22,9 +24,9 @@ namespace Domain.schedule
         public Guid TimeSlotId { get; set; }
         public TimeSlot TimeSlot { get; set; }
 
-        public Stream Stream { get; set; }
+        public AcademicStream Stream { get; set; }
         public Guid StreamId { get; set; }
 
-        public Version Version { get; set; }
+        public ScheduleVersion Version { get; set; }
     }
 }

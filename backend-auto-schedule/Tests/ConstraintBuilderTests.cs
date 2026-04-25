@@ -1,13 +1,11 @@
 using Application.solver.builder.buildSections;
 using Application.solver.model;
 using Domain.calendar;
+using Domain.schedule;
 using Domain.university.buildings;
 using Domain.university.teachers;
 using Domain.workload;
 using Google.OrTools.Sat;
-using ScheduleStream = Domain.schedule.Stream;
-using StreamGroups = Domain.schedule.StreamGroups;
-using TimeSlot = Domain.schedule.TimeSlot;
 using Xunit;
 
 namespace Tests;
@@ -16,17 +14,17 @@ namespace Tests;
 
 file static class Factory
 {
-    public static SemesterWorkload Workload(int hours, Teacher? teacher = null, ScheduleStream? stream = null)
+    public static SemesterWorkload Workload(int hours, Teacher? teacher = null, AcademicStream? stream = null)
     {
-        var t = teacher ?? new Teacher { Id = Guid.NewGuid(), Name = "T", Currilumus = [], TeacherAvailabilitys = [] };
-        var s = stream ?? new ScheduleStream { Id = Guid.NewGuid(), StreamGroups = [], Curriculums = [], Lessons = [] };
+        var t = teacher ?? new Teacher { Id = Guid.NewGuid(), Name = "T", Curriculums = [], TeacherAvailabilities = [] };
+        var s = stream ?? new AcademicStream { Id = Guid.NewGuid(), StreamGroups = [], Curriculums = [], Lessons = [] };
         var c = new Curriculum
         {
             Id = Guid.NewGuid(),
             Teacher = t, TeacherId = t.Id,
             Stream = s, StreamId = s.Id,
             LessonType = LessonType.Lecture,
-            WeekWorkloads = [], semesterWorkloads = [], NeededEquipments = []
+            WeekWorkloads = [], SemesterWorkloads = [], NeededEquipments = []
         };
         return new SemesterWorkload
         {
@@ -40,7 +38,7 @@ file static class Factory
     public static Classroom Classroom() => new()
     {
         Id = Guid.NewGuid(), Name = "Room", Capacity = 30,
-        Lessons = [], ClassroomAvailabilitys = [], EquipmentRooms = []
+        Lessons = [], ClassroomAvailabilities = [], EquipmentRooms = []
     };
 
     public static TimeSlot Slot(int number = 1)
@@ -66,7 +64,7 @@ public class TotalHoursConstraintSectionBuilderTests
             Penalties:         []);
 
         var model = new ScheduleModel(data);
-        new VaribalesSectionBuilder().Build(model);
+        new VariablesSectionBuilder().Build(model);
         new TotalHoursConstraintSectionBuilder().Build(model);
 
         var status = new CpSolver().Solve(model.Model);
@@ -86,7 +84,7 @@ public class TotalHoursConstraintSectionBuilderTests
             Penalties:         []);
 
         var model = new ScheduleModel(data);
-        new VaribalesSectionBuilder().Build(model);
+        new VariablesSectionBuilder().Build(model);
         new TotalHoursConstraintSectionBuilder().Build(model);
 
         var status = new CpSolver().Solve(model.Model);
@@ -112,7 +110,7 @@ public class IntersectionSectionBuilderTests
             Penalties:         []);
 
         var model = new ScheduleModel(data);
-        new VaribalesSectionBuilder().Build(model);
+        new VariablesSectionBuilder().Build(model);
         new TotalHoursConstraintSectionBuilder().Build(model);
         new IntersectionSectionBuilder().Build(model);
 
@@ -133,7 +131,7 @@ public class IntersectionSectionBuilderTests
             Penalties:         []);
 
         var model = new ScheduleModel(data);
-        new VaribalesSectionBuilder().Build(model);
+        new VariablesSectionBuilder().Build(model);
         new TotalHoursConstraintSectionBuilder().Build(model);
         new IntersectionSectionBuilder().Build(model);
 
