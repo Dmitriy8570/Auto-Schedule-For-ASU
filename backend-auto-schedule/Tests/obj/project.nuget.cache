@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ewLuNoo7sIA=",
+  "dgSpecHash": "MR/+MJjPLOM=",
   "success": true,
-  "projectFilePath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\Tests\\Tests.csproj",
+  "projectFilePath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\tests\\Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\barda\\.nuget\\packages\\google.ortools\\9.15.6755\\google.ortools.9.15.6755.nupkg.sha512",
     "C:\\Users\\barda\\.nuget\\packages\\google.ortools.runtime.linux-arm64\\9.15.6755\\google.ortools.runtime.linux-arm64.9.15.6755.nupkg.sha512",
