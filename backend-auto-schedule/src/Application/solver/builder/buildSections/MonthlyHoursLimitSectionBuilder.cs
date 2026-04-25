@@ -1,11 +1,14 @@
-﻿using Application.solver.builder.builderInterface;
+using Application.solver.builder.builderInterface;
 using Application.solver.model;
-using Domain.university.teachers;
 using Google.OrTools.Sat;
-
 
 namespace Application.solver.builder.buildSections
 {
+    /// <summary>
+    /// Добавляет жёсткое ограничение: суммарное число занятий по каждой нагрузке
+    /// за семестр должно точно соответствовать плановому количеству часов (Hours / 2,
+    /// поскольку одна пара = 2 академических часа).
+    /// </summary>
     public class TotalHoursConstraintSectionBuilder : IModelSectionBuilder
     {
         public void Build(ScheduleModel model)
@@ -24,6 +27,7 @@ namespace Application.solver.builder.buildSections
                     }
                 }
 
+                // Одна запись в Lessons соответствует одной паре (2 часа).
                 model.Model.Add(LinearExpr.Sum(taskVars) == item.Hours / 2);
             }
         }

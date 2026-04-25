@@ -2,17 +2,14 @@ using Application.solver.builder.buildSections;
 using Application.solver.model;
 using Domain.calendar;
 using Domain.constraints.penalty;
+using Domain.schedule;
 using Domain.university.buildings;
+using Domain.university.groups;
 using Domain.university.teachers;
 using Domain.workload;
 using Google.OrTools.Sat;
 using Xunit;
 using Xunit.Abstractions;
-using Group        = Domain.university.groups.Group;
-using ScheduleStream = Domain.schedule.Stream;
-using StreamGroups  = Domain.schedule.StreamGroups;
-using Subject       = Domain.schedule.Subject;
-using TimeSlot      = Domain.schedule.TimeSlot;
 
 namespace Tests;
 
@@ -87,7 +84,7 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
         var data  = new ScheduleData(workloads, classrooms, slots, penalties);
         var model = new ScheduleModel(data);
 
-        new VaribalesSectionBuilder().Build(model);
+        new VariablesSectionBuilder().Build(model);
         new TotalHoursConstraintSectionBuilder().Build(model);
         new IntersectionSectionBuilder().Build(model);
         new WindowSectionBuilder().Build(model);
@@ -111,14 +108,14 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
     // Фабричные методы
 
     private static Subject MakeSubject(string name) => new()
-        { Id = Guid.NewGuid(), Name = name, Currilumus = [] };
+        { Id = Guid.NewGuid(), Name = name, Curriculums = [] };
 
     private static Teacher MakeTeacher(string name) => new()
-        { Id = Guid.NewGuid(), Name = name, Currilumus = [], TeacherAvailabilitys = [] };
+        { Id = Guid.NewGuid(), Name = name, Curriculums = [], TeacherAvailabilities = [] };
 
-    private static (ScheduleStream stream, Group group) MakeStreamWithGroup(string groupName)
+    private static (AcademicStream stream, Group group) MakeStreamWithGroup(string groupName)
     {
-        var stream = new ScheduleStream { Id = Guid.NewGuid(), StreamGroups = [], Curriculums = [], Lessons = [] };
+        var stream = new AcademicStream { Id = Guid.NewGuid(), StreamGroups = [], Curriculums = [], Lessons = [] };
         var group  = new Group { Id = Guid.NewGuid(), Name = groupName, StudentCount = 25, Groups = [], StreamGroups = [] };
         var link   = new StreamGroups { GroupId = group.Id, Group = group, StreamId = stream.Id, Stream = stream };
         stream.StreamGroups.Add(link);
@@ -127,10 +124,10 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
     }
 
     private static Classroom MakeClassroom(string name, int capacity) => new()
-        { Id = Guid.NewGuid(), Name = name, Capacity = capacity, Lessons = [], ClassroomAvailabilitys = [], EquipmentRooms = [] };
+        { Id = Guid.NewGuid(), Name = name, Capacity = capacity, Lessons = [], ClassroomAvailabilities = [], EquipmentRooms = [] };
 
     private static SemesterWorkload MakeWorkload(
-        Teacher teacher, ScheduleStream stream, Subject subject, LessonType type, int hours)
+        Teacher teacher, AcademicStream stream, Subject subject, LessonType type, int hours)
     {
         var c = new Curriculum
         {
@@ -139,7 +136,7 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
             Stream  = stream,  StreamId  = stream.Id,
             Subject = subject, SubjectId = subject.Id,
             LessonType = type,
-            WeekWorkloads = [], semesterWorkloads = [], NeededEquipments = []
+            WeekWorkloads = [], SemesterWorkloads = [], NeededEquipments = []
         };
         return new SemesterWorkload
         {
@@ -151,13 +148,13 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
 
     private static (List<WeekDay> days, List<TimeSlot> slots) BuildWeekSlots(int daysCount, int pairsPerDay)
     {
-        Domain.calendar.DayOfWeek[] order =
+        WeekDayType[] order =
         [
-            Domain.calendar.DayOfWeek.Monday,
-            Domain.calendar.DayOfWeek.Tuesday,
-            Domain.calendar.DayOfWeek.Wednesday,
-            Domain.calendar.DayOfWeek.Thursday,
-            Domain.calendar.DayOfWeek.Friday,
+            WeekDayType.Monday,
+            WeekDayType.Tuesday,
+            WeekDayType.Wednesday,
+            WeekDayType.Thursday,
+            WeekDayType.Friday,
         ];
 
         var days  = new List<WeekDay>();
@@ -235,14 +232,14 @@ public class ScheduleVisualizationTests(ITestOutputHelper output)
         output.WriteLine("");
     }
 
-    private static string DayName(Domain.calendar.DayOfWeek d) => d switch
+    private static string DayName(WeekDayType d) => d switch
     {
-        Domain.calendar.DayOfWeek.Monday    => "Понедельник",
-        Domain.calendar.DayOfWeek.Tuesday   => "Вторник",
-        Domain.calendar.DayOfWeek.Wednesday => "Среда",
-        Domain.calendar.DayOfWeek.Thursday  => "Четверг",
-        Domain.calendar.DayOfWeek.Friday    => "Пятница",
-        _                                   => d.ToString()
+        WeekDayType.Monday    => "Понедельник",
+        WeekDayType.Tuesday   => "Вторник",
+        WeekDayType.Wednesday => "Среда",
+        WeekDayType.Thursday  => "Четверг",
+        WeekDayType.Friday    => "Пятница",
+        _                     => d.ToString()
     };
 
     private static string SlotTime(int n) => n switch

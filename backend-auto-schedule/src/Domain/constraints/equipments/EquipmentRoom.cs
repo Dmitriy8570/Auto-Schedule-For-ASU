@@ -1,10 +1,8 @@
-﻿using Domain.university.buildings;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Domain.university.buildings;
 
 namespace Domain.constraints.equipments
 {
+    /// <summary>Связующая таблица: оборудование, установленное в конкретной аудитории (многие-ко-многим).</summary>
     public class EquipmentRoom
     {
         public Guid EquipmentId { get; set; }
