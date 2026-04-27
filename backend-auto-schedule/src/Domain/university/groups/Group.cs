@@ -14,24 +14,26 @@ namespace Domain.university.groups
     /// <summary>Учебная группа студентов.</summary>
     public class Group
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
+        private Group() { }
 
-        public Shift Shift { get; set; }
+        public Guid Id { get; private set; }
+        public string Name { get; private set; }
+
+        public Shift Shift { get; private set; }
 
         /// <summary>Родительская группа (для подгрупп, напр. при делении на лабораторные).</summary>
-        public Group ParentGroup { get; set; }
+        public Group ParentGroup { get; private set; }
 
         /// <summary>Количество студентов в группе.</summary>
-        public int StudentCount { get; set; }
+        public int StudentCount { get; private set; }
 
         /// <summary>Подгруппы данной группы.</summary>
-        public List<Group> Groups { get; set; }
+        public List<Group> Groups { get; private set; }
 
-        public Guid CourseId { get; set; }
-        public Course Course { get; set; }
+        public Guid CourseId { get; private set; }
+        public Course Course { get; private set; }
 
         /// <summary>Потоки, в которые входит данная группа.</summary>
-        public List<StreamGroups> StreamGroups { get; set; }
+        public List<StreamGroups> StreamGroups { get; private set; }
     }
 }

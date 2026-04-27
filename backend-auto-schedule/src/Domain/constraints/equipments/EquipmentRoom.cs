@@ -5,10 +5,12 @@ namespace Domain.constraints.equipments
     /// <summary>Связующая таблица: оборудование, установленное в конкретной аудитории (многие-ко-многим).</summary>
     public class EquipmentRoom
     {
-        public Guid EquipmentId { get; set; }
-        public Guid ClassroomId { get; set; }
+        private EquipmentRoom() { }
 
-        public Equipment Equipment { get; set; }
-        public Classroom Classroom { get; set; }
+        public Guid EquipmentId { get; private set; }
+        public Guid ClassroomId { get; private set; }
+
+        public Equipment Equipment { get; private set; }
+        public Classroom Classroom { get; private set; }
     }
 }

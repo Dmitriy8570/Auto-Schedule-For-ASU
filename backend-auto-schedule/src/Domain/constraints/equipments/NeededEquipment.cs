@@ -5,10 +5,12 @@ namespace Domain.constraints.equipments
     /// <summary>Связующая таблица: оборудование, необходимое для конкретного учебного плана (многие-ко-многим).</summary>
     public class NeededEquipment
     {
-        public Guid CurriculumId { get; set; }
-        public Guid EquipmentId { get; set; }
+        private NeededEquipment() { }
 
-        public Curriculum Curriculum { get; set; }
-        public Equipment Equipment { get; set; }
+        public Guid CurriculumId { get; private set; }
+        public Guid EquipmentId { get; private set; }
+
+        public Curriculum Curriculum { get; private set; }
+        public Equipment Equipment { get; private set; }
     }
 }

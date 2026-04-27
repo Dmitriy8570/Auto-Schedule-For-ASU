@@ -16,17 +16,41 @@ namespace Domain.schedule
     /// <summary>Конкретное занятие в расписании: привязка нагрузки к аудитории и временному слоту.</summary>
     public class Lesson
     {
-        public Guid Id { get; set; }
+        private Lesson() { }
 
-        public Classroom Classroom { get; set; }
-        public Guid ClassroomId { get; set; }
+        public Guid Id { get; private set; }
 
-        public Guid TimeSlotId { get; set; }
-        public TimeSlot TimeSlot { get; set; }
+        public Classroom Classroom { get; private set; }
+        public Guid ClassroomId { get; private set; }
 
-        public AcademicStream Stream { get; set; }
-        public Guid StreamId { get; set; }
+        public Guid TimeSlotId { get; private set; }
+        public TimeSlot TimeSlot { get; private set; }
 
-        public ScheduleVersion Version { get; set; }
+        public AcademicStream Stream { get; private set; }
+        public Guid StreamId { get; private set; }
+
+        public ScheduleVersion Version { get; private set; } = ScheduleVersion.Draft;
+
+        public static Lesson Create(Guid id, Guid classroomId, Guid timeSlotId, Guid streamId)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Id cannot be empty.", nameof(id));
+            if (classroomId == Guid.Empty)
+                throw new ArgumentException("ClassroomId cannot be empty.", nameof(classroomId));
+            if (timeSlotId == Guid.Empty)
+                throw new ArgumentException("TimeSlotId cannot be empty.", nameof(timeSlotId));
+            if (streamId == Guid.Empty)
+                throw new ArgumentException("StreamId cannot be empty.", nameof(streamId));
+
+            return new Lesson
+            {
+                Id = id,
+                ClassroomId = classroomId,
+                TimeSlotId = timeSlotId,
+                StreamId = streamId
+            };
+        }
+
+        public void Publish() => Version = ScheduleVersion.Current;
     }
 }

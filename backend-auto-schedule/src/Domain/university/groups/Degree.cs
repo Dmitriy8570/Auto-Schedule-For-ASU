@@ -16,13 +16,15 @@ namespace Domain.university.groups
     /// <summary>Образовательная ступень внутри института (бакалавриат, магистратура и т.д.).</summary>
     public class Degree
     {
-        public Guid Id { get; set; }
-        public TypeDegree TypeDegree { get; set; }
+        private Degree() { }
+
+        public Guid Id { get; private set; }
+        public TypeDegree TypeDegree { get; private set; }
 
         /// <summary>Курсы (по годам обучения) данной ступени.</summary>
-        public List<Course> Courses { get; set; }
+        public List<Course> Courses { get; private set; }
 
-        public Guid InstituteId { get; set; }
-        public Institute Institute { get; set; }
+        public Guid InstituteId { get; private set; }
+        public Institute Institute { get; private set; }
     }
 }

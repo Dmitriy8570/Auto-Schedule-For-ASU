@@ -17,14 +17,16 @@ namespace Domain.calendar
     /// <summary>Конкретный день в рамках учебной недели с набором временных слотов.</summary>
     public class WeekDay
     {
-        public Guid Id { get; set; }
+        private WeekDay() { }
 
-        public Guid WeekId { get; set; }
-        public Week Week { get; set; }
+        public Guid Id { get; private set; }
 
-        public WeekDayType DayOfWeek { get; set; }
+        public Guid WeekId { get; private set; }
+        public Week Week { get; private set; }
+
+        public WeekDayType DayOfWeek { get; private set; }
 
         /// <summary>Временные слоты (пары), доступные в этот день.</summary>
-        public List<TimeSlot> TimeSlots { get; set; }
+        public List<TimeSlot> TimeSlots { get; private set; }
     }
 }

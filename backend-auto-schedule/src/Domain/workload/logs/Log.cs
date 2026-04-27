@@ -11,36 +11,40 @@ namespace Domain.workload.logs
     /// <summary>Запись журнала изменений семестровой нагрузки.</summary>
     public class SemesterLog
     {
-        public Guid Id { get; set; }
-        public LogAction Action { get; set; }
+        private SemesterLog() { }
+
+        public Guid Id { get; private set; }
+        public LogAction Action { get; private set; }
 
         /// <summary>Значение часов до изменения.</summary>
-        public int OldValue { get; set; }
+        public int OldValue { get; private set; }
 
         /// <summary>Значение часов после изменения.</summary>
-        public int NewValue { get; set; }
+        public int NewValue { get; private set; }
 
-        public DateTime TimeStamp { get; set; }
+        public DateTime TimeStamp { get; private set; }
 
-        public SemesterWorkload SemesterWorkload { get; set; }
-        public Guid SemesterWorkloadId { get; set; }
+        public SemesterWorkload SemesterWorkload { get; private set; }
+        public Guid SemesterWorkloadId { get; private set; }
     }
 
     /// <summary>Запись журнала изменений понедельной нагрузки.</summary>
     public class WeekLog
     {
-        public Guid Id { get; set; }
-        public LogAction Action { get; set; }
+        private WeekLog() { }
+
+        public Guid Id { get; private set; }
+        public LogAction Action { get; private set; }
 
         /// <summary>Значение часов до изменения.</summary>
-        public int OldValue { get; set; }
+        public int OldValue { get; private set; }
 
         /// <summary>Значение часов после изменения.</summary>
-        public int NewValue { get; set; }
+        public int NewValue { get; private set; }
 
-        public DateTime TimeStamp { get; set; }
+        public DateTime TimeStamp { get; private set; }
 
-        public WeekWorkload WeekWorkload { get; set; }
-        public Guid WeekWorkloadId { get; set; }
+        public WeekWorkload WeekWorkload { get; private set; }
+        public Guid WeekWorkloadId { get; private set; }
     }
 }

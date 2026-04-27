@@ -5,10 +5,12 @@ namespace Domain.schedule
     /// <summary>Связующая таблица между потоком и учебной группой (многие-ко-многим).</summary>
     public class StreamGroups
     {
-        public Guid GroupId { get; set; }
-        public Guid StreamId { get; set; }
+        private StreamGroups() { }
 
-        public Group Group { get; set; }
-        public AcademicStream Stream { get; set; }
+        public Guid GroupId { get; private set; }
+        public Guid StreamId { get; private set; }
+
+        public Group Group { get; private set; }
+        public AcademicStream Stream { get; private set; }
     }
 }
