@@ -1,9 +1,8 @@
-﻿using Application.solver.model;
+using Application.Solver.Model;
 
-namespace Application.solver.builder.builderInterface
+namespace Application.Solver.Builder.BuilderInterface;
+
+public interface IModelSectionBuilder
 {
-    public interface IModelSectionBuilder
-    {
-        void Build(ScheduleModel model);
-    }
+    void Build(ScheduleModel model);
 }

@@ -6,13 +6,15 @@ namespace Domain.university.common
     /// <summary>Институт (факультет) университета.</summary>
     public class Institute
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
+        private Institute() { }
+
+        public Guid Id { get; private set; }
+        public string Name { get; private set; }
 
         /// <summary>Степени (бакалавриат, магистратура и т.д.), реализуемые институтом.</summary>
-        public List<Degree> Degrees { get; set; }
+        public List<Degree> Degrees { get; private set; }
 
         /// <summary>Кафедры, входящие в состав института.</summary>
-        public List<Department> Departments { get; set; }
+        public List<Department> Departments { get; private set; }
     }
 }

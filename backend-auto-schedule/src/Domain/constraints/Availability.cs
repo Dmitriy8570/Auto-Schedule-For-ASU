@@ -10,18 +10,20 @@ namespace Domain.constraints
     /// </summary>
     public class ClassroomAvailability
     {
-        public Guid Id { get; set; }
+        private ClassroomAvailability() { }
+
+        public Guid Id { get; private set; }
 
         /// <summary>Штрафной коэффициент за назначение занятия в данный слот.</summary>
-        public int Penalty { get; set; }
+        public int Penalty { get; private set; }
 
-        public Classroom Classroom { get; set; }
-        public Guid ClassroomId { get; set; }
+        public Classroom Classroom { get; private set; }
+        public Guid ClassroomId { get; private set; }
 
         /// <summary>Номер пары, к которой относится ограничение.</summary>
-        public int NumberLesson { get; set; }
+        public int NumberLesson { get; private set; }
 
-        public WeekDayType DayOfWeek { get; set; }
+        public WeekDayType DayOfWeek { get; private set; }
     }
 
     /// <summary>
@@ -30,17 +32,19 @@ namespace Domain.constraints
     /// </summary>
     public class TeacherAvailability
     {
-        public Guid Id { get; set; }
+        private TeacherAvailability() { }
+
+        public Guid Id { get; private set; }
 
         /// <summary>Штрафной коэффициент за назначение занятия в данный слот.</summary>
-        public int Penalty { get; set; }
+        public int Penalty { get; private set; }
 
-        public Teacher Teacher { get; set; }
-        public Guid TeacherId { get; set; }
+        public Teacher Teacher { get; private set; }
+        public Guid TeacherId { get; private set; }
 
         /// <summary>Номер пары, к которой относится ограничение.</summary>
-        public int NumberLesson { get; set; }
+        public int NumberLesson { get; private set; }
 
-        public WeekDayType DayOfWeek { get; set; }
+        public WeekDayType DayOfWeek { get; private set; }
     }
 }

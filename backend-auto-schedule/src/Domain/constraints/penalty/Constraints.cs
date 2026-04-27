@@ -16,10 +16,12 @@ namespace Domain.constraints.penalty
     /// <summary>Конфигурация конкретного мягкого ограничения с его штрафным весом.</summary>
     public class ConstraintConfig
     {
-        public Guid Id { get; set; }
-        public ConstraintType ConstraintType { get; set; }
+        private ConstraintConfig() { }
+
+        public Guid Id { get; private set; }
+        public ConstraintType ConstraintType { get; private set; }
 
         /// <summary>Вес штрафа: чем выше, тем сильнее солвер стремится избежать нарушения.</summary>
-        public int Penalty { get; set; }
+        public int Penalty { get; private set; }
     }
 }

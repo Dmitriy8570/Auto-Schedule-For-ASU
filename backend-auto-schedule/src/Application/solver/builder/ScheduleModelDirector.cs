@@ -1,27 +1,26 @@
-using Application.solver.builder.builderInterface;
-using Application.solver.model;
+using Application.Solver.Builder.BuilderInterface;
+using Application.Solver.Model;
 
-namespace Application.solver.builder
+namespace Application.Solver.Builder;
+
+public class ScheduleModelDirector
 {
-    public class ScheduleModelDirector
+    private readonly IReadOnlyList<IModelSectionBuilder> _builders;
+
+    public ScheduleModelDirector(IReadOnlyList<IModelSectionBuilder> builders)
     {
-        private readonly IReadOnlyList<IModelSectionBuilder> _builders;
+        _builders = builders;
+    }
 
-        public ScheduleModelDirector(IReadOnlyList<IModelSectionBuilder> builders)
+    public ScheduleModel Build(ScheduleData data)
+    {
+        var model = new ScheduleModel(data);
+
+        foreach (var builder in _builders)
         {
-            _builders = builders;
+            builder.Build(model);
         }
 
-        public ScheduleModel Build(ScheduleData data)
-        {
-            var model = new ScheduleModel(data);
-
-            foreach (var builder in _builders)
-            {
-                builder.Build(model);
-            }
-
-            return model;
-        }
+        return model;
     }
 }

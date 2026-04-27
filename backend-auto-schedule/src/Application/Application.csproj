@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.OrTools" Version="9.15.6755" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
   <ItemGroup>

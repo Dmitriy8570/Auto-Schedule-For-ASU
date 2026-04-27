@@ -7,18 +7,20 @@ namespace Domain.schedule
     /// </summary>
     public class AcademicStream
     {
-        public Guid Id { get; set; }
+        private AcademicStream() { }
+
+        public Guid Id { get; private set; }
 
         /// <summary>Суммарное количество студентов во всех группах потока.</summary>
-        public int StudentsCount { get; set; }
+        public int StudentsCount { get; private set; }
 
         /// <summary>Группы, входящие в поток (связующая таблица).</summary>
-        public List<StreamGroups> StreamGroups { get; set; }
+        public List<StreamGroups> StreamGroups { get; private set; }
 
         /// <summary>Учебные планы, по которым занимается поток.</summary>
-        public List<Curriculum> Curriculums { get; set; }
+        public List<Curriculum> Curriculums { get; private set; }
 
         /// <summary>Занятия, назначенные потоку.</summary>
-        public List<Lesson> Lessons { get; set; }
+        public List<Lesson> Lessons { get; private set; }
     }
 }
