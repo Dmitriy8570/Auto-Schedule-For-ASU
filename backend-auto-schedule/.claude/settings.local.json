@@ -1,9 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git mv *)",
+      "Bash(grep -v \"^\\\\./$\")",
+      "Bash(mkdir -p src tests)",
+      "Bash(mv API src/)",
+      "Bash(mv Application src/)",
+      "Bash(mv Domain src/)",
+      "Bash(mv Tests tests/)",
       "Bash(dotnet build *)",
-      "Bash(dotnet test *)"
+      "Bash(git -C \"C:\\\\Users\\\\barda\\\\OneDrive\\\\Desktop\\\\Auto-Schedule-For-ASU\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\barda\\\\OneDrive\\\\Desktop\\\\Auto-Schedule-For-ASU\" branch -a)",
+      "Bash(git *)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
