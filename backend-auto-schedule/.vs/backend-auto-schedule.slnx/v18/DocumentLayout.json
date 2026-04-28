@@ -1,12 +1,71 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\application\\common\\lessons\\querys\\getlessonbyteacherquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|solutionrelative:src\\application\\common\\lessons\\querys\\getlessonbyteacherquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\application\\common\\lessons\\querys\\getlessonbyroomquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|solutionrelative:src\\application\\common\\lessons\\querys\\getlessonbyroomquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|c:\\users\\barda\\onedrive\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\application\\common\\lessons\\querys\\getlessonbygroupquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D2F55E23-3901-481A-976D-9D41A8F30C4F}|src\\Application\\Application.csproj|solutionrelative:src\\application\\common\\lessons\\querys\\getlessonbygroupquery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GetLessonByGroupQuery.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByGroupQuery.cs",
+              "RelativeDocumentMoniker": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByGroupQuery.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByGroupQuery.cs",
+              "RelativeToolTip": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByGroupQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-27T14:27:10.447Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "GetLessonByRoomQuery.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByRoomQuery.cs",
+              "RelativeDocumentMoniker": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByRoomQuery.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByRoomQuery.cs",
+              "RelativeToolTip": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByRoomQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-27T14:27:09.73Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GetLessonByTeacherQuery.cs",
+              "DocumentMoniker": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByTeacherQuery.cs",
+              "RelativeDocumentMoniker": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByTeacherQuery.cs",
+              "ToolTip": "C:\\Users\\barda\\OneDrive\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Application\\Common\\Lessons\\Querys\\GetLessonByTeacherQuery.cs",
+              "RelativeToolTip": "src\\Application\\Common\\Lessons\\Querys\\GetLessonByTeacherQuery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-27T14:27:08.974Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
