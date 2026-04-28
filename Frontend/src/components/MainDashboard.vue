@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { LogOut } from 'lucide-vue-next'
-import ObjectSchedulePage from './ObjectSchedulePage.vue' // Пока не обращай внимания, потом создадим
 import TheSidebar from './TheSidebar.vue'
+import ScheduleTab from './ScheduleTab.vue'
 
 // Создаем переменную для хранения текущей вкладки.
-// По умолчанию ставим 'schedule' (Расписание).
 const currentTab = ref('schedule')
 
-// Перехватываем событие выхода (чтобы потом передать в App.vue)
+// Перехватываем событие выхода
 const emit = defineEmits(['logout'])
 </script>
 
@@ -23,10 +21,7 @@ const emit = defineEmits(['logout'])
     
     <div class="main-content">
       
-      <div v-if="currentTab === 'schedule'" class="page-content">
-        <h1>Расписание</h1>
-        <p>Здесь будет крутая белая панель фильтров и пустое состояние с человечком!</p>
-      </div>
+      <ScheduleTab v-if="currentTab === 'schedule'" />
 
       <div v-if="currentTab === 'load'" class="page-content">
         <h1>Нагрузка</h1>
