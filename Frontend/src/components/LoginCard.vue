@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { User, Lock, Eye } from 'lucide-vue-next'
+import BaseButton from './BaseButton.vue'
+import BaseInput from './BaseInput.vue'
 
+const login = ref('')
+const password = ref('')
 const emit = defineEmits(['login'])
-
-const tryLogin = () => {
-  // Тут можно добавить проверку
-  emit('login')
-}
 </script>
 
 <template>
@@ -15,23 +15,21 @@ const tryLogin = () => {
     
     <div class="form-group">
       <label>Имя пользователя</label>
-      <div class="input-wrapper">
-        <User class="icon-left" :size="18" />
-        <input type="text" placeholder="Введите имя пользователя" />
-      </div>
+      <BaseInput v-model="login" placeholder="Введите имя">
+        <template #left-icon><User :size="18" /></template>
+      </BaseInput>
     </div>
 
     <div class="form-group">
       <label>Пароль</label>
-      <div class="input-wrapper">
-        <Lock class="icon-left" :size="18" />
-        <input type="password" placeholder="Введите пароль" />
-        <Eye class="icon-right" :size="18" />
-      </div>
+      <BaseInput v-model="password" type="password" placeholder="Введите пароль">
+        <template #left-icon><Lock :size="18" /></template>
+        <template #right-icon><Eye :size="18" /></template>
+      </BaseInput>
     </div>
 
-    <button class="submit-btn" @click.prevent="tryLogin">Войти</button>
-</div>
+    <BaseButton variant="primary" @click="emit('login')">Войти</BaseButton>
+  </div>
 </template>
 
 <style scoped>
