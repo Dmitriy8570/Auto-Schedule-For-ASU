@@ -131,7 +131,7 @@ const timeSlots = [
         </div>
 
         <!-- Строки с парами -->
-        <div v-for="slot in timeSlots" :key="slot.id" class="grid-row">
+         <div v-for="slot in timeSlots" :key="slot.id" class="grid-row">
           <!-- Левая ячейка со временем -->
           <div class="time-cell">
             <span class="slot-number">{{ slot.id }}</span>

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TheSidebar from './TheSidebar.vue'
+
 import ScheduleTab from './ScheduleTab.vue'
+import HistoryTab from './HistoryTab.vue'
+import LoadTab from './LoadTab.vue'
+import SettingsTab from './SettingsTab.vue'
 
 // Создаем переменную для хранения текущей вкладки.
 const currentTab = ref('schedule')
@@ -22,21 +26,10 @@ const emit = defineEmits(['logout'])
     <div class="main-content">
       
       <ScheduleTab v-if="currentTab === 'schedule'" />
+      <LoadTab v-if="currentTab === 'load'" />
+      <HistoryTab v-if="currentTab === 'history'" />
 
-      <div v-if="currentTab === 'load'" class="page-content">
-        <h1>Нагрузка</h1>
-        <p>нагрузка преподавателей</p>
-      </div>
-
-      <div v-if="currentTab === 'history'" class="page-content">
-        <h1>История изменений</h1>
-        <p>кто что сделал</p>
-      </div>
-
-      <div v-if="currentTab === 'settings'" class="page-content">
-        <h1>Ограничения</h1>
-        <p>Настройки</p>
-      </div>
+      <SettingsTab v-if="currentTab === 'settings'" />
 
     </div>
   </div>
