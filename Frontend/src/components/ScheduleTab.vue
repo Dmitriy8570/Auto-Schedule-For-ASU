@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { 
   Calendar, RotateCcw, Sparkles, ChevronDown, Download, 
-  User, Users, MapPin, Plus, CheckCircle2, Moon 
+  User, Users, MapPin, Plus, CheckCircle2, Moon, GraduationCap, Building2
 } from 'lucide-vue-next'
 
 // Импортируем нашу умную кнопку!
@@ -25,6 +25,8 @@ const timeSlots = [
   { id: 7, start: '18:20', end: '19:50' },
   { id: 8, start: '20:00', end: '21:30' },
 ]
+
+const isAutoGenerateOpen = ref(false)
 </script>
 
 <template>
@@ -58,9 +60,31 @@ const timeSlots = [
         <BaseButton variant="outline">
           <RotateCcw :size="16" /> Сбросить до выгруженного
         </BaseButton>
-        <BaseButton variant="gradient">
-          <Sparkles :size="16" /> Автогенерация <ChevronDown :size="16" />
-        </BaseButton>
+        <div class="dropdown-wrapper">
+  
+      <BaseButton variant="gradient" @click="isAutoGenerateOpen = !isAutoGenerateOpen">
+        <Sparkles :size="16" /> 
+        Автогенерация 
+        <ChevronUp v-if="isAutoGenerateOpen" :size="16" />
+        <ChevronDown v-else :size="16" />
+      </BaseButton>
+
+      <div v-if="isAutoGenerateOpen" class="dropdown-menu">
+        <div class="dropdown-item" @click="isAutoGenerateOpen = false">
+          <GraduationCap :size="18" class="dd-icon" />
+          <span>Для всего университета</span>
+        </div>
+        <div class="dropdown-item" @click="isAutoGenerateOpen = false">
+          <User :size="18" class="dd-icon" />
+          <span>Для выбранного преподавателя</span>
+        </div>
+        <div class="dropdown-item" @click="isAutoGenerateOpen = false">
+          <Building2 :size="18" class="dd-icon" />
+          <span>Для выбранного института</span>
+        </div>
+      </div>
+      
+    </div>
         <BaseButton variant="outline">
           <Download :size="16" /> Выгрузить
         </BaseButton>
@@ -288,5 +312,54 @@ const timeSlots = [
 .empty-cell:hover {
   background-color: #f8fafc; /* Легкая подсветка при наведении */
   cursor: pointer;
+}
+
+/* --- ВЫПАДАЮЩЕЕ МЕНЮ АВТОГЕНЕРАЦИИ --- */
+.dropdown-wrapper {
+  position: relative; /* Чтобы меню позиционировалось относительно этой обертки */
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px); /* Отступ 8px вниз от кнопки */
+  right: 0; /* Выравниваем по правому краю кнопки */
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  min-width: 270px; /* Ширина как на макете */
+  z-index: 50; /* Чтобы меню было поверх таблицы расписания */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item .dd-icon {
+  color: #475569; /* Серый цвет иконки по умолчанию */
+  transition: color 0.2s ease;
+}
+
+/* МАГИЯ НАВЕДЕНИЯ: Синий фон, синий текст и синяя иконка */
+.dropdown-item:hover {
+  background-color: #f4f6f8; /* Очень светлый серо-голубой фон */
+  color: #1a4d9c; /* Фирменный синий текст */
+}
+
+.dropdown-item:hover .dd-icon {
+  color: #1a4d9c; /* Фирменная синяя иконка */
 }
 </style>
