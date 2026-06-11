@@ -1,0 +1,101 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\api\\controllers\\lessonscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|solutionrelative:src\\api\\controllers\\lessonscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|solutionrelative:src\\api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AEB44915-960A-491D-B4AA-6985A2B81E9F}|src\\Infrastructure\\Infrastructure.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AEB44915-960A-491D-B4AA-6985A2B81E9F}|src\\Infrastructure\\Infrastructure.csproj|solutionrelative:src\\infrastructure\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\api\\api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|solutionrelative:src\\api\\api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|c:\\users\\bardakov\\desktop\\auto-schedule-for-asu\\backend-auto-schedule\\src\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CBAFC0F9-5B69-AE5B-776E-B650E010DF04}|src\\API\\API.csproj|solutionrelative:src\\api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "LessonsController.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\Controllers\\LessonsController.cs",
+              "RelativeDocumentMoniker": "src\\API\\Controllers\\LessonsController.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\Controllers\\LessonsController.cs",
+              "RelativeToolTip": "src\\API\\Controllers\\LessonsController.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-14T04:03:51.181Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Infrastructure\\DependencyInjection.cs",
+              "RelativeDocumentMoniker": "src\\Infrastructure\\DependencyInjection.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\Infrastructure\\DependencyInjection.cs",
+              "RelativeToolTip": "src\\Infrastructure\\DependencyInjection.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-14T03:56:10.901Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\appsettings.json",
+              "RelativeDocumentMoniker": "src\\API\\appsettings.json",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\appsettings.json",
+              "RelativeToolTip": "src\\API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-05-14T03:54:46.641Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "API.csproj",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\API.csproj",
+              "RelativeDocumentMoniker": "src\\API\\API.csproj",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\API.csproj",
+              "RelativeToolTip": "src\\API\\API.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-05-14T03:54:37.057Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\Program.cs",
+              "RelativeDocumentMoniker": "src\\API\\Program.cs",
+              "ToolTip": "C:\\Users\\bardakov\\Desktop\\Auto-Schedule-For-ASU\\backend-auto-schedule\\src\\API\\Program.cs",
+              "RelativeToolTip": "src\\API\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-14T03:18:51.117Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
