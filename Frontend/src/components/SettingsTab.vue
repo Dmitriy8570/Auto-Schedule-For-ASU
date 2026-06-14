@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { 
   Settings2, Search, User, MapPin, Users, BookOpen, Database, 
-  ChevronDown, GraduationCap, Building2, Layers, Hash, Filter, Trash2, Plus, Wrench, Save
+  ChevronDown, GraduationCap, Building2, Layers, Filter, Trash2, Plus, Wrench, Save
 } from 'lucide-vue-next'
 import BaseInput from './BaseInput.vue'
 
