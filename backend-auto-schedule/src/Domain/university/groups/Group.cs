@@ -21,8 +21,9 @@ namespace Domain.university.groups
 
         public Shift Shift { get; private set; }
 
-        /// <summary>Родительская группа (для подгрупп, напр. при делении на лабораторные).</summary>
-        public Group ParentGroup { get; private set; }
+        /// <summary>Родительская группа (для подгрупп, напр. при делении на лабораторные); null — для основной группы.</summary>
+        public Guid? ParentGroupId { get; private set; }
+        public Group? ParentGroup { get; private set; }
 
         /// <summary>Количество студентов в группе.</summary>
         public int StudentCount { get; private set; }

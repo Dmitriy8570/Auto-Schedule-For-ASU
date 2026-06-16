@@ -1,4 +1,4 @@
-﻿using Domain.university.teachers;
+using Domain.university.teachers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,7 +11,12 @@ public class TeacherConfiguration : IEntityTypeConfiguration<Teacher>
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.Name)
-            .IsRequired()
-            .HasMaxLength(100);
+               .IsRequired()
+               .HasMaxLength(100);
+
+        builder.HasOne(t => t.Department)
+               .WithMany(d => d.Teachers)
+               .HasForeignKey(t => t.DepartmentId)
+               .OnDelete(DeleteBehavior.Cascade);
     }
 }
