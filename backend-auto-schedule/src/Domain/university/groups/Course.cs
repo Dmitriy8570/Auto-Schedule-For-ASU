@@ -1,3 +1,5 @@
+using Domain.common;
+
 namespace Domain.university.groups
 {
     /// <summary>Курс обучения (1-й, 2-й, …) внутри конкретной ступени.</summary>
@@ -15,5 +17,14 @@ namespace Domain.university.groups
 
         public Guid DegreeId { get; private set; }
         public Degree Degree { get; private set; }
+
+        /// <summary>Создать курс в составе ступени.</summary>
+        public static Course Create(Guid id, int number, Guid degreeId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Number = Guard.Positive(number, nameof(number)),
+            DegreeId = Guard.NotEmpty(degreeId, nameof(degreeId)),
+            Groups = new List<Group>()
+        };
     }
 }

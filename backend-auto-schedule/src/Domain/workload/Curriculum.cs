@@ -46,9 +46,9 @@ namespace Domain.workload
 
         public LessonType LessonType { get; private set; }
 
-        /// <summary>Предпочтительный корпус для проведения занятий (мягкое ограничение).</summary>
-        public Guid FavoriteBuildingId { get; private set; }
-        public Building FavoriteBuilding { get; private set; }
+        /// <summary>Предпочтительный корпус для проведения занятий (мягкое ограничение); null — если не задан.</summary>
+        public Guid? FavoriteBuildingId { get; private set; }
+        public Building? FavoriteBuilding { get; private set; }
 
         public List<WeekWorkload> WeekWorkloads { get; private set; }
         public List<SemesterWorkload> SemesterWorkloads { get; private set; }

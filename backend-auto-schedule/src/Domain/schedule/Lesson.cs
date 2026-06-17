@@ -1,4 +1,5 @@
 using Domain.calendar;
+using Domain.common;
 using Domain.university.buildings;
 using Domain.workload;
 
@@ -31,25 +32,13 @@ namespace Domain.schedule
 
         public ScheduleVersion Version { get; private set; } = ScheduleVersion.Draft;
 
-        public static Lesson Create(Guid id, Guid classroomId, Guid timeSlotId, Guid streamId)
+        public static Lesson Create(Guid id, Guid classroomId, Guid timeSlotId, Guid streamId) => new()
         {
-            if (id == Guid.Empty)
-                throw new ArgumentException("Id cannot be empty.", nameof(id));
-            if (classroomId == Guid.Empty)
-                throw new ArgumentException("ClassroomId cannot be empty.", nameof(classroomId));
-            if (timeSlotId == Guid.Empty)
-                throw new ArgumentException("TimeSlotId cannot be empty.", nameof(timeSlotId));
-            if (streamId == Guid.Empty)
-                throw new ArgumentException("StreamId cannot be empty.", nameof(streamId));
-
-            return new Lesson
-            {
-                Id = id,
-                ClassroomId = classroomId,
-                TimeSlotId = timeSlotId,
-                StreamId = streamId
-            };
-        }
+            Id = Guard.NotEmpty(id, nameof(id)),
+            ClassroomId = Guard.NotEmpty(classroomId, nameof(classroomId)),
+            TimeSlotId = Guard.NotEmpty(timeSlotId, nameof(timeSlotId)),
+            StreamId = Guard.NotEmpty(streamId, nameof(streamId))
+        };
 
         public void Publish() => Version = ScheduleVersion.Current;
     }

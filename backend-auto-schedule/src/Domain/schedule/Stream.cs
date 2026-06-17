@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.workload;
 
 namespace Domain.schedule
@@ -22,5 +23,15 @@ namespace Domain.schedule
 
         /// <summary>Занятия, назначенные потоку.</summary>
         public List<Lesson> Lessons { get; private set; }
+
+        /// <summary>Создать учебный поток.</summary>
+        public static AcademicStream Create(Guid id, int studentsCount) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            StudentsCount = Guard.NotNegative(studentsCount, nameof(studentsCount)),
+            StreamGroups = new List<StreamGroups>(),
+            Curriculums = new List<Curriculum>(),
+            Lessons = new List<Lesson>()
+        };
     }
 }

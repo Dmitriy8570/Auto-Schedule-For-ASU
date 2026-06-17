@@ -1,0 +1,782 @@
+﻿[
+  {
+    "Name": "ПИ-101",
+    "Program": "ПИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ПИ-102",
+    "Program": "ПИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПИ-103",
+    "Program": "ПИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ПИ-104",
+    "Program": "ПИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПИ-105",
+    "Program": "ПИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 28
+  },
+  {
+    "Name": "ПИ-201",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 21
+  },
+  {
+    "Name": "ПИ-201/1",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 10,
+    "Parent": "ПИ-201"
+  },
+  {
+    "Name": "ПИ-201/2",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 11,
+    "Parent": "ПИ-201"
+  },
+  {
+    "Name": "ПИ-202",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПИ-203",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ПИ-204",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "Second",
+    "Students": 25
+  },
+  {
+    "Name": "ПИ-205",
+    "Program": "ПИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПИ-301",
+    "Program": "ПИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 22
+  },
+  {
+    "Name": "ПИ-302",
+    "Program": "ПИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "ПИ-303",
+    "Program": "ПИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ПИ-304",
+    "Program": "ПИ",
+    "Course": 3,
+    "Shift": "Second",
+    "Students": 20
+  },
+  {
+    "Name": "ПИ-305",
+    "Program": "ПИ",
+    "Course": 3,
+    "Shift": "Evening",
+    "Students": 28
+  },
+  {
+    "Name": "ПИ-401",
+    "Program": "ПИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ПИ-402",
+    "Program": "ПИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ПИ-403",
+    "Program": "ПИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 28
+  },
+  {
+    "Name": "ПИ-404",
+    "Program": "ПИ",
+    "Course": 4,
+    "Shift": "Second",
+    "Students": 22
+  },
+  {
+    "Name": "ПИ-405",
+    "Program": "ПИ",
+    "Course": 4,
+    "Shift": "Evening",
+    "Students": 19
+  },
+  {
+    "Name": "ИВТ-101",
+    "Program": "ИВТ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 28
+  },
+  {
+    "Name": "ИВТ-102",
+    "Program": "ИВТ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ИВТ-103",
+    "Program": "ИВТ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "ИВТ-104",
+    "Program": "ИВТ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ИВТ-105",
+    "Program": "ИВТ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ИВТ-201",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ИВТ-201/1",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 9,
+    "Parent": "ИВТ-201"
+  },
+  {
+    "Name": "ИВТ-201/2",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 10,
+    "Parent": "ИВТ-201"
+  },
+  {
+    "Name": "ИВТ-202",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 24
+  },
+  {
+    "Name": "ИВТ-203",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ИВТ-204",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "Second",
+    "Students": 21
+  },
+  {
+    "Name": "ИВТ-205",
+    "Program": "ИВТ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 21
+  },
+  {
+    "Name": "ИВТ-301",
+    "Program": "ИВТ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИВТ-302",
+    "Program": "ИВТ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ИВТ-303",
+    "Program": "ИВТ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ИВТ-304",
+    "Program": "ИВТ",
+    "Course": 3,
+    "Shift": "Second",
+    "Students": 21
+  },
+  {
+    "Name": "ИВТ-305",
+    "Program": "ИВТ",
+    "Course": 3,
+    "Shift": "Evening",
+    "Students": 29
+  },
+  {
+    "Name": "ИВТ-401",
+    "Program": "ИВТ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ИВТ-402",
+    "Program": "ИВТ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИВТ-403",
+    "Program": "ИВТ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ИВТ-404",
+    "Program": "ИВТ",
+    "Course": 4,
+    "Shift": "Second",
+    "Students": 26
+  },
+  {
+    "Name": "ИВТ-405",
+    "Program": "ИВТ",
+    "Course": 4,
+    "Shift": "Evening",
+    "Students": 25
+  },
+  {
+    "Name": "ИБ-101",
+    "Program": "ИБ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИБ-102",
+    "Program": "ИБ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИБ-103",
+    "Program": "ИБ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ИБ-104",
+    "Program": "ИБ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "ИБ-105",
+    "Program": "ИБ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ИБ-201",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 21
+  },
+  {
+    "Name": "ИБ-201/1",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 10,
+    "Parent": "ИБ-201"
+  },
+  {
+    "Name": "ИБ-201/2",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 11,
+    "Parent": "ИБ-201"
+  },
+  {
+    "Name": "ИБ-202",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 23
+  },
+  {
+    "Name": "ИБ-203",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ИБ-204",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "Second",
+    "Students": 29
+  },
+  {
+    "Name": "ИБ-205",
+    "Program": "ИБ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ИБ-301",
+    "Program": "ИБ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИБ-302",
+    "Program": "ИБ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ИБ-303",
+    "Program": "ИБ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 24
+  },
+  {
+    "Name": "ИБ-304",
+    "Program": "ИБ",
+    "Course": 3,
+    "Shift": "Second",
+    "Students": 23
+  },
+  {
+    "Name": "ИБ-305",
+    "Program": "ИБ",
+    "Course": 3,
+    "Shift": "Evening",
+    "Students": 26
+  },
+  {
+    "Name": "ИБ-401",
+    "Program": "ИБ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ИБ-402",
+    "Program": "ИБ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 21
+  },
+  {
+    "Name": "ИБ-403",
+    "Program": "ИБ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 25
+  },
+  {
+    "Name": "ИБ-404",
+    "Program": "ИБ",
+    "Course": 4,
+    "Shift": "Second",
+    "Students": 19
+  },
+  {
+    "Name": "ИБ-405",
+    "Program": "ИБ",
+    "Course": 4,
+    "Shift": "Evening",
+    "Students": 26
+  },
+  {
+    "Name": "ПМ-101",
+    "Program": "ПМ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ПМ-102",
+    "Program": "ПМ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "ПМ-103",
+    "Program": "ПМ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "ПМ-104",
+    "Program": "ПМ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 22
+  },
+  {
+    "Name": "ПМ-105",
+    "Program": "ПМ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПМ-201",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ПМ-201/1",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 9,
+    "Parent": "ПМ-201"
+  },
+  {
+    "Name": "ПМ-201/2",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 10,
+    "Parent": "ПМ-201"
+  },
+  {
+    "Name": "ПМ-202",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 28
+  },
+  {
+    "Name": "ПМ-203",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 29
+  },
+  {
+    "Name": "ПМ-204",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "Second",
+    "Students": 20
+  },
+  {
+    "Name": "ПМ-205",
+    "Program": "ПМ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 19
+  },
+  {
+    "Name": "ПМ-301",
+    "Program": "ПМ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 25
+  },
+  {
+    "Name": "ПМ-302",
+    "Program": "ПМ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПМ-303",
+    "Program": "ПМ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "ПМ-304",
+    "Program": "ПМ",
+    "Course": 3,
+    "Shift": "Second",
+    "Students": 26
+  },
+  {
+    "Name": "ПМ-305",
+    "Program": "ПМ",
+    "Course": 3,
+    "Shift": "Evening",
+    "Students": 19
+  },
+  {
+    "Name": "ПМ-401",
+    "Program": "ПМ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "ПМ-402",
+    "Program": "ПМ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 23
+  },
+  {
+    "Name": "ПМ-403",
+    "Program": "ПМ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "ПМ-404",
+    "Program": "ПМ",
+    "Course": 4,
+    "Shift": "Second",
+    "Students": 29
+  },
+  {
+    "Name": "ПМ-405",
+    "Program": "ПМ",
+    "Course": 4,
+    "Shift": "Evening",
+    "Students": 25
+  },
+  {
+    "Name": "БИ-101",
+    "Program": "БИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 26
+  },
+  {
+    "Name": "БИ-102",
+    "Program": "БИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 23
+  },
+  {
+    "Name": "БИ-103",
+    "Program": "БИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 21
+  },
+  {
+    "Name": "БИ-104",
+    "Program": "БИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "БИ-105",
+    "Program": "БИ",
+    "Course": 1,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "БИ-201",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 18
+  },
+  {
+    "Name": "БИ-201/1",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 9,
+    "Parent": "БИ-201"
+  },
+  {
+    "Name": "БИ-201/2",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 9,
+    "Parent": "БИ-201"
+  },
+  {
+    "Name": "БИ-202",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 25
+  },
+  {
+    "Name": "БИ-203",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 24
+  },
+  {
+    "Name": "БИ-204",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "Second",
+    "Students": 24
+  },
+  {
+    "Name": "БИ-205",
+    "Program": "БИ",
+    "Course": 2,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "БИ-301",
+    "Program": "БИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 23
+  },
+  {
+    "Name": "БИ-302",
+    "Program": "БИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 23
+  },
+  {
+    "Name": "БИ-303",
+    "Program": "БИ",
+    "Course": 3,
+    "Shift": "First",
+    "Students": 27
+  },
+  {
+    "Name": "БИ-304",
+    "Program": "БИ",
+    "Course": 3,
+    "Shift": "Second",
+    "Students": 29
+  },
+  {
+    "Name": "БИ-305",
+    "Program": "БИ",
+    "Course": 3,
+    "Shift": "Evening",
+    "Students": 29
+  },
+  {
+    "Name": "БИ-401",
+    "Program": "БИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 20
+  },
+  {
+    "Name": "БИ-402",
+    "Program": "БИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 22
+  },
+  {
+    "Name": "БИ-403",
+    "Program": "БИ",
+    "Course": 4,
+    "Shift": "First",
+    "Students": 28
+  },
+  {
+    "Name": "БИ-404",
+    "Program": "БИ",
+    "Course": 4,
+    "Shift": "Second",
+    "Students": 26
+  },
+  {
+    "Name": "БИ-405",
+    "Program": "БИ",
+    "Course": 4,
+    "Shift": "Evening",
+    "Students": 29
+  }
+]

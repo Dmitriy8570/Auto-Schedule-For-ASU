@@ -17,7 +17,7 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -36,7 +36,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Semester");
+                    b.ToTable("Semesters");
                 });
 
             modelBuilder.Entity("Domain.calendar.Week", b =>
@@ -61,7 +61,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("SemesterId");
 
-                    b.ToTable("Week");
+                    b.ToTable("Weeks");
                 });
 
             modelBuilder.Entity("Domain.calendar.WeekDay", b =>
@@ -80,7 +80,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("WeekId");
 
-                    b.ToTable("WeekDay");
+                    b.ToTable("WeekDays");
                 });
 
             modelBuilder.Entity("Domain.constraints.ClassroomAvailability", b =>
@@ -105,7 +105,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("ClassroomId");
 
-                    b.ToTable("ClassroomAvailability");
+                    b.ToTable("ClassroomAvailabilities");
                 });
 
             modelBuilder.Entity("Domain.constraints.TeacherAvailability", b =>
@@ -130,7 +130,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("TeacherAvailability");
+                    b.ToTable("TeacherAvailabilities");
                 });
 
             modelBuilder.Entity("Domain.constraints.equipments.Equipment", b =>
@@ -141,11 +141,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Equipment");
+                    b.ToTable("Equipments");
                 });
 
             modelBuilder.Entity("Domain.constraints.equipments.EquipmentRoom", b =>
@@ -160,7 +161,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("ClassroomId");
 
-                    b.ToTable("EquipmentRoom");
+                    b.ToTable("EquipmentRooms");
                 });
 
             modelBuilder.Entity("Domain.constraints.equipments.NeededEquipment", b =>
@@ -175,7 +176,27 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("EquipmentId");
 
-                    b.ToTable("NeededEquipment");
+                    b.ToTable("NeededEquipments");
+                });
+
+            modelBuilder.Entity("Domain.constraints.penalty.ConstraintConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ConstraintType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Penalty")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConstraintType")
+                        .IsUnique();
+
+                    b.ToTable("ConstraintConfigs");
                 });
 
             modelBuilder.Entity("Domain.schedule.AcademicStream", b =>
@@ -189,7 +210,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AcademicStream");
+                    b.ToTable("AcademicStreams");
                 });
 
             modelBuilder.Entity("Domain.schedule.Lesson", b =>
@@ -244,11 +265,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subject");
+                    b.ToTable("Subjects");
                 });
 
             modelBuilder.Entity("Domain.schedule.TimeSlot", b =>
@@ -267,7 +289,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("WeekDayId");
 
-                    b.ToTable("TimeSlot");
+                    b.ToTable("TimeSlots");
                 });
 
             modelBuilder.Entity("Domain.university.buildings.Building", b =>
@@ -278,11 +300,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Building");
+                    b.ToTable("Buildings");
                 });
 
             modelBuilder.Entity("Domain.university.buildings.Classroom", b =>
@@ -299,7 +322,8 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
@@ -316,11 +340,12 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Institute");
+                    b.ToTable("Institutes");
                 });
 
             modelBuilder.Entity("Domain.university.groups.Course", b =>
@@ -339,7 +364,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("DegreeId");
 
-                    b.ToTable("Course");
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("Domain.university.groups.Degree", b =>
@@ -358,7 +383,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("InstituteId");
 
-                    b.ToTable("Degree");
+                    b.ToTable("Degrees");
                 });
 
             modelBuilder.Entity("Domain.university.groups.Group", b =>
@@ -375,7 +400,7 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<Guid>("ParentGroupId")
+                    b.Property<Guid?>("ParentGroupId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Shift")
@@ -404,13 +429,14 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("InstituteId");
 
-                    b.ToTable("Department");
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("Domain.university.teachers.Teacher", b =>
@@ -443,7 +469,7 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("Double")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("FavoriteBuildingId")
+                    b.Property<Guid?>("FavoriteBuildingId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("LessonType")
@@ -471,7 +497,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Curriculum");
+                    b.ToTable("Curriculums");
                 });
 
             modelBuilder.Entity("Domain.workload.SemesterWorkload", b =>
@@ -495,7 +521,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("SemesterId");
 
-                    b.ToTable("SemesterWorkload");
+                    b.ToTable("SemesterWorkloads");
                 });
 
             modelBuilder.Entity("Domain.workload.WeekWorkload", b =>
@@ -524,7 +550,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("WeekId");
 
-                    b.ToTable("WeekWorkload");
+                    b.ToTable("WeekWorkloads");
                 });
 
             modelBuilder.Entity("Domain.workload.logs.SemesterLog", b =>
@@ -552,7 +578,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("SemesterWorkloadId");
 
-                    b.ToTable("SemesterLog");
+                    b.ToTable("SemesterLogs");
                 });
 
             modelBuilder.Entity("Domain.workload.logs.WeekLog", b =>
@@ -580,7 +606,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("WeekWorkloadId");
 
-                    b.ToTable("WeekLog");
+                    b.ToTable("WeekLogs");
                 });
 
             modelBuilder.Entity("Domain.calendar.Week", b =>
@@ -766,8 +792,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.university.groups.Group", "ParentGroup")
                         .WithMany("Groups")
                         .HasForeignKey("ParentGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Course");
 
@@ -801,8 +826,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.university.buildings.Building", "FavoriteBuilding")
                         .WithMany("Curriculums")
                         .HasForeignKey("FavoriteBuildingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Domain.schedule.AcademicStream", "Stream")
                         .WithMany("Curriculums")
@@ -855,7 +879,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.workload.Curriculum", "Curriculum")
                         .WithMany("WeekWorkloads")
                         .HasForeignKey("CurriculumId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.workload.SemesterWorkload", "SemesterWorkload")
@@ -867,7 +891,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.calendar.Week", "Week")
                         .WithMany("WeekWorkloads")
                         .HasForeignKey("WeekId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Curriculum");

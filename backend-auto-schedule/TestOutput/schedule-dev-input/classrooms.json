@@ -1,0 +1,347 @@
+﻿[
+  {
+    "Name": "А-101",
+    "Building": "Корпус А",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-102",
+    "Building": "Корпус А",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-201",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-202",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-203",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-204",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-205",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-206",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-207",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-208",
+    "Building": "Корпус А",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "А-301",
+    "Building": "Корпус А",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-302",
+    "Building": "Корпус А",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-303",
+    "Building": "Корпус А",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-304",
+    "Building": "Корпус А",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "А-305",
+    "Building": "Корпус А",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-101",
+    "Building": "Корпус Б",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-102",
+    "Building": "Корпус Б",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-201",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-202",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-203",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-204",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-205",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-206",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-207",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-208",
+    "Building": "Корпус Б",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "Б-301",
+    "Building": "Корпус Б",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-302",
+    "Building": "Корпус Б",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-303",
+    "Building": "Корпус Б",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-304",
+    "Building": "Корпус Б",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-305",
+    "Building": "Корпус Б",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "Б-401",
+    "Building": "Корпус Б",
+    "Capacity": 20,
+    "Equipment": [
+      "Лаборатория электроники",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-101",
+    "Building": "Корпус В",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-102",
+    "Building": "Корпус В",
+    "Capacity": 120,
+    "Equipment": [
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-201",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-202",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-203",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-204",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-205",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-206",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-207",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-208",
+    "Building": "Корпус В",
+    "Capacity": 30,
+    "Equipment": []
+  },
+  {
+    "Name": "В-301",
+    "Building": "Корпус В",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-302",
+    "Building": "Корпус В",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-303",
+    "Building": "Корпус В",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-304",
+    "Building": "Корпус В",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-305",
+    "Building": "Корпус В",
+    "Capacity": 18,
+    "Equipment": [
+      "Компьютерный класс",
+      "Проектор"
+    ]
+  },
+  {
+    "Name": "В-401",
+    "Building": "Корпус В",
+    "Capacity": 20,
+    "Equipment": [
+      "Лаборатория электроники",
+      "Проектор"
+    ]
+  }
+]
