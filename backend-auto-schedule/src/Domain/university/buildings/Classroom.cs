@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.constraints;
 using Domain.constraints.equipments;
 using Domain.schedule;
@@ -26,5 +27,20 @@ namespace Domain.university.buildings
 
         /// <summary>Оборудование, установленное в аудитории.</summary>
         public List<EquipmentRoom> EquipmentRooms { get; private set; }
+
+        /// <summary>Вмещает ли аудитория указанное число студентов.</summary>
+        public bool CanAccommodate(int studentsCount) => Capacity >= studentsCount;
+
+        /// <summary>Создать аудиторию в составе корпуса.</summary>
+        public static Classroom Create(Guid id, string name, int capacity, Guid buildingId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Name = Guard.NotBlank(name, nameof(name)),
+            Capacity = Guard.Positive(capacity, nameof(capacity)),
+            BuildingId = Guard.NotEmpty(buildingId, nameof(buildingId)),
+            Lessons = new List<Lesson>(),
+            ClassroomAvailabilities = new List<ClassroomAvailability>(),
+            EquipmentRooms = new List<EquipmentRoom>()
+        };
     }
 }

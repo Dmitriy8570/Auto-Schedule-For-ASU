@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.schedule;
 using Domain.workload;
 
@@ -36,5 +37,38 @@ namespace Domain.university.groups
 
         /// <summary>Потоки, в которые входит данная группа.</summary>
         public List<StreamGroups> StreamGroups { get; private set; }
+
+        /// <summary>Является ли подгруппой (имеет родительскую группу).</summary>
+        public bool IsSubgroup => ParentGroupId is not null;
+
+        /// <summary>Создать основную учебную группу курса.</summary>
+        public static Group Create(Guid id, string name, Shift shift, int studentCount, Guid courseId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Name = Guard.NotBlank(name, nameof(name)),
+            Shift = Guard.Defined(shift, nameof(shift)),
+            StudentCount = Guard.NotNegative(studentCount, nameof(studentCount)),
+            CourseId = Guard.NotEmpty(courseId, nameof(courseId)),
+            Groups = new List<Group>(),
+            StreamGroups = new List<StreamGroups>()
+        };
+
+        /// <summary>
+        /// Создать подгруппу данной группы (для деления на лабораторные и т.п.).
+        /// Подгруппа наследует смену и курс родителя; её размер не может превышать размер родительской группы.
+        /// </summary>
+        public Group CreateSubgroup(Guid id, string name, int studentCount)
+        {
+            if (studentCount > StudentCount)
+                throw new ArgumentOutOfRangeException(nameof(studentCount), studentCount,
+                    "Размер подгруппы не может превышать размер родительской группы.");
+
+            var subgroup = Create(id, name, Shift, studentCount, CourseId);
+            subgroup.ParentGroupId = Id;
+
+            Groups ??= new List<Group>();
+            Groups.Add(subgroup);
+            return subgroup;
+        }
     }
 }

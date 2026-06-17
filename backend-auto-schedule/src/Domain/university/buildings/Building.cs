@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.workload;
 
 namespace Domain.university.buildings
@@ -15,5 +16,14 @@ namespace Domain.university.buildings
 
         /// <summary>Учебные планы, предпочитающие данный корпус.</summary>
         public List<Curriculum> Curriculums { get; private set; }
+
+        /// <summary>Создать учебный корпус.</summary>
+        public static Building Create(Guid id, string name) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Name = Guard.NotBlank(name, nameof(name)),
+            Classrooms = new List<Classroom>(),
+            Curriculums = new List<Curriculum>()
+        };
     }
 }

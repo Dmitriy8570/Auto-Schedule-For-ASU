@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using API;
 using Application;
 using Infrastructure;
@@ -5,8 +6,9 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Контроллеры и сериализация.
-builder.Services.AddControllers();
+// Контроллеры и сериализация (enum'ы — читаемыми строками, а не числами).
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Глобальная обработка исключений (ошибки валидации → 400 ProblemDetails).
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();

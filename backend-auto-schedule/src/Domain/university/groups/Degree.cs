@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.university.common;
 
 namespace Domain.university.groups
@@ -26,5 +27,14 @@ namespace Domain.university.groups
 
         public Guid InstituteId { get; private set; }
         public Institute Institute { get; private set; }
+
+        /// <summary>Создать образовательную ступень в составе института.</summary>
+        public static Degree Create(Guid id, TypeDegree typeDegree, Guid instituteId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            TypeDegree = Guard.Defined(typeDegree, nameof(typeDegree)),
+            InstituteId = Guard.NotEmpty(instituteId, nameof(instituteId)),
+            Courses = new List<Course>()
+        };
     }
 }

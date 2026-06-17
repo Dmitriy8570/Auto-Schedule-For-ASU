@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.constraints;
 using Domain.workload;
 
@@ -19,5 +20,15 @@ namespace Domain.university.teachers
 
         /// <summary>Ограничения доступности преподавателя по дням и парам.</summary>
         public List<TeacherAvailability> TeacherAvailabilities { get; private set; }
+
+        /// <summary>Создать преподавателя, прикреплённого к кафедре.</summary>
+        public static Teacher Create(Guid id, string name, Guid departmentId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Name = Guard.NotBlank(name, nameof(name)),
+            DepartmentId = Guard.NotEmpty(departmentId, nameof(departmentId)),
+            Curriculums = new List<Curriculum>(),
+            TeacherAvailabilities = new List<TeacherAvailability>()
+        };
     }
 }

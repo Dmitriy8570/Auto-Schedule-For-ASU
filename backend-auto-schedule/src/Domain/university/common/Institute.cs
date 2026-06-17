@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.university.groups;
 using Domain.university.teachers;
 
@@ -16,5 +17,14 @@ namespace Domain.university.common
 
         /// <summary>Кафедры, входящие в состав института.</summary>
         public List<Department> Departments { get; private set; }
+
+        /// <summary>Создать институт с заданным наименованием.</summary>
+        public static Institute Create(Guid id, string name) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            Name = Guard.NotBlank(name, nameof(name)),
+            Degrees = new List<Degree>(),
+            Departments = new List<Department>()
+        };
     }
 }

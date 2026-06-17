@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Application.Common.Behaviors;
+using Application.Solver.Mapping;
+using Application.Solver.Solving;
 using FluentValidation;
 using MediatR;
 
@@ -18,6 +20,10 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+        // Солвер расписания (без состояния).
+        services.AddSingleton<IScheduleSolver, ScheduleSolver>();
+        services.AddSingleton<IScheduleResultMapper, ScheduleResultMapper>();
 
         return services;
     }
