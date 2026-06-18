@@ -39,7 +39,7 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
         var timeSlots = await LoadTimeSlotsAsync(semesterId, cancellationToken);
         var penalties = await _context.ConstraintConfigs.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new ScheduleData(workloads, classrooms, timeSlots, penalties);
+        return new ScheduleData(workloads, classrooms, timeSlots, penalties, SemesterId: semesterId);
     }
 
     public async Task<ScheduleData> GetForInstituteAsync(
@@ -59,7 +59,7 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
         return new ScheduleData(
             workloads, classrooms, timeSlots, penalties,
-            occupiedClassrooms, occupiedTeachers, anchors);
+            occupiedClassrooms, occupiedTeachers, anchors, semesterId);
     }
 
     // ----- Загрузка осей модели --------------------------------------------------------------

@@ -51,6 +51,10 @@ public sealed class GenerateScheduleCommandHandler
             return new GenerateScheduleResult(
                 solution.Status.ToString(), 0, solution.ObjectiveValue, solution.WallTimeSeconds);
 
+        // Заменяем прежнее расписание семестра (а не добавляем поверх), удаление и вставка — одним SaveChanges.
+        var existing = await _lessonRepository.GetBySemesterAsync(request.SemesterId, cancellationToken);
+        _lessonRepository.RemoveRange(existing);
+
         var lessons = _mapper.ToLessons(data, solution.Assignments);
         foreach (var lesson in lessons)
             await _lessonRepository.AddAsync(lesson, cancellationToken);

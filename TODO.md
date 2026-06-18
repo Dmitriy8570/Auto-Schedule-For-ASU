@@ -7,33 +7,28 @@
 
 ---
 
-## 🔴 P0 — корректность модели расписания
+## 🔴 P0 — корректность модели расписания  ✅ выполнено
 
-- [ ] **Ограничение вместимости аудитории.** `Classroom.Capacity` и `AcademicStream.StudentsCount`
-  не используются ни одним builder'ом — поток может попасть в маленькую аудиторию.
-  Добавить `CapacitySectionBuilder` (жёсткий): запретить `Lessons[w,r,t]`, где
-  `Classrooms[r].Capacity < StudentsCount`. Включить в оба набора директора.
-  _Файлы: `Application/Solver/Builder/BuildSections/`, `ScheduleModelDirector.cs`._
+- [x] **Ограничение вместимости аудитории.** Добавлен `CapacitySectionBuilder` (жёсткий):
+  запрет `Lessons[w,r,t]` где `Classrooms[r].Capacity < Stream.StudentsCount`. Включён в оба
+  набора `ScheduleModelDirector`.
 
-- [ ] **Чётность часов в `TotalHoursSectionBuilder`.** `Hours / 2` молча теряет нечётные часы
-  (3ч → 1 пара). Добавить валидацию чётности `Hours` или явную политику округления.
-  _Файл: `Application/Solver/Builder/BuildSections/TotalHoursSectionBuilder.cs:22`._
+- [x] **Чётность часов в `TotalHoursSectionBuilder`.** Нечётные часы больше не теряются молча —
+  генерация прерывается с явным сообщением (fail-fast) с указанием нагрузки.
 
-- [ ] **`Lesson.SemesterId` (денормализация).** Сейчас семестр занятия достижим только через
-  `TimeSlot→WeekDay→Week→Semester`; из-за этого publish/delete работают по институту через
-  все семестры, а запросы расписания делают лишние джойны. Добавить FK `SemesterId` на `Lesson`,
-  миграцию, обновить запросы/команды.
-  _Файлы: `Domain/schedule/Lesson.cs`, `Infrastructure/Data/Configurations/LessonConfiguration.cs`, миграции._
+- [x] **`Lesson.SemesterId` (денормализация).** Добавлен FK `SemesterId` на `Lesson` (+ индекс,
+  миграция `AddLessonSemesterId`). Прокинут через `ScheduleData` → провайдер → маппер и в
+  `CreateLessonCommand`. Удаление/перегенерация теперь могут работать по семестру.
 
-- [ ] **Повторная генерация на весь семестр плодит дубли.** `GenerateScheduleCommand` только
-  добавляет занятия (без удаления прежних), в отличие от по-институтной команды. Унифицировать
-  «заменить, а не добавить».
-  _Файл: `Application/Common/Lessons/Commands/GenerateScheduleCommand.cs`._
+- [x] **Повторная генерация на весь семестр плодит дубли.** `GenerateScheduleCommand` теперь
+  удаляет прежнее расписание семестра перед вставкой (одним `SaveChanges`); институтная
+  генерация удаляет по (институт + семестр).
 
-- [ ] **Пересмотреть `DoubleLessonSectionBuilder`.** Гарантирует наличие соседа, но не запрещает
-  3+ подряд и не гарантирует ровно пары; с `TotalHours` возможны странные раскладки.
-  Рассмотреть моделирование двойной пары одной переменной на пару слотов.
-  _Файл: `Application/Solver/Builder/BuildSections/DoubleLessonSectionBuilder.cs`._
+- [x] **Пересмотрен `DoubleLessonSectionBuilder`.** Добавлен запрет серий из 3+ (в любом окне из
+  трёх слотов занято ≤2); вместе с «нет одиночных» даёт непрерывные блоки ровно по 2.
+
+  > Осталось из P0-блока на потом (P1): publish по-прежнему по институту без фильтра семестра
+  > (`GetByInstituteAsync`) — теперь, когда есть `SemesterId`, стоит ограничить семестром.
 
 ## 🔴 P0 — масштабируемость солвера
 

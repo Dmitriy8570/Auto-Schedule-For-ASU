@@ -27,6 +27,7 @@ public class ScheduleModelDirector
         new TotalHoursSectionBuilder(),
         new IntersectionSectionBuilder(),
         new EquipmentSectionBuilder(),
+        new CapacitySectionBuilder(),
         new ShiftSectionBuilder(),
         new BuildingTravelSectionBuilder(),
         new DoubleLessonSectionBuilder(),
@@ -57,6 +58,7 @@ public class ScheduleModelDirector
         new IntersectionSectionBuilder(),
         new OccupiedResourcesSectionBuilder(), // B: ресурсы других институтов уже заняты.
         new EquipmentSectionBuilder(),
+        new CapacitySectionBuilder(),
         new ShiftSectionBuilder(),
         new BuildingTravelSectionBuilder(),
         new DoubleLessonSectionBuilder(),

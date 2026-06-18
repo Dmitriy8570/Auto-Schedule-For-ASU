@@ -29,7 +29,8 @@ public readonly record struct ScheduleData(
     IReadOnlyList<ConstraintConfig> Penalties,
     IReadOnlyList<OccupiedSlot>? OccupiedClassroomSlots = null,
     IReadOnlyList<OccupiedTeacherSlot>? OccupiedTeacherSlots = null,
-    IReadOnlyList<WorkloadAnchor>? Anchors = null
+    IReadOnlyList<WorkloadAnchor>? Anchors = null,
+    Guid SemesterId = default
 );
 
 /// <summary>Аудитория, занятая в конкретном слоте расписанием другого института этого семестра.</summary>

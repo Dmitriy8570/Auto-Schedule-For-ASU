@@ -25,5 +25,13 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
                .WithMany()
                .HasForeignKey(l => l.TimeSlotId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        // Семестр занятия (денормализация); навигации со стороны Semester нет.
+        builder.HasOne<Domain.calendar.Semester>()
+               .WithMany()
+               .HasForeignKey(l => l.SemesterId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(l => l.SemesterId);
     }
 }

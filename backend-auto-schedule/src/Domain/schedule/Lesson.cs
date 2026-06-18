@@ -30,14 +30,18 @@ namespace Domain.schedule
         public AcademicStream Stream { get; private set; }
         public Guid StreamId { get; private set; }
 
+        /// <summary>Семестр, к которому относится занятие (денормализовано для запросов и перегенерации).</summary>
+        public Guid SemesterId { get; private set; }
+
         public ScheduleVersion Version { get; private set; } = ScheduleVersion.Draft;
 
-        public static Lesson Create(Guid id, Guid classroomId, Guid timeSlotId, Guid streamId) => new()
+        public static Lesson Create(Guid id, Guid classroomId, Guid timeSlotId, Guid streamId, Guid semesterId) => new()
         {
             Id = Guard.NotEmpty(id, nameof(id)),
             ClassroomId = Guard.NotEmpty(classroomId, nameof(classroomId)),
             TimeSlotId = Guard.NotEmpty(timeSlotId, nameof(timeSlotId)),
-            StreamId = Guard.NotEmpty(streamId, nameof(streamId))
+            StreamId = Guard.NotEmpty(streamId, nameof(streamId)),
+            SemesterId = Guard.NotEmpty(semesterId, nameof(semesterId))
         };
 
         public void Publish() => Version = ScheduleVersion.Current;

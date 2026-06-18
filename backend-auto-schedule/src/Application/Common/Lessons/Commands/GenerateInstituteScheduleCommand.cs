@@ -52,7 +52,8 @@ public sealed class GenerateInstituteScheduleCommandHandler
 
         // Решение найдено — заменяем текущее расписание института новым черновиком.
         // Удаление и вставка фиксируются одним SaveChanges, чтобы не оставить институт без расписания.
-        var existing = await _lessonRepository.GetByInstituteAsync(request.InstituteId, cancellationToken);
+        var existing = await _lessonRepository.GetByInstituteAndSemesterAsync(
+            request.InstituteId, request.SemesterId, cancellationToken);
         _lessonRepository.RemoveRange(existing);
 
         var lessons = _mapper.ToLessons(data, solution.Assignments); // Lesson.Create() => Version = Draft.
