@@ -30,20 +30,23 @@ public class LessonsController : ControllerBase
         }
     }
 
-    /// <summary>Получить занятия учебной группы.</summary>
+    /// <summary>Получить занятия учебной группы (опционально — за конкретную неделю).</summary>
     [HttpGet("by-group/{groupId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByGroup(Guid groupId, CancellationToken ct)
-        => Ok(await _mediator.Send(new GetLessonByGroupQuery { GroupId = groupId }, ct));
+    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByGroup(
+        Guid groupId, CancellationToken ct, [FromQuery] Guid? weekId = null)
+        => Ok(await _mediator.Send(new GetLessonByGroupQuery { GroupId = groupId, WeekId = weekId }, ct));
 
-    /// <summary>Получить занятия в аудитории.</summary>
+    /// <summary>Получить занятия в аудитории (опционально — за конкретную неделю).</summary>
     [HttpGet("by-room/{classroomId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByRoom(Guid classroomId, CancellationToken ct)
-        => Ok(await _mediator.Send(new GetLessonByRoomQuery { ClassroomId = classroomId }, ct));
+    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByRoom(
+        Guid classroomId, CancellationToken ct, [FromQuery] Guid? weekId = null)
+        => Ok(await _mediator.Send(new GetLessonByRoomQuery { ClassroomId = classroomId, WeekId = weekId }, ct));
 
-    /// <summary>Получить занятия преподавателя.</summary>
+    /// <summary>Получить занятия преподавателя (опционально — за конкретную неделю).</summary>
     [HttpGet("by-teacher/{teacherId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByTeacher(Guid teacherId, CancellationToken ct)
-        => Ok(await _mediator.Send(new GetLessonByTeacherQuery { TeacherId = teacherId }, ct));
+    public async Task<ActionResult<IReadOnlyList<LessonDTO>>> GetByTeacher(
+        Guid teacherId, CancellationToken ct, [FromQuery] Guid? weekId = null)
+        => Ok(await _mediator.Send(new GetLessonByTeacherQuery { TeacherId = teacherId, WeekId = weekId }, ct));
 
     /// <summary>Создать занятие.</summary>
     [HttpPost]
@@ -63,4 +66,22 @@ public class LessonsController : ControllerBase
         Guid semesterId, Guid instituteId, CancellationToken ct)
         => Ok(await _mediator.Send(
             new GenerateInstituteScheduleCommand { SemesterId = semesterId, InstituteId = instituteId }, ct));
+
+    /// <summary>
+    /// Опубликовать расписание института: перевести черновик (Draft) в текущее (Current),
+    /// заменив ранее опубликованное расписание.
+    /// </summary>
+    [HttpPost("publish/institute/{instituteId:guid}")]
+    public async Task<ActionResult<PublishInstituteScheduleResult>> PublishForInstitute(
+        Guid instituteId, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _mediator.Send(new PublishInstituteScheduleCommand { InstituteId = instituteId }, ct));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
 }

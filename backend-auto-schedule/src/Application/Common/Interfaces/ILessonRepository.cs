@@ -14,7 +14,12 @@ public interface ILessonRepository
     /// <summary>Удалить набор занятий (старое расписание института).</summary>
     void RemoveRange(IEnumerable<Lesson> lessons);
     
-    Task<IReadOnlyList<Lesson>> GetLessonByTeacherAsync(Guid teacherId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<Lesson>> GetLessonByRoomAsync(Guid classroomId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<Lesson>> GetLessonByGroupAsync(Guid groupId, CancellationToken cancellationToken);
+    /// <summary>Занятия преподавателя; при заданном <paramref name="weekId"/> — только в пределах этой недели.</summary>
+    Task<IReadOnlyList<Lesson>> GetLessonByTeacherAsync(Guid teacherId, Guid? weekId, CancellationToken cancellationToken);
+
+    /// <summary>Занятия в аудитории; при заданном <paramref name="weekId"/> — только в пределах этой недели.</summary>
+    Task<IReadOnlyList<Lesson>> GetLessonByRoomAsync(Guid classroomId, Guid? weekId, CancellationToken cancellationToken);
+
+    /// <summary>Занятия учебной группы; при заданном <paramref name="weekId"/> — только в пределах этой недели.</summary>
+    Task<IReadOnlyList<Lesson>> GetLessonByGroupAsync(Guid groupId, Guid? weekId, CancellationToken cancellationToken);
 }

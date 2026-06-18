@@ -17,19 +17,19 @@
 1. ПОЛУЧЕНИЕ РАСПИСАНИЯ
 --------------------------------------------------------------------------------
 
-1.1. Расписание по неделе и преподавателю            [нужно добавить фильтр week]
+1.1. Расписание по неделе и преподавателю                      [реализовано]
   GET /api/lessons/by-teacher/{teacherId}?weekId={weekId}
     path:  teacherId : Guid  — преподаватель
     query: weekId    : Guid? — учебная неделя; если не задан, вернуть весь семестр
   200: LessonView[]
 
-1.2. Расписание по неделе и группе                   [нужно добавить фильтр week]
+1.2. Расписание по неделе и группе                            [реализовано]
   GET /api/lessons/by-group/{groupId}?weekId={weekId}
     path:  groupId : Guid
     query: weekId  : Guid?
   200: LessonView[]
 
-1.3. Расписание по неделе и аудитории                [нужно добавить фильтр week]
+1.3. Расписание по неделе и аудитории                         [реализовано]
   GET /api/lessons/by-room/{classroomId}?weekId={weekId}
     path:  classroomId : Guid
     query: weekId      : Guid?
@@ -72,14 +72,15 @@
 
 
 --------------------------------------------------------------------------------
-3. СОХРАНЕНИЕ (ПУБЛИКАЦИЯ) РАСПИСАНИЯ                          [нужно реализовать]
+3. СОХРАНЕНИЕ (ПУБЛИКАЦИЯ) РАСПИСАНИЯ                          [реализовано]
 --------------------------------------------------------------------------------
   Перевод черновика института из Draft в Current.
 
-  POST /api/lessons/publish/semester/{semesterId}/institute/{instituteId}
-    path: semesterId  : Guid
-          instituteId : Guid
+  POST /api/lessons/publish/institute/{instituteId}
+    path: instituteId : Guid
     body: нет
+    // Без semesterId: занятие (Lesson) не привязано к семестру напрямую,
+    // публикуется текущий черновик института.
 
   Поведение:
     - все занятия института со статусом Draft переводятся в Current;
@@ -113,14 +114,14 @@
 
 
 --------------------------------------------------------------------------------
-5. ИЗМЕНЕНИЯ В НАГРУЗКЕ ВУЗА                                   [нужно реализовать]
+5. ИЗМЕНЕНИЯ В НАГРУЗКЕ ВУЗА                                   [реализовано]
 --------------------------------------------------------------------------------
   Журнал изменений нагрузки (SemesterLog / WeekLog) с фильтрами.
 
   GET /api/workload/changes
     query (все необязательные, комбинируются по И):
       teacherId : Guid?
-      groupId   : Guid?
+      groupId   : Guid?     — совпадение по любой группе потока нагрузки
       subjectId : Guid?
       semesterId: Guid?     — ограничить семестром
       from      : DateTime? — нижняя граница TimeStamp
@@ -128,14 +129,14 @@
 
   200: WorkloadChange[]
     {
-      "action":     int,      // 0 Add | 1 Update | 2 Delete
-      "oldValue":   int,       // часов до изменения
-      "newValue":   int,       // часов после изменения
-      "timeStamp":  DateTime,
-      "scope":      string,    // "Semester" | "Week"
-      "teacherId":  Guid,
-      "subjectId":  Guid,
-      "groupId":    Guid,
-      "curriculumId": Guid
+      "action":       int,      // 0 Add | 1 Update | 2 Delete
+      "oldValue":     int,      // часов до изменения
+      "newValue":     int,      // часов после изменения
+      "timeStamp":    DateTime,
+      "scope":        string,   // "Semester" | "Week"
+      "curriculumId": Guid,
+      "teacherId":    Guid,
+      "subjectId":    Guid,
+      "streamId":     Guid      // поток нагрузки (групп может быть несколько — groupId только фильтр)
     }
   // Сортировка по timeStamp по убыванию.
