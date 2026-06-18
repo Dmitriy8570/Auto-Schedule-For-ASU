@@ -1,31 +1,28 @@
 using Domain.common;
 using Domain.workload;
 
-namespace Domain.calendar
+namespace Domain.calendar;
+
+/// <summary>Учебный семестр с датами начала и конца.</summary>
+public class Semester
 {
-    /// <summary>Учебный семестр с датами начала и конца.</summary>
-    public class Semester
+    private Semester() { }
+
+    public Guid Id { get; private set; }
+    public DateOnly StartDate { get; private set; }
+    public DateOnly EndDate { get; private set; }
+
+    /// <summary>Недели, входящие в семестр.</summary>
+    public List<Week> Weeks { get; private set; } = [];
+
+    /// <summary>Семестровые нагрузки по всем учебным планам.</summary>
+    public List<SemesterWorkload> SemesterWorkloads { get; private set; } = [];
+
+    /// <summary>Создать учебный семестр.</summary>
+    public static Semester Create(Guid id, DateOnly startDate, DateOnly endDate) => new()
     {
-        private Semester() { }
-
-        public Guid Id { get; private set; }
-        public DateOnly StartDate { get; private set; }
-        public DateOnly EndDate { get; private set; }
-
-        /// <summary>Недели, входящие в семестр.</summary>
-        public List<Week> Weeks { get; private set; }
-
-        /// <summary>Семестровые нагрузки по всем учебным планам.</summary>
-        public List<SemesterWorkload> SemesterWorkloads { get; private set; }
-
-        /// <summary>Создать учебный семестр.</summary>
-        public static Semester Create(Guid id, DateOnly startDate, DateOnly endDate) => new()
-        {
-            Id = Guard.NotEmpty(id, nameof(id)),
-            StartDate = startDate,
-            EndDate = endDate,
-            Weeks = new List<Week>(),
-            SemesterWorkloads = new List<SemesterWorkload>()
-        };
-    }
+        Id = Guard.NotEmpty(id, nameof(id)),
+        StartDate = startDate,
+        EndDate = endDate
+    };
 }

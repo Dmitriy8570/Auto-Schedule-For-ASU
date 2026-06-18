@@ -1,40 +1,38 @@
 using Domain.common;
 using Domain.university.common;
 
-namespace Domain.university.groups
+namespace Domain.university.groups;
+
+/// <summary>Ступень образования.</summary>
+public enum TypeDegree
 {
-    /// <summary>Ступень образования.</summary>
-    public enum TypeDegree
+    Secondary = 0,
+    Bachelor = 1,
+    Specialist = 2,
+    Master = 3,
+    Postgraduate = 4,
+    Doctoral = 5
+}
+
+/// <summary>Образовательная ступень внутри института (бакалавриат, магистратура и т.д.).</summary>
+public class Degree
+{
+    private Degree() { }
+
+    public Guid Id { get; private set; }
+    public TypeDegree TypeDegree { get; private set; }
+
+    /// <summary>Курсы (по годам обучения) данной ступени.</summary>
+    public List<Course> Courses { get; private set; } = [];
+
+    public Guid InstituteId { get; private set; }
+    public Institute Institute { get; private set; } = null!;
+
+    /// <summary>Создать образовательную ступень в составе института.</summary>
+    public static Degree Create(Guid id, TypeDegree typeDegree, Guid instituteId) => new()
     {
-        Secondary = 0,
-        Bachelor = 1,
-        Specialist = 2,
-        Master = 3,
-        Postgraduate = 4,
-        Doctoral = 5
-    }
-
-    /// <summary>Образовательная ступень внутри института (бакалавриат, магистратура и т.д.).</summary>
-    public class Degree
-    {
-        private Degree() { }
-
-        public Guid Id { get; private set; }
-        public TypeDegree TypeDegree { get; private set; }
-
-        /// <summary>Курсы (по годам обучения) данной ступени.</summary>
-        public List<Course> Courses { get; private set; }
-
-        public Guid InstituteId { get; private set; }
-        public Institute Institute { get; private set; }
-
-        /// <summary>Создать образовательную ступень в составе института.</summary>
-        public static Degree Create(Guid id, TypeDegree typeDegree, Guid instituteId) => new()
-        {
-            Id = Guard.NotEmpty(id, nameof(id)),
-            TypeDegree = Guard.Defined(typeDegree, nameof(typeDegree)),
-            InstituteId = Guard.NotEmpty(instituteId, nameof(instituteId)),
-            Courses = new List<Course>()
-        };
-    }
+        Id = Guard.NotEmpty(id, nameof(id)),
+        TypeDegree = Guard.Defined(typeDegree, nameof(typeDegree)),
+        InstituteId = Guard.NotEmpty(instituteId, nameof(instituteId))
+    };
 }

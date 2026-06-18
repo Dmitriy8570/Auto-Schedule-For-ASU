@@ -1,16 +1,15 @@
 using Domain.university.buildings;
 
-namespace Domain.constraints.equipments
+namespace Domain.constraints.equipments;
+
+/// <summary>Связующая таблица: оборудование, установленное в конкретной аудитории (многие-ко-многим).</summary>
+public class EquipmentRoom
 {
-    /// <summary>Связующая таблица: оборудование, установленное в конкретной аудитории (многие-ко-многим).</summary>
-    public class EquipmentRoom
-    {
-        private EquipmentRoom() { }
+    private EquipmentRoom() { }
 
-        public Guid EquipmentId { get; private set; }
-        public Guid ClassroomId { get; private set; }
+    public Guid EquipmentId { get; private set; }
+    public Guid ClassroomId { get; private set; }
 
-        public Equipment Equipment { get; private set; }
-        public Classroom Classroom { get; private set; }
-    }
+    public Equipment Equipment { get; private set; } = null!;
+    public Classroom Classroom { get; private set; } = null!;
 }

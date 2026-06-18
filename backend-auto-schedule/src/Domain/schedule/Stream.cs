@@ -1,37 +1,33 @@
 using Domain.common;
 using Domain.workload;
 
-namespace Domain.schedule
+namespace Domain.schedule;
+
+/// <summary>
+/// Учебный поток — объединение групп, которые проходят одни и те же дисциплины вместе.
+/// </summary>
+public class AcademicStream
 {
-    /// <summary>
-    /// Учебный поток — объединение групп, которые проходят одни и те же дисциплины вместе.
-    /// </summary>
-    public class AcademicStream
+    private AcademicStream() { }
+
+    public Guid Id { get; private set; }
+
+    /// <summary>Суммарное количество студентов во всех группах потока.</summary>
+    public int StudentsCount { get; private set; }
+
+    /// <summary>Группы, входящие в поток (связующая таблица).</summary>
+    public List<StreamGroups> StreamGroups { get; private set; } = [];
+
+    /// <summary>Учебные планы, по которым занимается поток.</summary>
+    public List<Curriculum> Curriculums { get; private set; } = [];
+
+    /// <summary>Занятия, назначенные потоку.</summary>
+    public List<Lesson> Lessons { get; private set; } = [];
+
+    /// <summary>Создать учебный поток.</summary>
+    public static AcademicStream Create(Guid id, int studentsCount) => new()
     {
-        private AcademicStream() { }
-
-        public Guid Id { get; private set; }
-
-        /// <summary>Суммарное количество студентов во всех группах потока.</summary>
-        public int StudentsCount { get; private set; }
-
-        /// <summary>Группы, входящие в поток (связующая таблица).</summary>
-        public List<StreamGroups> StreamGroups { get; private set; }
-
-        /// <summary>Учебные планы, по которым занимается поток.</summary>
-        public List<Curriculum> Curriculums { get; private set; }
-
-        /// <summary>Занятия, назначенные потоку.</summary>
-        public List<Lesson> Lessons { get; private set; }
-
-        /// <summary>Создать учебный поток.</summary>
-        public static AcademicStream Create(Guid id, int studentsCount) => new()
-        {
-            Id = Guard.NotEmpty(id, nameof(id)),
-            StudentsCount = Guard.NotNegative(studentsCount, nameof(studentsCount)),
-            StreamGroups = new List<StreamGroups>(),
-            Curriculums = new List<Curriculum>(),
-            Lessons = new List<Lesson>()
-        };
-    }
+        Id = Guard.NotEmpty(id, nameof(id)),
+        StudentsCount = Guard.NotNegative(studentsCount, nameof(studentsCount))
+    };
 }
