@@ -69,6 +69,36 @@ services:
     networks:
       - app-network
 
+  # ---------- Active Directory (Samba AD DC) ----------
+  ad-dc:
+    build:
+      context: ./ad-dc
+      dockerfile: Dockerfile
+    container_name: auto-schedule-ad
+    hostname: dc1
+    restart: unless-stopped
+    # Samba AD DC требует расширенных привилегий (xattr, setcap и т.п.).
+    privileged: true
+    environment:
+      AD_REALM: ${AD_REALM:-TEST.MC}
+      AD_DOMAIN: ${AD_DOMAIN:-TEST}
+      AD_ADMIN_PASSWORD: ${AD_ADMIN_PASSWORD:-P@ssw0rd2024!}
+      # Группа «Бюро расписаний».
+      AD_GROUP: ${AD_GROUP:-ScheduleBureau}
+      AD_GROUP_DESC: ${AD_GROUP_DESC:-Бюро расписаний}
+      # Единственный пользователь домена.
+      AD_USER: ${AD_USER:-i.petrov}
+      AD_USER_PASSWORD: ${AD_USER_PASSWORD:-Schedule2024!}
+    ports:
+      - "${AD_LDAP_PORT:-389}:389"     # LDAP
+      - "${AD_LDAPS_PORT:-636}:636"    # LDAPS
+      - "${AD_KERBEROS_PORT:-88}:88"   # Kerberos
+    volumes:
+      - ad-data:/var/lib/samba
+      - ad-conf:/etc/samba
+    networks:
+      - app-network
+
   # ---------- Frontend (Vue + nginx) ----------
   frontend:
     build:
@@ -86,6 +116,8 @@ services:
 volumes:
   postgres-data:
   mmis-data:
+  ad-data:
+  ad-conf:
 
 networks:
   app-network:

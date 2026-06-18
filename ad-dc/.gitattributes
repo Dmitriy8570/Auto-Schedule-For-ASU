@@ -1,0 +1,2 @@
+# entrypoint выполняется внутри Linux-контейнера — всегда LF, без CRLF от Windows.
+*.sh text eol=lf
