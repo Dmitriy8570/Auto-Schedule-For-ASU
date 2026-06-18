@@ -20,6 +20,11 @@ WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080 \
     ASPNETCORE_ENVIRONMENT=Production
 
+# System.DirectoryServices.Protocols на Linux использует OpenLDAP (libldap).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libldap2 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish .
 
 # Непривилегированный пользователь (входит в образ aspnet).

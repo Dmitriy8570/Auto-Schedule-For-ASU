@@ -1,4 +1,5 @@
 ﻿using Application.Common.Interfaces;
+using Infrastructure.Auth;
 using Infrastructure.Data;
 using Infrastructure.Mmis;
 using Infrastructure.Repositories;
@@ -29,6 +30,12 @@ public static class DependencyInjection
         services.AddScoped<MmisReader>();
         services.AddScoped<IMmisSyncService, MmisSyncService>();
         services.AddHostedService<MmisSyncHostedService>();
+
+        // Аутентификация: LDAP-bind в Active Directory + выпуск JWT.
+        services.Configure<AdAuthOptions>(configuration.GetSection(AdAuthOptions.SectionName));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddScoped<IAuthenticationService, LdapAuthenticationService>();
+        services.AddSingleton<ITokenService, JwtTokenService>();
 
         return services;
     }

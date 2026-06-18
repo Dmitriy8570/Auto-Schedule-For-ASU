@@ -32,6 +32,8 @@ services:
         condition: service_healthy
       mmis-db:
         condition: service_healthy
+      ad-dc:
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
@@ -40,6 +42,20 @@ services:
       # Источник нагрузки — контейнер MMIS (MS SQL). Хост = имя сервиса "mmis-db".
       Mmis__ConnectionString: "Server=mmis-db,1433;Database=MMIS;User Id=sa;Password=${MMIS_SA_PASSWORD:-Mmis_Str0ng_Pass!};TrustServerCertificate=True;Encrypt=False"
       Mmis__SyncAtTime: "${MMIS_SYNC_AT_TIME:-03:00}"
+      # Аутентификация в Active Directory (хост = имя сервиса "ad-dc").
+      ActiveDirectory__Host: ad-dc
+      ActiveDirectory__Port: "636"
+      ActiveDirectory__UseSsl: "true"
+      ActiveDirectory__IgnoreCertificateErrors: "true"
+      ActiveDirectory__Realm: ${AD_REALM:-TEST.MC}
+      ActiveDirectory__BaseDn: ${AD_BASE_DN:-DC=test,DC=mc}
+      ActiveDirectory__RequiredGroup: ${AD_GROUP:-ScheduleBureau}
+      # libldap: не проверять самоподписанный сертификат DC (лабораторная среда).
+      LDAPTLS_REQCERT: never
+      # Подпись JWT — обязательно переопределить в production.
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-dev-only-change-me-please-use-a-32+byte-secret-key}
+      Jwt__Issuer: ${JWT_ISSUER:-auto-schedule}
+      Jwt__Audience: ${JWT_AUDIENCE:-auto-schedule}
     ports:
       - "${BACKEND_PORT:-5000}:8080"
     networks:
