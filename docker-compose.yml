@@ -1,0 +1,87 @@
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    container_name: auto-schedule-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-autoSchedule}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-autoSchedule}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  # ---------- Backend (.NET API) ----------
+  backend:
+    build:
+      context: ./backend-auto-schedule
+      dockerfile: Dockerfile
+    container_name: auto-schedule-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      # Подключение к контейнеру БД (хост = имя сервиса "db" во внутренней сети).
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-autoSchedule};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
+    ports:
+      - "${BACKEND_PORT:-5000}:8080"
+    networks:
+      - app-network
+
+  # ---------- MMIS (имитация исходной БД MS SQL) ----------
+  mmis-db:
+    build:
+      context: ./mmis-mssql
+      dockerfile: Dockerfile
+    container_name: auto-schedule-mmis
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MMIS_SA_PASSWORD:-Mmis_Str0ng_Pass!}
+    ports:
+      - "${MMIS_PORT:-1433}:1433"
+    volumes:
+      - mmis-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - app-network
+
+  # ---------- Frontend (Vue + nginx) ----------
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: auto-schedule-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - app-network
+
+volumes:
+  postgres-data:
+  mmis-data:
+
+networks:
+  app-network:
+    driver: bridge
