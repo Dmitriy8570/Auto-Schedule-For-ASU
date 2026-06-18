@@ -1,4 +1,4 @@
-using Application.Common.DTO.Workload;
+using Application.Common.DTO.Workloads;
 
 namespace Application.Common.Interfaces;
 

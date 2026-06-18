@@ -576,7 +576,7 @@ namespace Infrastructure.Migrations
                     b.Property<int>("OldValue")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("SemesterWorkloadId")
+                    b.Property<Guid?>("SemesterWorkloadId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("TimeStamp")
@@ -607,7 +607,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("WeekWorkloadId")
+                    b.Property<Guid?>("WeekWorkloadId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -920,8 +920,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.workload.SemesterWorkload", "SemesterWorkload")
                         .WithMany("SemesterLogs")
                         .HasForeignKey("SemesterWorkloadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("SemesterWorkload");
                 });
@@ -931,8 +930,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.workload.WeekWorkload", "WeekWorkload")
                         .WithMany("WeekLogs")
                         .HasForeignKey("WeekWorkloadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("WeekWorkload");
                 });

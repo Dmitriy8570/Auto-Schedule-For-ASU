@@ -1,8 +1,8 @@
-using Application.Common.DTO.Workload;
+using Application.Common.DTO.Workloads;
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Common.Workload.Queries;
+namespace Application.Common.Workloads.Queries;
 
 /// <summary>Журнал изменений нагрузки вуза с необязательными фильтрами.</summary>
 public sealed class GetWorkloadChangesQuery : IRequest<IReadOnlyList<WorkloadChangeDto>>

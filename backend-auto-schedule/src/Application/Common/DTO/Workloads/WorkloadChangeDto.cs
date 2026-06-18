@@ -1,6 +1,6 @@
 using Domain.workload.logs;
 
-namespace Application.Common.DTO.Workload;
+namespace Application.Common.DTO.Workloads;
 
 /// <summary>
 /// Запись журнала изменений нагрузки вуза (объединяет семестровые и понедельные журналы).

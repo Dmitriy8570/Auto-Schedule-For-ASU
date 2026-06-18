@@ -131,17 +131,17 @@ public static class DataFileGenerator
         {
             char letter = (char)('А' + idx);
 
-            // По 2 поточные лекционные на корпус.
+            // По 2 поточные лекционные на корпус (вмещают самый большой поток: 5 групп × ≤29 = 145).
             for (int i = 1; i <= 2; i++)
-                result.Add(new ClassroomDto($"{letter}-10{i}", building, 120, new[] { "Проектор" }));
+                result.Add(new ClassroomDto($"{letter}-10{i}", building, 150, new[] { "Проектор" }));
 
             // 8 семинарских.
             for (int i = 1; i <= 8; i++)
                 result.Add(new ClassroomDto($"{letter}-2{i:00}", building, 30, Array.Empty<string>()));
 
-            // 5 компьютерных классов.
+            // 5 компьютерных классов (вмещают полную основную группу: ≤29 студентов).
             for (int i = 1; i <= 5; i++)
-                result.Add(new ClassroomDto($"{letter}-3{i:00}", building, 18, new[] { "Компьютерный класс", "Проектор" }));
+                result.Add(new ClassroomDto($"{letter}-3{i:00}", building, 30, new[] { "Компьютерный класс", "Проектор" }));
 
             // 1 лаборатория электроники (только в корпусах Б и В).
             if (idx >= 1)

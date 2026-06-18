@@ -1,4 +1,4 @@
-using Application.Common.DTO.Workload;
+using Application.Common.DTO.Workloads;
 using Application.Common.Interfaces;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

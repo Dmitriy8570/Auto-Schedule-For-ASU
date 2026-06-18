@@ -115,11 +115,19 @@
 
 
 --------------------------------------------------------------------------------
-5. ИЗМЕНЕНИЯ В НАГРУЗКЕ ВУЗА                                   [реализовано]
+5. НАГРУЗКА ВУЗА                                              [реализовано]
 --------------------------------------------------------------------------------
+  Текущая нагрузка (учебный план) и журнал её изменений — один контроллер.
+
+  GET /api/workloads
+    query: instituteId?, departmentId?, teacherId?, subjectSearch?, page=1, pageSize=20
+    -> PagedResult<WorkloadItem>
+       WorkloadItem: { curriculumId, teacher, subject, group, lessonType,
+                       semesterHours, weeklyHours: [ { week, hours } ] }
+
   Журнал изменений нагрузки (SemesterLog / WeekLog) с фильтрами.
 
-  GET /api/workload/changes
+  GET /api/workloads/changes
     query (все необязательные, комбинируются по И):
       teacherId : Guid?
       groupId   : Guid?     — совпадение по любой группе потока нагрузки
