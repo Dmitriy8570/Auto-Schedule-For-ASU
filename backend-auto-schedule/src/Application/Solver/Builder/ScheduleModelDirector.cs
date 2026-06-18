@@ -27,6 +27,7 @@ public class ScheduleModelDirector
         new TotalHoursSectionBuilder(),
         new IntersectionSectionBuilder(),
         new EquipmentSectionBuilder(),
+        new CapacitySectionBuilder(),
         new ShiftSectionBuilder(),
         new BuildingTravelSectionBuilder(),
         new DoubleLessonSectionBuilder(),
@@ -37,6 +38,38 @@ public class ScheduleModelDirector
         new AvailabilitySectionBuilder(),
         new FavoriteBuildingSectionBuilder(),
         new ParallelismSectionBuilder(),
+
+        // Целевая функция.
+        new ObjectiveSectionBuilder(),
+    });
+
+    /// <summary>
+    /// Набор для генерации по отдельному институту (декомпозиция «B + C»):
+    /// к полному набору добавляются жёсткая блокировка ресурсов, занятых другими
+    /// институтами этого семестра, и мягкий якорь к расписанию прошлого семестра.
+    /// </summary>
+    public static ScheduleModelDirector CreatePerInstitute() => new(new IModelSectionBuilder[]
+    {
+        // Переменные.
+        new VariablesSectionBuilder(),
+
+        // Жёсткие ограничения.
+        new TotalHoursSectionBuilder(),
+        new IntersectionSectionBuilder(),
+        new OccupiedResourcesSectionBuilder(), // B: ресурсы других институтов уже заняты.
+        new EquipmentSectionBuilder(),
+        new CapacitySectionBuilder(),
+        new ShiftSectionBuilder(),
+        new BuildingTravelSectionBuilder(),
+        new DoubleLessonSectionBuilder(),
+
+        // Мягкие ограничения (штрафы в целевой функции).
+        new DailyLessonsLimitSectionBuilder(),
+        new WindowSectionBuilder(),
+        new AvailabilitySectionBuilder(),
+        new FavoriteBuildingSectionBuilder(),
+        new ParallelismSectionBuilder(),
+        new PreviousScheduleAnchorSectionBuilder(), // C: стабильность к прошлому семестру.
 
         // Целевая функция.
         new ObjectiveSectionBuilder(),

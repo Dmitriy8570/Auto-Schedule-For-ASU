@@ -7,6 +7,9 @@ namespace Application.Common.Lessons.Querys;
 public class GetLessonByGroupQuery: IRequest<IReadOnlyList<LessonDTO>>
 {
     public Guid GroupId { get; init; }
+
+    /// <summary>Необязательный фильтр по учебной неделе; null — расписание за весь семестр.</summary>
+    public Guid? WeekId { get; init; }
 }
 
 public class GetLessonByGroupQueryHandler : IRequestHandler<GetLessonByGroupQuery, IReadOnlyList<LessonDTO>>
@@ -18,13 +21,14 @@ public class GetLessonByGroupQueryHandler : IRequestHandler<GetLessonByGroupQuer
     }
     public async Task<IReadOnlyList<LessonDTO>> Handle(GetLessonByGroupQuery request, CancellationToken cancellationToken)
     {
-        var lessons = await _lessonRepository.GetLessonByGroupAsync(request.GroupId, cancellationToken);
+        var lessons = await _lessonRepository.GetLessonByGroupAsync(request.GroupId, request.WeekId, cancellationToken);
         return lessons?.Select(lesson => new LessonDTO
         {
             Id = lesson.Id,
             ClassroomId = lesson.ClassroomId,
             TimeSlotId = lesson.TimeSlotId,
-            StreamId = lesson.StreamId
+            StreamId = lesson.StreamId,
+            Version = lesson.Version
         }).ToList() ?? new List<LessonDTO>();
     }
 }

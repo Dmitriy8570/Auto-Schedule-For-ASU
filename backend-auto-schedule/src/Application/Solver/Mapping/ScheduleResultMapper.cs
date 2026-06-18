@@ -20,7 +20,7 @@ public sealed class ScheduleResultMapper : IScheduleResultMapper
             var classroomId = data.Classrooms[a.Room].Id;
             var timeSlotId = data.TimeSlots[a.Slot].Id;
 
-            lessons.Add(Lesson.Create(Guid.NewGuid(), classroomId, timeSlotId, streamId));
+            lessons.Add(Lesson.Create(Guid.NewGuid(), classroomId, timeSlotId, streamId, data.SemesterId));
         }
         return lessons;
     }

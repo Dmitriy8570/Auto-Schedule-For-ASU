@@ -9,6 +9,7 @@ public class CreateLessonCommand : IRequest<Guid>
     public Guid ClassroomId { get; init; }
     public Guid TimeSlotId { get; init; }
     public Guid StreamId { get; init; }
+    public Guid SemesterId { get; init; }
 }
 
 public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, Guid>
@@ -23,7 +24,7 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
     public async Task<Guid> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
     {
         var lessonId = Guid.NewGuid();
-        var lesson = Lesson.Create(lessonId, request.ClassroomId, request.TimeSlotId, request.StreamId);
+        var lesson = Lesson.Create(lessonId, request.ClassroomId, request.TimeSlotId, request.StreamId, request.SemesterId);
         await _lessonRepository.AddAsync(lesson, cancellationToken);
         await _lessonRepository.SaveChangesAsync(cancellationToken);
         return lessonId;
