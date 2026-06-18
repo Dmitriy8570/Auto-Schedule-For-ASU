@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ILessonRepository, LessonRepository>();
         services.AddScoped<IUniversityRepository, UniversityRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<IWorkloadRepository, WorkloadRepository>();
 
         // Синхронизация с MMIS (MS SQL): фоновая ежедневная выгрузка + журналирование нагрузки.
         services.Configure<MmisSyncOptions>(configuration.GetSection(MmisSyncOptions.SectionName));
