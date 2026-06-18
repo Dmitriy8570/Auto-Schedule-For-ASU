@@ -30,11 +30,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mmis-db:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       # Подключение к контейнеру БД (хост = имя сервиса "db" во внутренней сети).
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB:-autoSchedule};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}"
+      # Источник нагрузки — контейнер MMIS (MS SQL). Хост = имя сервиса "mmis-db".
+      Mmis__ConnectionString: "Server=mmis-db,1433;Database=MMIS;User Id=sa;Password=${MMIS_SA_PASSWORD:-Mmis_Str0ng_Pass!};TrustServerCertificate=True;Encrypt=False"
+      Mmis__SyncAtTime: "${MMIS_SYNC_AT_TIME:-03:00}"
     ports:
       - "${BACKEND_PORT:-5000}:8080"
     networks:

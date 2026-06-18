@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Mmis;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,6 +21,13 @@ public static class DependencyInjection
         services.AddScoped<ILessonRepository, LessonRepository>();
         services.AddScoped<IUniversityRepository, UniversityRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
+
+        // Синхронизация с MMIS (MS SQL): фоновая ежедневная выгрузка + журналирование нагрузки.
+        services.Configure<MmisSyncOptions>(configuration.GetSection(MmisSyncOptions.SectionName));
+        services.AddSingleton<MmisSyncStatus>();
+        services.AddScoped<MmisReader>();
+        services.AddScoped<IMmisSyncService, MmisSyncService>();
+        services.AddHostedService<MmisSyncHostedService>();
 
         return services;
     }

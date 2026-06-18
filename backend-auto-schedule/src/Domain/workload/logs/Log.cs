@@ -24,8 +24,24 @@ namespace Domain.workload.logs
 
         public DateTime TimeStamp { get; private set; }
 
-        public SemesterWorkload SemesterWorkload { get; private set; }
-        public Guid SemesterWorkloadId { get; private set; }
+        /// <summary>
+        /// Семестровая нагрузка, к которой относится запись. Может быть <c>null</c> после
+        /// физического удаления нагрузки (запись Delete переживает удаление — связь обнуляется).
+        /// </summary>
+        public SemesterWorkload? SemesterWorkload { get; private set; }
+        public Guid? SemesterWorkloadId { get; private set; }
+
+        /// <summary>Создать запись журнала семестровой нагрузки.</summary>
+        public static SemesterLog Create(
+            LogAction action, int oldValue, int newValue, DateTime timeStamp, Guid semesterWorkloadId) => new()
+        {
+            Id = Guid.NewGuid(),
+            Action = action,
+            OldValue = oldValue,
+            NewValue = newValue,
+            TimeStamp = timeStamp,
+            SemesterWorkloadId = semesterWorkloadId
+        };
     }
 
     /// <summary>Запись журнала изменений понедельной нагрузки.</summary>
@@ -44,7 +60,23 @@ namespace Domain.workload.logs
 
         public DateTime TimeStamp { get; private set; }
 
-        public WeekWorkload WeekWorkload { get; private set; }
-        public Guid WeekWorkloadId { get; private set; }
+        /// <summary>
+        /// Понедельная нагрузка, к которой относится запись. Может быть <c>null</c> после
+        /// физического удаления нагрузки (запись Delete переживает удаление — связь обнуляется).
+        /// </summary>
+        public WeekWorkload? WeekWorkload { get; private set; }
+        public Guid? WeekWorkloadId { get; private set; }
+
+        /// <summary>Создать запись журнала понедельной нагрузки.</summary>
+        public static WeekLog Create(
+            LogAction action, int oldValue, int newValue, DateTime timeStamp, Guid weekWorkloadId) => new()
+        {
+            Id = Guid.NewGuid(),
+            Action = action,
+            OldValue = oldValue,
+            NewValue = newValue,
+            TimeStamp = timeStamp,
+            WeekWorkloadId = weekWorkloadId
+        };
     }
 }

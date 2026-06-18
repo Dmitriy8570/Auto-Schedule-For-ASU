@@ -1,8 +1,8 @@
+using Domain.common;
 using Domain.constraints.equipments;
 using Domain.schedule;
 using Domain.university.buildings;
 using Domain.university.teachers;
-using System.Text.RegularExpressions;
 
 namespace Domain.workload
 {
@@ -55,5 +55,23 @@ namespace Domain.workload
 
         /// <summary>Оборудование, необходимое для проведения занятий по данному плану.</summary>
         public List<NeededEquipment> NeededEquipments { get; private set; }
+
+        /// <summary>Создать учебный план.</summary>
+        public static Curriculum Create(
+            Guid id, Guid teacherId, Guid streamId, Guid subjectId,
+            LessonType lessonType, bool parallelism, bool @double, Guid? favoriteBuildingId = null) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            TeacherId = Guard.NotEmpty(teacherId, nameof(teacherId)),
+            StreamId = Guard.NotEmpty(streamId, nameof(streamId)),
+            SubjectId = Guard.NotEmpty(subjectId, nameof(subjectId)),
+            LessonType = Guard.Defined(lessonType, nameof(lessonType)),
+            Parallelism = parallelism,
+            Double = @double,
+            FavoriteBuildingId = favoriteBuildingId,
+            WeekWorkloads = new List<WeekWorkload>(),
+            SemesterWorkloads = new List<SemesterWorkload>(),
+            NeededEquipments = new List<NeededEquipment>()
+        };
     }
 }

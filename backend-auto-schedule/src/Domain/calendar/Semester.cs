@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.workload;
 
 namespace Domain.calendar
@@ -16,5 +17,15 @@ namespace Domain.calendar
 
         /// <summary>Семестровые нагрузки по всем учебным планам.</summary>
         public List<SemesterWorkload> SemesterWorkloads { get; private set; }
+
+        /// <summary>Создать учебный семестр.</summary>
+        public static Semester Create(Guid id, DateOnly startDate, DateOnly endDate) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            StartDate = startDate,
+            EndDate = endDate,
+            Weeks = new List<Week>(),
+            SemesterWorkloads = new List<SemesterWorkload>()
+        };
     }
 }

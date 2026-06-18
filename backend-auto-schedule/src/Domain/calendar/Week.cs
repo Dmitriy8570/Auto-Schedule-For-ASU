@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.workload;
 
 namespace Domain.calendar
@@ -30,5 +31,17 @@ namespace Domain.calendar
 
         /// <summary>Понедельные нагрузки, запланированные на эту неделю.</summary>
         public List<WeekWorkload> WeekWorkloads { get; private set; }
+
+        /// <summary>Создать учебную неделю семестра.</summary>
+        public static Week Create(Guid id, DateOnly startDate, DateOnly endDate, WeekType weekType, Guid semesterId) => new()
+        {
+            Id = Guard.NotEmpty(id, nameof(id)),
+            StartDate = startDate,
+            EndDate = endDate,
+            WeekType = Guard.Defined(weekType, nameof(weekType)),
+            SemesterId = Guard.NotEmpty(semesterId, nameof(semesterId)),
+            WeekDays = new List<WeekDay>(),
+            WeekWorkloads = new List<WeekWorkload>()
+        };
     }
 }

@@ -10,9 +10,12 @@ public class WeekLogConfiguration : IEntityTypeConfiguration<WeekLog>
     {
         builder.HasKey(l => l.Id);
 
+        // Связь опциональна: при физическом удалении нагрузки запись Delete остаётся,
+        // а внешний ключ обнуляется (SetNull) — журнал переживает удаление.
         builder.HasOne(l => l.WeekWorkload)
                .WithMany(ww => ww.WeekLogs)
                .HasForeignKey(l => l.WeekWorkloadId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.SetNull);
     }
 }

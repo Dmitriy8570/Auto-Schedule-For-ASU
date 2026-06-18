@@ -10,9 +10,12 @@ public class SemesterLogConfiguration : IEntityTypeConfiguration<SemesterLog>
     {
         builder.HasKey(l => l.Id);
 
+        // Связь опциональна: при физическом удалении нагрузки запись Delete остаётся,
+        // а внешний ключ обнуляется (SetNull) — журнал переживает удаление.
         builder.HasOne(l => l.SemesterWorkload)
                .WithMany(sw => sw.SemesterLogs)
                .HasForeignKey(l => l.SemesterWorkloadId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.SetNull);
     }
 }
