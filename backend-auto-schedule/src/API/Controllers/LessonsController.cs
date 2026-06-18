@@ -52,4 +52,15 @@ public class LessonsController : ControllerBase
         var id = await _mediator.Send(command, ct);
         return CreatedAtAction(nameof(GetById), new { id }, id);
     }
+
+    /// <summary>
+    /// Сгенерировать черновик расписания для одного института на семестр
+    /// (с учётом занятости других институтов и якоря к прошлому семестру).
+    /// Текущее расписание института при этом заменяется.
+    /// </summary>
+    [HttpPost("generate/semester/{semesterId:guid}/institute/{instituteId:guid}")]
+    public async Task<ActionResult<GenerateScheduleResult>> GenerateForInstitute(
+        Guid semesterId, Guid instituteId, CancellationToken ct)
+        => Ok(await _mediator.Send(
+            new GenerateInstituteScheduleCommand { SemesterId = semesterId, InstituteId = instituteId }, ct));
 }

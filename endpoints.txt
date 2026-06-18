@@ -1,0 +1,141 @@
+КОНТРАКТ API РАСПИСАНИЯ
+======================
+
+Базовый префикс: /api
+Формат: application/json
+Идентификаторы: GUID
+Версия занятия (Version): 0 = Current (опубликовано), 1 = Draft (черновик)
+
+Общие коды ответов:
+  200 OK            — успешно
+  201 Created       — создан ресурс
+  400 Bad Request   — ошибка валидации (ValidationProblemDetails)
+  404 Not Found     — ресурс не найден
+
+
+--------------------------------------------------------------------------------
+1. ПОЛУЧЕНИЕ РАСПИСАНИЯ
+--------------------------------------------------------------------------------
+
+1.1. Расписание по неделе и преподавателю            [нужно добавить фильтр week]
+  GET /api/lessons/by-teacher/{teacherId}?weekId={weekId}
+    path:  teacherId : Guid  — преподаватель
+    query: weekId    : Guid? — учебная неделя; если не задан, вернуть весь семестр
+  200: LessonView[]
+
+1.2. Расписание по неделе и группе                   [нужно добавить фильтр week]
+  GET /api/lessons/by-group/{groupId}?weekId={weekId}
+    path:  groupId : Guid
+    query: weekId  : Guid?
+  200: LessonView[]
+
+1.3. Расписание по неделе и аудитории                [нужно добавить фильтр week]
+  GET /api/lessons/by-room/{classroomId}?weekId={weekId}
+    path:  classroomId : Guid
+    query: weekId      : Guid?
+  200: LessonView[]
+
+  LessonView:
+    {
+      "id":          Guid,
+      "classroomId": Guid,
+      "timeSlotId":  Guid,
+      "streamId":    Guid,
+      "version":     int    // 0 Current | 1 Draft
+    }
+  // Примечание: при необходимости расширить отображаемыми полями
+  // (день недели, номер пары, дисциплина, корпус, ФИО преподавателя).
+
+
+--------------------------------------------------------------------------------
+2. ГЕНЕРАЦИЯ РАСПИСАНИЯ ИНСТИТУТА                              [реализовано]
+--------------------------------------------------------------------------------
+
+  POST /api/lessons/generate/semester/{semesterId}/institute/{instituteId}
+    path: semesterId  : Guid — семестр
+          instituteId : Guid — институт
+    body: нет
+
+  Поведение:
+    - учитывает ресурсы, уже занятые другими институтами этого семестра (жёстко);
+    - переносит предпочтения из расписания прошлого семестра (мягкий якорь);
+    - удаляет текущее расписание института и создаёт новое как ЧЕРНОВИК (Draft).
+
+  200: GenerateScheduleResult
+    {
+      "status":          string, // Optimal | Feasible | Infeasible | Unknown
+      "lessonsCreated":  int,    // число созданных занятий (0, если решение не найдено)
+      "objectiveValue":  number, // значение целевой функции (сумма штрафов)
+      "wallTimeSeconds": number  // время работы солвера
+    }
+  // При status Infeasible/Unknown текущее расписание института НЕ изменяется.
+
+
+--------------------------------------------------------------------------------
+3. СОХРАНЕНИЕ (ПУБЛИКАЦИЯ) РАСПИСАНИЯ                          [нужно реализовать]
+--------------------------------------------------------------------------------
+  Перевод черновика института из Draft в Current.
+
+  POST /api/lessons/publish/semester/{semesterId}/institute/{instituteId}
+    path: semesterId  : Guid
+          instituteId : Guid
+    body: нет
+
+  Поведение:
+    - все занятия института со статусом Draft переводятся в Current;
+    - ранее опубликованное расписание института заменяется.
+
+  200:
+    {
+      "published": int   // число опубликованных занятий
+    }
+  404: если черновик института отсутствует
+
+
+--------------------------------------------------------------------------------
+4. СОЗДАНИЕ ЗАНЯТИЯ                                            [реализовано]
+--------------------------------------------------------------------------------
+
+  POST /api/lessons
+    body: CreateLessonCommand
+      {
+        "classroomId": Guid,
+        "timeSlotId":  Guid,
+        "streamId":    Guid
+      }
+    // Создаётся как черновик (Version = Draft).
+
+  201: Guid (идентификатор занятия), заголовок Location → GET /api/lessons/{id}
+  400: ошибка валидации
+
+  Сопутствующий:
+  GET /api/lessons/{id}  →  200 LessonView | 404
+
+
+--------------------------------------------------------------------------------
+5. ИЗМЕНЕНИЯ В НАГРУЗКЕ ВУЗА                                   [нужно реализовать]
+--------------------------------------------------------------------------------
+  Журнал изменений нагрузки (SemesterLog / WeekLog) с фильтрами.
+
+  GET /api/workload/changes
+    query (все необязательные, комбинируются по И):
+      teacherId : Guid?
+      groupId   : Guid?
+      subjectId : Guid?
+      semesterId: Guid?     — ограничить семестром
+      from      : DateTime? — нижняя граница TimeStamp
+      to        : DateTime? — верхняя граница TimeStamp
+
+  200: WorkloadChange[]
+    {
+      "action":     int,      // 0 Add | 1 Update | 2 Delete
+      "oldValue":   int,       // часов до изменения
+      "newValue":   int,       // часов после изменения
+      "timeStamp":  DateTime,
+      "scope":      string,    // "Semester" | "Week"
+      "teacherId":  Guid,
+      "subjectId":  Guid,
+      "groupId":    Guid,
+      "curriculumId": Guid
+    }
+  // Сортировка по timeStamp по убыванию.

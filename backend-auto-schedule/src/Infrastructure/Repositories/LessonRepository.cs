@@ -31,4 +31,12 @@ public class  LessonRepository: ILessonRepository
     
     public async Task<IReadOnlyList<Lesson>> GetLessonByRoomAsync(Guid classroomId, CancellationToken cancellationToken) =>
         await _context.Lessons.Where(l => l.ClassroomId == classroomId).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Lesson>> GetByInstituteAsync(Guid instituteId, CancellationToken cancellationToken) =>
+        await _context.Lessons
+            .Where(l => l.Stream.StreamGroups
+                .Any(sg => sg.Group.Course.Degree.InstituteId == instituteId))
+            .ToListAsync(cancellationToken);
+
+    public void RemoveRange(IEnumerable<Lesson> lessons) => _context.Lessons.RemoveRange(lessons);
 }
