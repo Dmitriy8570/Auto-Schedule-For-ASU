@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Search, BarChart2, FileText, Users, BookOpen } from 'lucide-vue-next'
 import BaseInput from './BaseInput.vue'
+import { lookups } from '../api/lookups'
+import { workloads } from '../api/workloads'
+import { ApiError } from '../api/http'
+import type { InstituteDto, DepartmentDto, TeacherDto, WorkloadItemDto, LessonType } from '../api/types'
 
-// Состояние фильтров
+// --- Справочники для фильтров ---
+const institutes = ref<InstituteDto[]>([])
+const departments = ref<DepartmentDto[]>([])
+const teachers = ref<TeacherDto[]>([])
+
 const selectedInstitute = ref('')
 const selectedDept = ref('')
 const selectedTeacher = ref('')
@@ -11,33 +19,96 @@ const searchQuery = ref('')
 
 const isInstituteSelected = computed(() => selectedInstitute.value !== '')
 
-// Списки для фильтров
-const institutes = ['ММИГ', 'ИТКН', 'ИНЭУ']
-const departments = ['Кафедра высшей математики', 'Кафедра АСУ', 'Кафедра физики']
-const teachers = ['Иванов Иван Иванович', 'Петрова Мария Сергеевна', 'Сидоров Петр Александрович']
+// --- Данные нагрузки ---
+const items = ref<WorkloadItemDto[]>([])
+const loading = ref(false)
+const error = ref('')
+const page = ref(1)
+const pageSize = 20
+const totalPages = ref(1)
+const totalItems = ref(0)
 
-// Данные для таблицы (как на твоем скриншоте)
-const loadData = [
-  { id: 1, teacher: 'Иванов Иван Иванович', subject: 'Математический анализ', group: 'ИВТ-301', type: 'ЛЕК', total: 36, hours: 2 },
-  { id: 2, teacher: 'Иванов Иван Иванович', subject: 'Математический анализ', group: 'ИВТ-301', type: 'ПРАК', total: 36, hours: 2 },
-  { id: 3, teacher: 'Петрова Мария Сергеевна', subject: 'Программирование', group: 'ИВТ-301', type: 'ЛЕК', total: 36, hours: 2 },
-  { id: 4, teacher: 'Сидоров Петр Александрович', subject: 'Базы данных', group: 'ПИ-201', type: 'ЛЕК', total: 36, hours: 2 },
-]
+// Сетка недель: максимальная неделя среди строк (минимум 18 для стабильного вида).
+const weeks = computed(() => {
+  const max = items.value.reduce(
+    (m, row) => Math.max(m, ...row.weeklyHours.map(w => w.week), 0), 0)
+  return Array.from({ length: Math.max(max, 18) }, (_, i) => i + 1)
+})
 
-// 18 недель
-const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
+const totalHours = computed(() => items.value.reduce((sum, r) => sum + r.semesterHours, 0))
+
+const lessonTypeShort: Record<LessonType, string> = {
+  Lecture: 'ЛЕК', Seminar: 'СЕМ', Laboratory: 'ЛАБ', Consultation: 'КОНС', Examination: 'ЭКЗ',
+}
+const hoursOnWeek = (row: WorkloadItemDto, week: number): number =>
+  row.weeklyHours.find(w => w.week === week)?.hours ?? 0
+
+async function loadWorkloads() {
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await workloads.list({
+      instituteId: selectedInstitute.value || undefined,
+      departmentId: selectedDept.value || undefined,
+      teacherId: selectedTeacher.value || undefined,
+      subjectSearch: searchQuery.value.trim() || undefined,
+      page: page.value,
+      pageSize,
+    })
+    items.value = result.items
+    totalPages.value = result.totalPages
+    totalItems.value = result.totalItems
+  } catch (e) {
+    error.value = e instanceof ApiError ? e.message : 'Не удалось загрузить нагрузку.'
+    items.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// Каскад: при смене института грузим его кафедры/преподавателей и сбрасываем вложенные фильтры.
+watch(selectedInstitute, async (id) => {
+  selectedDept.value = ''
+  selectedTeacher.value = ''
+  departments.value = []
+  teachers.value = []
+  if (id) {
+    [departments.value, teachers.value] = await Promise.all([
+      lookups.departments(id),
+      lookups.teachers({ instituteId: id }),
+    ])
+  }
+})
+
+// Любая смена фильтра — на первую страницу и перезагрузка (поиск с задержкой).
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch([selectedInstitute, selectedDept, selectedTeacher], () => { page.value = 1; loadWorkloads() })
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { page.value = 1; loadWorkloads() }, 350)
+})
+watch(page, loadWorkloads)
+
+function goToPage(p: number) {
+  if (p >= 1 && p <= totalPages.value) page.value = p
+}
+
+onMounted(async () => {
+  institutes.value = await lookups.institutes().catch(() => [])
+  await loadWorkloads()
+})
 </script>
 
 <template>
   <div class="load-container">
-    
+
     <header class="load-header">
       <div class="title-group">
         <BarChart2 :size="24" color="#1a4d9c" />
         <h2>Нагрузка (ММИС)</h2>
       </div>
       <div class="total-hours-badge">
-        <FileText :size="16" /> Всего часов: 144
+        <FileText :size="16" /> Всего часов на странице: {{ totalHours }}
       </div>
     </header>
 
@@ -45,24 +116,24 @@ const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
       <div class="filter-group">
         <label>Институт</label>
         <select v-model="selectedInstitute" class="select-dropdown">
-          <option value="" disabled selected>Все институты</option>
-          <option v-for="inst in institutes" :key="inst" :value="inst">{{ inst }}</option>
+          <option value="">Все институты</option>
+          <option v-for="inst in institutes" :key="inst.id" :value="inst.id">{{ inst.name }}</option>
         </select>
       </div>
 
       <div class="filter-group">
         <label>Кафедра</label>
         <select v-model="selectedDept" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="" disabled selected>Все кафедры</option>
-          <option v-for="dept in departments" :key="dept" :value="dept">{{ dept }}</option>
+          <option value="">Все кафедры</option>
+          <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
         </select>
       </div>
 
       <div class="filter-group">
         <label>Преподаватель</label>
         <select v-model="selectedTeacher" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="" disabled selected>Все преподаватели</option>
-          <option v-for="t in teachers" :key="t" :value="t">{{ t }}</option>
+          <option value="">Все преподаватели</option>
+          <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
         </select>
       </div>
 
@@ -75,7 +146,11 @@ const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
     </div>
 
     <div class="table-wrapper">
-      <table class="load-table">
+      <div v-if="loading" class="state-msg">Загрузка…</div>
+      <div v-else-if="error" class="state-msg state-error">{{ error }}</div>
+      <div v-else-if="items.length === 0" class="state-msg">Нет данных по выбранным фильтрам.</div>
+
+      <table v-else class="load-table">
         <thead>
           <tr>
             <th class="main-th">Преподаватель / Предмет</th>
@@ -86,36 +161,42 @@ const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in loadData" :key="row.id" class="data-row">
-            
+          <tr v-for="row in items" :key="row.curriculumId" class="data-row">
+
             <td class="main-td">
               <div class="teacher-name">{{ row.teacher }}</div>
               <div class="subject-name">
                 <BookOpen :size="14" /> {{ row.subject }}
               </div>
             </td>
-            
+
             <td>
               <div class="group-cell">
                 <Users :size="14" color="#94a3b8" /> {{ row.group }}
               </div>
             </td>
-            
+
             <td>
-              <span class="type-badge" :class="row.type === 'ЛЕК' ? 'badge-lek' : 'badge-prak'">
-                {{ row.type }}
+              <span class="type-badge" :class="row.lessonType === 'Lecture' ? 'badge-lek' : 'badge-prak'">
+                {{ lessonTypeShort[row.lessonType] }}
               </span>
             </td>
-            
-            <td class="total-td"><b>{{ row.total }}</b></td>
-            
+
+            <td class="total-td"><b>{{ row.semesterHours }}</b></td>
+
             <td v-for="w in weeks" :key="w" class="week-td">
-              {{ row.hours }}
+              {{ hoursOnWeek(row, w) || '' }}
             </td>
 
           </tr>
         </tbody>
       </table>
+
+      <div v-if="!loading && !error && totalPages > 1" class="pager">
+        <button class="page-btn" :disabled="page <= 1" @click="goToPage(page - 1)">Назад</button>
+        <span class="page-text">Стр. {{ page }} / {{ totalPages }} · всего {{ totalItems }}</span>
+        <button class="page-btn" :disabled="page >= totalPages" @click="goToPage(page + 1)">Вперёд</button>
+      </div>
     </div>
   </div>
 </template>
@@ -192,6 +273,9 @@ label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: upper
   padding: 0 24px 24px 24px;
 }
 
+.state-msg { padding: 40px 0; text-align: center; color: #64748b; font-size: 14px; }
+.state-error { color: #dc2626; }
+
 .load-table {
   width: 100%;
   border-collapse: collapse;
@@ -259,4 +343,14 @@ label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: upper
 .week-td { color: #1a4d9c; font-weight: 500; }
 
 .data-row:hover td { background-color: #f8fafc; }
+
+/* Пагинация */
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 16px; }
+.page-text { font-size: 13px; color: #64748b; }
+.page-btn {
+  background: white; border: 1px solid #cbd5e1; border-radius: 8px;
+  padding: 6px 14px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) { background-color: #f8fafc; border-color: #94a3b8; }
+.page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

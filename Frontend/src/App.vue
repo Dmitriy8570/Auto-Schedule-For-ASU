@@ -1,31 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import TheHeader from './components/TheHeader.vue'
 import LoginCard from './components/LoginCard.vue'
 import TheFooter from './components/TheFooter.vue'
 import MainDashboard from './components/MainDashboard.vue'
+import { useAuth } from './composables/useAuth'
 
-
-const isLoggedIn = ref(false)
-
-// Функция входа
-const handleLogin = () => {
-  isLoggedIn.value = true
-}
-
-const handleLogout = () => {
-  isLoggedIn.value = false
-}
+// Экран определяется наличием действительной сессии (JWT в localStorage).
+const { isAuthenticated, logout } = useAuth()
 </script>
 
 <template>
-  <div v-if="!isLoggedIn" class="login-page">
+  <div v-if="!isAuthenticated" class="login-page">
     <TheHeader />
-    <LoginCard @login="handleLogin" />
+    <LoginCard />
     <TheFooter />
   </div>
 
-  <MainDashboard v-else @logout="handleLogout" />
+  <MainDashboard v-else @logout="logout" />
 </template>
 
 <style scoped>
