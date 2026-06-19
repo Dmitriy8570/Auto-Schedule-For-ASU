@@ -25,6 +25,13 @@ export interface TeacherDto { id: string; name: string; departmentId: string; de
 export interface BuildingDto { id: string; name: string }
 export interface RoomDto { id: string; name: string; capacity: number; buildingId: string; buildingName: string }
 
+// --- Управление объектами (вкладка «Ограничения») ---
+export interface EquipmentDto { id: string; name: string }
+
+export type ConstraintType =
+  | 'TeacherGap' | 'StudentGap' | 'ClassroomAvailability' | 'TeacherAvailability'
+export interface ConstraintConfigDto { id: string; constraintType: ConstraintType; penalty: number }
+
 // --- Нагрузка ---
 export type LessonType = 'Lecture' | 'Seminar' | 'Laboratory' | 'Consultation' | 'Examination'
 
@@ -60,14 +67,67 @@ export interface WorkloadChangeDto {
   streamId: string
 }
 
+// --- Календарь ---
+export type WeekType = 'Red' | 'Blue'
+
+export interface SemesterDto {
+  id: string
+  startDate: string
+  endDate: string
+  isCurrent: boolean
+  weekCount: number
+}
+
+export interface WeekDto {
+  id: string
+  number: number
+  weekType: WeekType
+  startDate: string
+  endDate: string
+}
+
+export interface TimeSlotDto {
+  id: string
+  dayOfWeek: number   // 0 = Пн … 5 = Сб
+  number: number      // номер пары
+}
+
+export interface CurriculumOptionDto {
+  id: string
+  subjectName: string
+  teacherId: string
+  teacherName: string
+  lessonType: DomainLessonType
+  streamId: string
+  groupNames: string
+}
+
 // --- Расписание ---
 export type ScheduleVersion = 'Current' | 'Draft'
+// Доменный тип занятия (как приходит с бэкенда; отличается от LessonType нагрузки лишь именами enum).
+export type DomainLessonType =
+  | 'Lecture' | 'Seminar' | 'Laboratory' | 'Consultation' | 'Examination'
+
 export interface LessonDTO {
   id: string
   classroomId: string
   timeSlotId: string
   streamId: string
+  curriculumId: string | null
   version: ScheduleVersion
+  // Обогащённые поля для сетки.
+  dayOfWeek: number        // 0 = Пн … 5 = Сб
+  pairNumber: number       // номер пары (1..8)
+  weekId: string
+  weekType: WeekType
+  subjectName: string | null
+  teacherId: string | null
+  teacherName: string | null
+  lessonType: DomainLessonType | null
+  classroomName: string
+  buildingName: string
+  groupNames: string
+  studentsCount: number
 }
 
 export interface GenerateScheduleResult {

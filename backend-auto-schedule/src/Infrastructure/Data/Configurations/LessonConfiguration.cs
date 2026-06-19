@@ -32,6 +32,15 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
                .HasForeignKey(l => l.SemesterId)
                .OnDelete(DeleteBehavior.Cascade);
 
+        // Учебный план занятия (дисциплина/преподаватель/тип). Необязателен; при удалении
+        // плана связь обнуляется (SetNull), чтобы опубликованное занятие пережило пересоздание
+        // нагрузки при синхронизации с ММИС. Обратной коллекции на Curriculum нет.
+        builder.HasOne(l => l.Curriculum)
+               .WithMany()
+               .HasForeignKey(l => l.CurriculumId)
+               .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(l => l.SemesterId);
+        builder.HasIndex(l => l.CurriculumId);
     }
 }

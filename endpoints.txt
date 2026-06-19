@@ -35,16 +35,28 @@
     query: weekId      : Guid?
   200: LessonView[]
 
-  LessonView:
+  LessonView (обогащённый — для раскладки в сетке «дни × пары»):
     {
-      "id":          Guid,
-      "classroomId": Guid,
-      "timeSlotId":  Guid,
-      "streamId":    Guid,
-      "version":     int    // 0 Current | 1 Draft
+      "id":            Guid,
+      "classroomId":   Guid,
+      "timeSlotId":    Guid,
+      "streamId":      Guid,
+      "version":       string,  // "Current" | "Draft"
+      "dayOfWeek":     int,     // 0 Пн … 5 Сб (WeekDayType)
+      "pairNumber":    int,     // номер пары (1..8)
+      "weekId":        Guid,
+      "weekType":      string,  // "Red" | "Blue"
+      "subjectName":   string?, // null, если у занятия не задан учебный план
+      "teacherId":     Guid?,
+      "teacherName":   string?,
+      "lessonType":    string?, // Lecture|Seminar|Laboratory|Consultation|Examination
+      "classroomName": string,
+      "buildingName":  string,
+      "groupNames":    string,  // группы потока через запятую
+      "studentsCount": int
     }
-  // Примечание: при необходимости расширить отображаемыми полями
-  // (день недели, номер пары, дисциплина, корпус, ФИО преподавателя).
+  // Обогащение берётся из навигаций: TimeSlot→WeekDay→Week (день/пара/неделя/тип),
+  // Curriculum→Subject/Teacher (дисциплина/ФИО/тип), Classroom→Building, Stream→Groups.
 
 
 --------------------------------------------------------------------------------
@@ -100,10 +112,11 @@
   POST /api/lessons
     body: CreateLessonCommand
       {
-        "classroomId": Guid,
-        "timeSlotId":  Guid,
-        "streamId":    Guid,
-        "semesterId":  Guid
+        "classroomId":  Guid,
+        "timeSlotId":   Guid,
+        "streamId":     Guid,
+        "semesterId":   Guid,
+        "curriculumId": Guid?   // учебный план (дисциплина/преподаватель/тип); необязателен
       }
     // Создаётся как черновик (Version = Draft).
 
@@ -112,6 +125,9 @@
 
   Сопутствующий:
   GET /api/lessons/{id}  →  200 LessonView | 404
+
+  Удаление занятия:                                            [реализовано]
+  DELETE /api/lessons/{id}  →  204 No Content | 404
 
 
 --------------------------------------------------------------------------------
@@ -174,3 +190,55 @@
 
   typeDegree: Secondary|Bachelor|Specialist|Master|Postgraduate|Doctoral
   shift:      First|Second|Evening
+
+
+--------------------------------------------------------------------------------
+7. КАЛЕНДАРЬ (выбор периода расписания)                        [реализовано]
+--------------------------------------------------------------------------------
+  Нужен для выбора семестра и недели в сетке расписания (ось недель weekId).
+
+  GET /api/semesters
+    -> SemesterDto[] (свежие сверху)
+       { id: Guid, startDate, endDate, isCurrent: bool, weekCount: int }
+
+  GET /api/weeks?semesterId={semesterId}
+    -> WeekDto[] (по возрастанию даты начала)
+       { id: Guid, number: int, weekType: "Red"|"Blue", startDate, endDate }
+    // number — порядковый номер недели в семестре (1..N); UI оперирует им.
+
+  GET /api/timeslots?weekId={weekId}                            [реализовано]
+    -> TimeSlotDto[] { id: Guid, dayOfWeek: int (0 Пн..5 Сб), number: int }
+    // Сопоставление ячейки сетки (день, пара) → TimeSlotId при добавлении пары.
+
+  GET /api/curriculums?groupId=&teacherId=&semesterId=          [реализовано]
+    -> CurriculumOptionDto[] (для формы «добавить пару»; все фильтры опциональны)
+       { id, subjectName, teacherId, teacherName,
+         lessonType: Lecture|Seminar|Laboratory|Consultation|Examination,
+         streamId, groupNames }
+
+
+--------------------------------------------------------------------------------
+8. УПРАВЛЕНИЕ ОБЪЕКТАМИ (вкладка «Ограничения»)                [реализовано]
+--------------------------------------------------------------------------------
+  CRUD аудиторий и оборудования + настройка весов мягких ограничений.
+
+  Аудитории:
+  GET    /api/classrooms?buildingId=   -> RoomDto[]
+  POST   /api/classrooms               body { name, capacity, buildingId }  -> 200 RoomDto
+  PUT    /api/classrooms/{id}          body { name, capacity, buildingId }  -> 200 RoomDto | 404
+  DELETE /api/classrooms/{id}          -> 204 | 404
+    RoomDto: { id, name, capacity, buildingId, buildingName }
+
+  Оборудование:
+  GET    /api/equipments               -> EquipmentDto[] { id, name }
+  POST   /api/equipments               body { name }      -> 200 EquipmentDto
+  PUT    /api/equipments/{id}          body { name }      -> 200 EquipmentDto | 404
+  DELETE /api/equipments/{id}          -> 204 | 404
+
+  Веса мягких ограничений:
+  GET /api/constraints                 -> ConstraintConfigDto[]
+       { id, constraintType: TeacherGap|StudentGap|ClassroomAvailability|TeacherAvailability,
+         penalty: int }
+  PUT /api/constraints/{id}            body { penalty }   -> 200 ConstraintConfigDto | 404
+
+  400 (ValidationProblemDetails) — пустое имя, неположительная вместимость, отрицательный вес.

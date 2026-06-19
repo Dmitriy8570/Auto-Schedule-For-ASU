@@ -81,4 +81,8 @@ export const http = {
     request<T>(path, { method: 'GET', query, signal }),
   post: <T>(path: string, body?: unknown, query?: RequestOptions['query']) =>
     request<T>(path, { method: 'POST', body, query }),
+  put: <T>(path: string, body?: unknown, query?: RequestOptions['query']) =>
+    request<T>(path, { method: 'PUT', body, query }),
+  del: <T>(path: string, query?: RequestOptions['query']) =>
+    request<T>(path, { method: 'DELETE', query }),
 }

@@ -22,14 +22,7 @@ public class GetLessonByTeacherQueryHandler : IRequestHandler<GetLessonByTeacher
     public async Task<IReadOnlyList<LessonDTO>> Handle(GetLessonByTeacherQuery request, CancellationToken cancellationToken)
     {
         var lessons = await _lessonRepository.GetLessonByTeacherAsync(request.TeacherId, request.WeekId, cancellationToken);
-        return lessons?.Select(lesson => new LessonDTO
-        {
-            Id = lesson.Id,
-            ClassroomId = lesson.ClassroomId,
-            TimeSlotId = lesson.TimeSlotId,
-            StreamId = lesson.StreamId,
-            Version = lesson.Version
-        }).ToList() ?? new List<LessonDTO>();
+        return lessons?.Select(LessonDTO.From).ToList() ?? new List<LessonDTO>();
     }
 }
 

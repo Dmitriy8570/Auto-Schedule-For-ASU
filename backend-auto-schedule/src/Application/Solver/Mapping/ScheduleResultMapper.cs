@@ -16,11 +16,13 @@ public sealed class ScheduleResultMapper : IScheduleResultMapper
         var lessons = new List<Lesson>(assignments.Count);
         foreach (var a in assignments)
         {
-            var streamId = data.SemesterWorkloads[a.Workload].Curriculum.StreamId;
+            var curriculum = data.SemesterWorkloads[a.Workload].Curriculum;
+            var streamId = curriculum.StreamId;
             var classroomId = data.Classrooms[a.Room].Id;
             var timeSlotId = data.TimeSlots[a.Slot].Id;
 
-            lessons.Add(Lesson.Create(Guid.NewGuid(), classroomId, timeSlotId, streamId, data.SemesterId));
+            lessons.Add(Lesson.Create(
+                Guid.NewGuid(), classroomId, timeSlotId, streamId, data.SemesterId, curriculum.Id));
         }
         return lessons;
     }

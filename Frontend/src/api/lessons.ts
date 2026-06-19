@@ -3,6 +3,14 @@ import type { LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult 
 
 export type ScheduleEntity = 'teacher' | 'group' | 'room'
 
+export interface CreateLessonRequest {
+  classroomId: string
+  timeSlotId: string
+  streamId: string
+  semesterId: string
+  curriculumId?: string
+}
+
 export const lessons = {
   byTeacher: (teacherId: string, weekId?: string) =>
     http.get<LessonDTO[]>(`/lessons/by-teacher/${teacherId}`, { weekId }),
@@ -18,6 +26,12 @@ export const lessons = {
     if (entity === 'group') return lessons.byGroup(id, weekId)
     return lessons.byRoom(id, weekId)
   },
+
+  // Создать занятие (черновик). Возвращает GUID нового занятия.
+  create: (body: CreateLessonRequest) => http.post<string>('/lessons', body),
+
+  // Удалить занятие.
+  remove: (id: string) => http.del<void>(`/lessons/${id}`),
 
   // Генерация черновика расписания института на семестр.
   generateForInstitute: (semesterId: string, instituteId: string) =>

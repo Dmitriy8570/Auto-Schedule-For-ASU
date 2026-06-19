@@ -222,6 +222,9 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("ClassroomId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CurriculumId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("SemesterId")
                         .HasColumnType("uuid");
 
@@ -237,6 +240,8 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClassroomId");
+
+                    b.HasIndex("CurriculumId");
 
                     b.HasIndex("SemesterId");
 
@@ -704,6 +709,11 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.workload.Curriculum", "Curriculum")
+                        .WithMany()
+                        .HasForeignKey("CurriculumId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Domain.calendar.Semester", null)
                         .WithMany()
                         .HasForeignKey("SemesterId")
@@ -723,6 +733,8 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Classroom");
+
+                    b.Navigation("Curriculum");
 
                     b.Navigation("Stream");
 

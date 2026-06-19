@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { 
-  Settings2, Search, User, MapPin, Users, BookOpen, Database, 
-  ChevronDown, GraduationCap, Building2, Layers, Filter, Trash2, Plus, Wrench, Save
+import { ref, computed, onMounted } from 'vue'
+import {
+  Settings2, Search, User, MapPin, Users, BookOpen, Database,
+  ChevronDown, GraduationCap, Building2, Layers, Filter, Trash2, Plus, Wrench, Save, SlidersHorizontal
 } from 'lucide-vue-next'
 import BaseInput from './BaseInput.vue'
+import { lookups } from '../api/lookups'
+import { management } from '../api/management'
+import { ApiError } from '../api/http'
+import type { RoomDto, EquipmentDto, ConstraintConfigDto, BuildingDto, ConstraintType } from '../api/types'
 
 const searchQuery = ref('')
 
 // Текущая активная вкладка ('teachers', 'rooms', 'groups', 'load', 'objects')
-const activeTab = ref('objects') 
+const activeTab = ref('objects')
 
 // ==========================================
 // ДАННЫЕ
@@ -48,38 +52,96 @@ const loadListData = ref([
 ])
 
 // ==========================================
-// ЛОГИКА ОБЪЕКТОВ
+// ЛОГИКА ОБЪЕКТОВ (реальные данные с бэкенда)
 // ==========================================
-const activeObjectTab = ref('equipment') // Откроем сразу Оборудование
-const isCreatingRoom = ref(false) 
-const isCreatingEquipment = ref(false) // УПРАВЛЯЕТ ФОРМОЙ ОБОРУДОВАНИЯ
+const activeObjectTab = ref<'audiences' | 'equipment' | 'weights'>('audiences')
+const isCreatingRoom = ref(false)
+const isCreatingEquipment = ref(false)
+const objectsError = ref('')
 
-const objectsListData = ref([
-  { id: 1, name: 'Ауд. 305', desc: 'Главный корпус - 30 мест' },
-  { id: 2, name: 'Ауд. 308', desc: 'Главный корпус - 30 мест' },
-  { id: 3, name: 'Ауд. 401', desc: 'Главный корпус - 100 мест' },
-  { id: 4, name: 'Ауд. 215', desc: 'Технический корпус - 20 мест' },
-  { id: 5, name: 'Ауд. Актовый зал', desc: 'Главный корпус - 500 мест' }
-])
+const classrooms = ref<RoomDto[]>([])
+const equipments = ref<EquipmentDto[]>([])
+const buildings = ref<BuildingDto[]>([])
+const constraints = ref<ConstraintConfigDto[]>([])
 
-const equipmentListData = ref([
-  'Проектор', 'Интерактивная доска', 'Компьютеры', 'Лабораторный стенд', 'Осциллограф', 
-  '3D-принтер', 'Микроскоп', 'Графический планшет', 'Звуковое оборудование', 'Видеокамера', 
-  'Химический вытяжной шкаф', 'Паяльная станция', 'Маркерная доска', 'Экран для проектора', 
-  'Принтер', 'Сканер'
-])
-
+// Форма аудитории.
+const roomForm = ref<{ id: string | null; name: string; buildingId: string; capacity: number }>(
+  { id: null, name: '', buildingId: '', capacity: 30 })
 const newEquipmentName = ref('')
 
-// Функция сохранения оборудования из правой формы
-const saveEquipment = () => {
-  const name = newEquipmentName.value.trim()
-  if (name) {
-    equipmentListData.value.unshift(name) // Добавляем в начало списка
-  }
-  newEquipmentName.value = '' // Очищаем поле
-  isCreatingEquipment.value = false // Закрываем форму
+// Человекочитаемые названия типов мягких ограничений.
+const constraintLabels: Record<ConstraintType, string> = {
+  TeacherGap: 'Окна в расписании преподавателя',
+  StudentGap: 'Окна в расписании группы',
+  ClassroomAvailability: 'Недоступная аудитория',
+  TeacherAvailability: 'Недоступный слот преподавателя',
 }
+
+async function loadObjects() {
+  objectsError.value = ''
+  try {
+    [classrooms.value, equipments.value, buildings.value, constraints.value] = await Promise.all([
+      management.classrooms(), management.equipments(), lookups.buildings(), management.constraints(),
+    ])
+  } catch (e) {
+    objectsError.value = e instanceof ApiError ? e.message : 'Не удалось загрузить данные.'
+  }
+}
+
+function openRoomForm() {
+  roomForm.value = { id: null, name: '', buildingId: buildings.value[0]?.id ?? '', capacity: 30 }
+  isCreatingRoom.value = true
+}
+function editRoom(r: RoomDto) {
+  roomForm.value = { id: r.id, name: r.name, buildingId: r.buildingId, capacity: r.capacity }
+  isCreatingRoom.value = true
+}
+async function saveRoom() {
+  const f = roomForm.value
+  if (!f.name.trim() || !f.buildingId) { objectsError.value = 'Укажите название и корпус.'; return }
+  objectsError.value = ''
+  try {
+    const body = { name: f.name.trim(), capacity: Number(f.capacity), buildingId: f.buildingId }
+    if (f.id) await management.updateClassroom(f.id, body)
+    else await management.createClassroom(body)
+    isCreatingRoom.value = false
+    classrooms.value = await management.classrooms()
+  } catch (e) {
+    objectsError.value = e instanceof ApiError ? e.message : 'Не удалось сохранить аудиторию.'
+  }
+}
+async function deleteRoom(id: string) {
+  if (!confirm('Удалить аудиторию?')) return
+  try { await management.deleteClassroom(id); classrooms.value = await management.classrooms() }
+  catch (e) { objectsError.value = e instanceof ApiError ? e.message : 'Не удалось удалить аудиторию.' }
+}
+
+async function saveEquipment() {
+  const name = newEquipmentName.value.trim()
+  if (!name) { isCreatingEquipment.value = false; return }
+  objectsError.value = ''
+  try {
+    await management.createEquipment(name)
+    newEquipmentName.value = ''
+    isCreatingEquipment.value = false
+    equipments.value = await management.equipments()
+  } catch (e) {
+    objectsError.value = e instanceof ApiError ? e.message : 'Не удалось добавить оборудование.'
+  }
+}
+async function deleteEquipment(id: string) {
+  if (!confirm('Удалить тип оборудования?')) return
+  try { await management.deleteEquipment(id); equipments.value = await management.equipments() }
+  catch (e) { objectsError.value = e instanceof ApiError ? e.message : 'Не удалось удалить оборудование.' }
+}
+
+async function saveConstraint(c: ConstraintConfigDto) {
+  objectsError.value = ''
+  try { await management.updateConstraint(c.id, Number(c.penalty)) }
+  catch (e) { objectsError.value = e instanceof ApiError ? e.message : 'Не удалось сохранить вес.' }
+}
+
+onMounted(loadObjects)
 
 // ==========================================
 // ВСПОМОГАТЕЛЬНАЯ ЛОГИКА
@@ -142,8 +204,9 @@ const getBadgeClass = (type: string) => {
       <div v-if="activeTab === 'objects'" class="objects-summary">
         <Database :size="48" color="#cbd5e1" class="summary-icon" />
         <p class="summary-title">Управление объектами системы</p>
-        <div class="summary-row"><span>Аудиторий:</span> <b>5</b></div>
-        <div class="summary-row"><span>Типов оборудования:</span> <b>{{ equipmentListData.length }}</b></div>
+        <div class="summary-row"><span>Аудиторий:</span> <b>{{ classrooms.length }}</b></div>
+        <div class="summary-row"><span>Типов оборудования:</span> <b>{{ equipments.length }}</b></div>
+        <div class="summary-row"><span>Весов ограничений:</span> <b>{{ constraints.length }}</b></div>
       </div>
 
       <div v-if="activeTab !== 'objects'" class="list-header" :class="{ 'mt-4': activeTab === 'load' }">
@@ -235,40 +298,61 @@ const getBadgeClass = (type: string) => {
             <div class="wk-tab" :class="{ active: activeObjectTab === 'equipment' }" @click="activeObjectTab = 'equipment'; isCreatingEquipment = false">
               <Wrench :size="16" /> Оборудование
             </div>
+            <div class="wk-tab" :class="{ active: activeObjectTab === 'weights' }" @click="activeObjectTab = 'weights'">
+              <SlidersHorizontal :size="16" /> Веса
+            </div>
           </header>
 
           <div class="sub-sidebar-content">
-            
+
+            <div v-if="objectsError" class="objects-error">{{ objectsError }}</div>
+
             <template v-if="activeObjectTab === 'audiences'">
-              <button class="create-btn" @click="isCreatingRoom = true"><Plus :size="16" /> Создать аудиторию</button>
+              <button class="create-btn" @click="openRoomForm"><Plus :size="16" /> Создать аудиторию</button>
+              <div v-if="classrooms.length === 0" class="muted-note">Аудиторий пока нет.</div>
               <div class="management-list">
-                <div v-for="obj in objectsListData" :key="obj.id" class="management-item">
+                <div v-for="obj in classrooms" :key="obj.id" class="management-item" @click="editRoom(obj)">
                   <div class="m-info">
                     <div class="m-title">{{ obj.name }}</div>
-                    <div class="m-desc">{{ obj.desc }}</div>
+                    <div class="m-desc">{{ obj.buildingName }} — {{ obj.capacity }} мест</div>
                   </div>
-                  <button class="delete-btn"><Trash2 :size="16" /></button>
+                  <button class="delete-btn" @click.stop="deleteRoom(obj.id)"><Trash2 :size="16" /></button>
                 </div>
               </div>
             </template>
 
             <template v-if="activeObjectTab === 'equipment'">
               <div class="add-equipment-form">
-                <input 
-                  type="text" 
-                  v-model="newEquipmentName" 
-                  @keyup.enter="isCreatingEquipment = true" 
-                  placeholder="Название оборудования..." 
-                  class="eq-input" 
+                <input
+                  type="text"
+                  v-model="newEquipmentName"
+                  @keyup.enter="saveEquipment"
+                  placeholder="Название оборудования..."
+                  class="eq-input"
                 />
-                <button class="add-eq-btn" @click="isCreatingEquipment = true">
+                <button class="add-eq-btn" @click="saveEquipment">
                   <Plus :size="16" />
                 </button>
               </div>
-              <div class="section-label">БАЗОВОЕ</div>
+              <div v-if="equipments.length === 0" class="muted-note">Оборудование не добавлено.</div>
               <div class="equipment-list">
-                <div v-for="(item, index) in equipmentListData" :key="index" class="equipment-item">
-                  <Wrench :size="14" color="#94a3b8" /><span>{{ item }}</span>
+                <div v-for="item in equipments" :key="item.id" class="equipment-item">
+                  <Wrench :size="14" color="#94a3b8" /><span class="eq-name">{{ item.name }}</span>
+                  <button class="delete-btn eq-del" @click="deleteEquipment(item.id)"><Trash2 :size="14" /></button>
+                </div>
+              </div>
+            </template>
+
+            <template v-if="activeObjectTab === 'weights'">
+              <div class="section-label">ВЕСА МЯГКИХ ОГРАНИЧЕНИЙ</div>
+              <div v-if="constraints.length === 0" class="muted-note">Веса не настроены.</div>
+              <div class="weights-list">
+                <div v-for="c in constraints" :key="c.id" class="weight-item">
+                  <div class="w-label">{{ constraintLabels[c.constraintType] || c.constraintType }}</div>
+                  <div class="w-controls">
+                    <input type="number" min="0" v-model.number="c.penalty" class="w-input" />
+                    <button class="w-save" @click="saveConstraint(c)"><Save :size="14" /></button>
+                  </div>
                 </div>
               </div>
             </template>
@@ -282,24 +366,29 @@ const getBadgeClass = (type: string) => {
               <header class="form-header">
                 <div class="form-icon-box bg-purple-light"><MapPin :size="24" color="#a855f7" /></div>
                 <div class="form-title-group">
-                  <h3>Новая аудитория</h3>
+                  <h3>{{ roomForm.id ? 'Редактирование аудитории' : 'Новая аудитория' }}</h3>
                   <p>Заполните параметры аудитории</p>
                 </div>
               </header>
               <div class="form-grid">
-                <div class="form-group"><label>НОМЕР / НАЗВАНИЕ</label><input type="text" placeholder="например, 305" class="custom-input" /></div>
+                <div class="form-group"><label>НОМЕР / НАЗВАНИЕ</label>
+                  <input type="text" v-model="roomForm.name" placeholder="например, 305" class="custom-input" />
+                </div>
                 <div class="form-group">
                   <label>КОРПУС</label>
-                  <select class="custom-select"><option>Главный корпус</option><option>Технический корпус</option></select>
+                  <select class="custom-select" v-model="roomForm.buildingId">
+                    <option value="" disabled>Выберите корпус</option>
+                    <option v-for="b in buildings" :key="b.id" :value="b.id">{{ b.name }}</option>
+                  </select>
                 </div>
-                <div class="form-group"><label>ВМЕСТИМОСТЬ (МЕСТ)</label><input type="number" value="30" class="custom-input" /></div>
-                <div class="form-group">
-                  <label>ТИП АУДИТОРИИ</label>
-                  <select class="custom-select"><option>Учебная аудитория</option><option>Компьютерный класс</option><option>Лаборатория</option></select>
+                <div class="form-group"><label>ВМЕСТИМОСТЬ (МЕСТ)</label>
+                  <input type="number" min="1" v-model.number="roomForm.capacity" class="custom-input" />
                 </div>
               </div>
-              <div class="form-group full-width"><label>ОБОРУДОВАНИЕ</label><input type="text" placeholder="Добавить оборудование..." class="custom-input" /></div>
-              <button class="save-btn" @click="isCreatingRoom = false"><Save :size="16" /> Сохранить</button>
+              <div class="form-actions">
+                <button class="cancel-btn" @click="isCreatingRoom = false">Отмена</button>
+                <button class="save-btn" @click="saveRoom"><Save :size="16" /> Сохранить</button>
+              </div>
             </div>
 
             <div v-else class="empty-state-wrapper">
@@ -343,7 +432,7 @@ const getBadgeClass = (type: string) => {
                 <div class="empty-icon-box bg-blue-light"><Wrench :size="40" color="#3b82f6" /></div>
                 <h3>Справочник оборудования</h3>
                 <p>Добавляйте новые типы оборудования. Они<br>будут доступны при настройке аудиторий и<br>ограничений нагрузки.</p>
-                <span class="info-text">{{ equipmentListData.length }} типов оборудования в системе</span>
+                <span class="info-text">{{ equipments.length }} типов оборудования в системе</span>
               </div>
             </div>
           </template>
@@ -491,4 +580,22 @@ const getBadgeClass = (type: string) => {
 
 .save-btn { display: flex; align-items: center; gap: 8px; background-color: #1d4ed8; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; margin-top: 12px; font-weight: 500; font-size: 14px; transition: background-color 0.2s; }
 .save-btn:hover { background-color: #1e40af; }
+
+.form-actions { display: flex; gap: 12px; margin-top: 12px; }
+.cancel-btn { background: #e2e8f0; color: #475569; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; margin-top: 12px; }
+.cancel-btn:hover { background: #cbd5e1; }
+
+.objects-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px; }
+.muted-note { color: #94a3b8; font-size: 13px; padding: 8px 0; }
+.eq-name { flex-grow: 1; }
+.eq-del { margin-left: auto; }
+
+.weights-list { display: flex; flex-direction: column; gap: 12px; }
+.weight-item { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid #f1f5f9; border-radius: 12px; }
+.w-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+.w-controls { display: flex; gap: 8px; }
+.w-input { flex-grow: 1; height: 36px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; outline: none; }
+.w-input:focus { border-color: #1d4ed8; }
+.w-save { width: 40px; background: #1d4ed8; color: white; border: none; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.w-save:hover { background: #1e40af; }
 </style>

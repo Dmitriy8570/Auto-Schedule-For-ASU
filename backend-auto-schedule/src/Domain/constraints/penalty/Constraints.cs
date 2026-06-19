@@ -1,3 +1,5 @@
+using Domain.common;
+
 namespace Domain.constraints.penalty;
 
 /// <summary>Тип мягкого ограничения (штрафа) при составлении расписания.</summary>
@@ -23,4 +25,15 @@ public class ConstraintConfig
 
     /// <summary>Вес штрафа: чем выше, тем сильнее солвер стремится избежать нарушения.</summary>
     public int Penalty { get; private set; }
+
+    /// <summary>Создать конфигурацию мягкого ограничения с весом штрафа.</summary>
+    public static ConstraintConfig Create(Guid id, ConstraintType constraintType, int penalty) => new()
+    {
+        Id = Guard.NotEmpty(id, nameof(id)),
+        ConstraintType = Guard.Defined(constraintType, nameof(constraintType)),
+        Penalty = Guard.NotNegative(penalty, nameof(penalty))
+    };
+
+    /// <summary>Изменить вес штрафа.</summary>
+    public void SetPenalty(int penalty) => Penalty = Guard.NotNegative(penalty, nameof(penalty));
 }

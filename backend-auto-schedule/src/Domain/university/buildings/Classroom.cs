@@ -39,4 +39,12 @@ public class Classroom
         Capacity = Guard.Positive(capacity, nameof(capacity)),
         BuildingId = Guard.NotEmpty(buildingId, nameof(buildingId))
     };
+
+    /// <summary>Изменить параметры аудитории (название, вместимость, корпус).</summary>
+    public void Update(string name, int capacity, Guid buildingId)
+    {
+        Name = Guard.NotBlank(name, nameof(name));
+        Capacity = Guard.Positive(capacity, nameof(capacity));
+        BuildingId = Guard.NotEmpty(buildingId, nameof(buildingId));
+    }
 }

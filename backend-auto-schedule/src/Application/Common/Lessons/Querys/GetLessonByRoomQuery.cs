@@ -22,13 +22,6 @@ public class GetLessonByRoomQueryHandler : IRequestHandler<GetLessonByRoomQuery,
     public async Task<IReadOnlyList<LessonDTO>> Handle(GetLessonByRoomQuery request, CancellationToken cancellationToken)
     {
         var lessons = await _lessonRepository.GetLessonByRoomAsync(request.ClassroomId, request.WeekId, cancellationToken);
-        return lessons?.Select(lesson => new LessonDTO
-        {
-            Id = lesson.Id,
-            ClassroomId = lesson.ClassroomId,
-            TimeSlotId = lesson.TimeSlotId,
-            StreamId = lesson.StreamId,
-            Version = lesson.Version
-        }).ToList() ?? new List<LessonDTO>();
+        return lessons?.Select(LessonDTO.From).ToList() ?? new List<LessonDTO>();
     }
 }

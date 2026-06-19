@@ -22,13 +22,6 @@ public class GetLessonByIdQueryHandler : IRequestHandler<GetLessonByIdQuery, Les
         var lesson = await _lessonRepository.GetLessonByIdAsync(request.Id, cancellationToken)
         ?? throw new KeyNotFoundException();
 
-        return new LessonDTO
-        {
-            Id = lesson.Id,
-            ClassroomId = lesson.ClassroomId,
-            TimeSlotId = lesson.TimeSlotId,
-            StreamId = lesson.StreamId,
-            Version = lesson.Version
-        };
+        return LessonDTO.From(lesson);
     }
 }

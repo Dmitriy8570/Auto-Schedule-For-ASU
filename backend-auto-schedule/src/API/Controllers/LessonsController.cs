@@ -56,6 +56,21 @@ public class LessonsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 
+    /// <summary>Удалить занятие.</summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new DeleteLessonCommand(id), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
     /// <summary>
     /// Сгенерировать черновик расписания для одного института на семестр
     /// (с учётом занятости других институтов и якоря к прошлому семестру).

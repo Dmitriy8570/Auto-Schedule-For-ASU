@@ -15,7 +15,8 @@ public class  LessonRepository: ILessonRepository
     }
 
     public async Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken cancellationToken)
-          => await _context.Lessons.FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+          => await WithDisplayIncludes(_context.Lessons.AsNoTracking())
+                .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
 
     public async Task AddAsync(Lesson lesson, CancellationToken cancellationToken)
           => await _context.Lessons.AddAsync(lesson, cancellationToken);
@@ -23,20 +24,35 @@ public class  LessonRepository: ILessonRepository
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
           => await _context.SaveChangesAsync(cancellationToken);
 
+    /// <summary>
+    /// Подгружает навигации, нужные для отображения занятия в сетке расписания
+    /// (день/пара/неделя, дисциплина/преподаватель/тип, аудитория/корпус, группы потока).
+    /// </summary>
+    private static IQueryable<Lesson> WithDisplayIncludes(IQueryable<Lesson> query) =>
+        query
+            .Include(l => l.TimeSlot).ThenInclude(t => t.WeekDay).ThenInclude(wd => wd.Week)
+            .Include(l => l.Classroom).ThenInclude(c => c.Building)
+            .Include(l => l.Curriculum!).ThenInclude(c => c.Subject)
+            .Include(l => l.Curriculum!).ThenInclude(c => c.Teacher)
+            .Include(l => l.Stream).ThenInclude(s => s.StreamGroups).ThenInclude(sg => sg.Group);
+
     public async Task<IReadOnlyList<Lesson>> GetLessonByTeacherAsync(Guid teacherId, Guid? weekId, CancellationToken cancellationToken) =>
-        await _context.Lessons
-            .Where(l => l.Stream.Curriculums.Any(c => c.TeacherId == teacherId))
+        await WithDisplayIncludes(_context.Lessons.AsNoTracking())
+            // Если у занятия задан учебный план — по преподавателю плана; иначе — по любому плану потока.
+            .Where(l => l.Curriculum != null
+                ? l.Curriculum.TeacherId == teacherId
+                : l.Stream.Curriculums.Any(c => c.TeacherId == teacherId))
             .Where(InWeek(weekId))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Lesson>> GetLessonByGroupAsync(Guid groupId, Guid? weekId, CancellationToken cancellationToken) =>
-        await _context.Lessons
+        await WithDisplayIncludes(_context.Lessons.AsNoTracking())
             .Where(l => l.Stream.StreamGroups.Any(sg => sg.GroupId == groupId))
             .Where(InWeek(weekId))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Lesson>> GetLessonByRoomAsync(Guid classroomId, Guid? weekId, CancellationToken cancellationToken) =>
-        await _context.Lessons
+        await WithDisplayIncludes(_context.Lessons.AsNoTracking())
             .Where(l => l.ClassroomId == classroomId)
             .Where(InWeek(weekId))
             .ToListAsync(cancellationToken);
@@ -66,4 +82,14 @@ public class  LessonRepository: ILessonRepository
             .ToListAsync(cancellationToken);
 
     public void RemoveRange(IEnumerable<Lesson> lessons) => _context.Lessons.RemoveRange(lessons);
+
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+        if (lesson is null) return false;
+
+        _context.Lessons.Remove(lesson);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

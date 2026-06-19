@@ -22,7 +22,8 @@ const { isAuthenticated, logout } = useAuth()
 <style scoped>
 .login-page {
   min-height: 100vh;
-  background-color: #1a4d9c;
+  /* Градиент из макета Figma (from-rgb(26,77,156) via-rgb(35,95,180) to-rgb(20,60,130)) */
+  background: linear-gradient(135deg, #1a4d9c 0%, #235fb4 50%, #143c82 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;

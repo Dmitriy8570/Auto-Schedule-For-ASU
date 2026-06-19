@@ -20,6 +20,9 @@ public interface ILessonRepository
 
     /// <summary>Удалить набор занятий (старое расписание).</summary>
     void RemoveRange(IEnumerable<Lesson> lessons);
+
+    /// <summary>Удалить занятие по идентификатору. Возвращает <c>false</c>, если занятие не найдено.</summary>
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
     
     /// <summary>Занятия преподавателя; при заданном <paramref name="weekId"/> — только в пределах этой недели.</summary>
     Task<IReadOnlyList<Lesson>> GetLessonByTeacherAsync(Guid teacherId, Guid? weekId, CancellationToken cancellationToken);
