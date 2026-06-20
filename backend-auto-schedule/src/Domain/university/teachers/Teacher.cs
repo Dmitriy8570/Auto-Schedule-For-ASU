@@ -1,3 +1,4 @@
+using Domain.calendar;
 using Domain.common;
 using Domain.constraints;
 using Domain.workload;
@@ -28,4 +29,19 @@ public class Teacher
         Name = Guard.NotBlank(name, nameof(name)),
         DepartmentId = Guard.NotEmpty(departmentId, nameof(departmentId))
     };
+
+    /// <summary>
+    /// Полностью заменить сетку доступности преподавателя. Нейтральные слоты не хранятся:
+    /// отсутствие записи равнозначно нейтральной градации.
+    /// </summary>
+    public void ReplaceAvailabilities(IEnumerable<(WeekDayType DayOfWeek, int PairNumber, AvailabilityState State)> cells)
+    {
+        TeacherAvailabilities.Clear();
+        foreach (var (day, pair, state) in cells)
+        {
+            if (state == AvailabilityState.Neutral) continue;
+            TeacherAvailabilities.Add(
+                TeacherAvailability.Create(Id, day, pair, AvailabilityStates.ToPenalty(state)));
+        }
+    }
 }

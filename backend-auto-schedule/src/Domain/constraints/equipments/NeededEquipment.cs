@@ -1,3 +1,4 @@
+using Domain.common;
 using Domain.workload;
 
 namespace Domain.constraints.equipments;
@@ -12,4 +13,11 @@ public class NeededEquipment
 
     public Curriculum Curriculum { get; private set; } = null!;
     public Equipment Equipment { get; private set; } = null!;
+
+    /// <summary>Создать связь «учебный план ↔ необходимое оборудование».</summary>
+    public static NeededEquipment Create(Guid curriculumId, Guid equipmentId) => new()
+    {
+        CurriculumId = Guard.NotEmpty(curriculumId, nameof(curriculumId)),
+        EquipmentId = Guard.NotEmpty(equipmentId, nameof(equipmentId)),
+    };
 }

@@ -32,7 +32,10 @@ public class ShiftSectionBuilder : IModelSectionBuilder
         }
     }
 
-    /// <summary>Номер пары допустим для смены: 1-я — пары 1..4, 2-я — 5..6, вечерняя — 7+.</summary>
+    /// <summary>
+    /// Номер пары допустим для смены: 1-я — пары 1..4, 2-я — 5..6, вечерняя — 7+.
+    /// Для <see cref="Shift.Unspecified"/> ограничение смены не применяется (допустим любой слот).
+    /// </summary>
     private static bool SlotMatchesShift(Shift shift, int lessonNumber) => shift switch
     {
         Shift.First => lessonNumber <= 4,

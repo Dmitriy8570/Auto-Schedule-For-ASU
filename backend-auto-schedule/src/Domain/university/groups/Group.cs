@@ -9,6 +9,8 @@ public enum Shift
     First = 0,
     Second = 1,
     Evening = 2,
+    /// <summary>Смена не задана — ограничение смены к группе не применяется.</summary>
+    Unspecified = 3,
 }
 
 /// <summary>Учебная группа студентов.</summary>
@@ -66,4 +68,7 @@ public class Group
         Groups.Add(subgroup);
         return subgroup;
     }
+
+    /// <summary>Изменить смену обучения группы.</summary>
+    public void SetShift(Shift shift) => Shift = Guard.Defined(shift, nameof(shift));
 }

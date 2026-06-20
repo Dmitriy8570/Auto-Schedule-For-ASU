@@ -1,12 +1,14 @@
 using Domain.calendar;
+using Domain.common;
 using Domain.university.buildings;
 using Domain.university.teachers;
 
 namespace Domain.constraints;
 
 /// <summary>
-/// Ограничение доступности аудитории: если аудитория недоступна в указанный слот,
-/// назначение занятия в него штрафуется с весом <see cref="Penalty"/>.
+/// Ограничение доступности аудитории в конкретном слоте (день + пара). Знак <see cref="Penalty"/>
+/// задаёт градацию: положительный вес штрафует назначение, отрицательный — поощряет
+/// (см. <see cref="AvailabilityStates"/>).
 /// </summary>
 public class ClassroomAvailability
 {
@@ -14,7 +16,7 @@ public class ClassroomAvailability
 
     public Guid Id { get; private set; }
 
-    /// <summary>Штрафной коэффициент за назначение занятия в данный слот.</summary>
+    /// <summary>Знаковый штраф за назначение занятия в данный слот (см. <see cref="AvailabilityStates"/>).</summary>
     public int Penalty { get; private set; }
 
     public Classroom Classroom { get; private set; } = null!;
@@ -24,11 +26,22 @@ public class ClassroomAvailability
     public int NumberLesson { get; private set; }
 
     public WeekDayType DayOfWeek { get; private set; }
+
+    /// <summary>Создать запись доступности аудитории для слота.</summary>
+    public static ClassroomAvailability Create(Guid classroomId, WeekDayType dayOfWeek, int numberLesson, int penalty) => new()
+    {
+        Id = Guid.NewGuid(),
+        ClassroomId = Guard.NotEmpty(classroomId, nameof(classroomId)),
+        DayOfWeek = Guard.Defined(dayOfWeek, nameof(dayOfWeek)),
+        NumberLesson = Guard.Positive(numberLesson, nameof(numberLesson)),
+        Penalty = penalty,
+    };
 }
 
 /// <summary>
-/// Ограничение доступности преподавателя: если преподаватель недоступен в указанный слот,
-/// назначение занятия в него штрафуется с весом <see cref="Penalty"/>.
+/// Ограничение доступности преподавателя в конкретном слоте (день + пара). Знак <see cref="Penalty"/>
+/// задаёт градацию: положительный вес штрафует назначение, отрицательный — поощряет
+/// (см. <see cref="AvailabilityStates"/>).
 /// </summary>
 public class TeacherAvailability
 {
@@ -36,7 +49,7 @@ public class TeacherAvailability
 
     public Guid Id { get; private set; }
 
-    /// <summary>Штрафной коэффициент за назначение занятия в данный слот.</summary>
+    /// <summary>Знаковый штраф за назначение занятия в данный слот (см. <see cref="AvailabilityStates"/>).</summary>
     public int Penalty { get; private set; }
 
     public Teacher Teacher { get; private set; } = null!;
@@ -46,4 +59,14 @@ public class TeacherAvailability
     public int NumberLesson { get; private set; }
 
     public WeekDayType DayOfWeek { get; private set; }
+
+    /// <summary>Создать запись доступности преподавателя для слота.</summary>
+    public static TeacherAvailability Create(Guid teacherId, WeekDayType dayOfWeek, int numberLesson, int penalty) => new()
+    {
+        Id = Guid.NewGuid(),
+        TeacherId = Guard.NotEmpty(teacherId, nameof(teacherId)),
+        DayOfWeek = Guard.Defined(dayOfWeek, nameof(dayOfWeek)),
+        NumberLesson = Guard.Positive(numberLesson, nameof(numberLesson)),
+        Penalty = penalty,
+    };
 }

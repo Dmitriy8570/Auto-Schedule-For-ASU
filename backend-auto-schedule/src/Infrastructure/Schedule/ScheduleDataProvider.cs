@@ -68,7 +68,7 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
         await _context.SemesterWorkloads
             .AsNoTracking()
             .Where(sw => sw.SemesterId == semesterId)
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.Teacher)
+            .Include(sw => sw.Curriculum).ThenInclude(c => c.Teacher).ThenInclude(t => t.TeacherAvailabilities)
             .Include(sw => sw.Curriculum).ThenInclude(c => c.Subject)
             .Include(sw => sw.Curriculum).ThenInclude(c => c.FavoriteBuilding)
             .Include(sw => sw.Curriculum).ThenInclude(c => c.NeededEquipments)

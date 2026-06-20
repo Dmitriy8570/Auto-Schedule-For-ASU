@@ -70,4 +70,32 @@ public class Curriculum
         Double = @double,
         FavoriteBuildingId = favoriteBuildingId
     };
+
+    /// <summary>
+    /// Изменить по-нагрузочные ограничения плана: параллельность, двойную пару и предпочтительный корпус.
+    /// Состав необходимого оборудования (<see cref="NeededEquipments"/>) синхронизируется отдельно
+    /// методом <see cref="SetRequiredEquipment"/>.
+    /// </summary>
+    public void SetConstraints(bool parallelism, bool @double, Guid? favoriteBuildingId)
+    {
+        Parallelism = parallelism;
+        Double = @double;
+        FavoriteBuildingId = favoriteBuildingId;
+    }
+
+    /// <summary>
+    /// Привести состав необходимого оборудования к заданному набору. Реализовано через разницу
+    /// (а не Clear + повторное добавление), чтобы не создавать конфликт отслеживания EF при
+    /// сохранении связей с прежним составным ключом (CurriculumId, EquipmentId).
+    /// </summary>
+    public void SetRequiredEquipment(IEnumerable<Guid> equipmentIds)
+    {
+        var target = equipmentIds.Distinct().ToHashSet();
+        NeededEquipments.RemoveAll(n => !target.Contains(n.EquipmentId));
+
+        var existing = NeededEquipments.Select(n => n.EquipmentId).ToHashSet();
+        foreach (var equipmentId in target)
+            if (existing.Add(equipmentId))
+                NeededEquipments.Add(NeededEquipment.Create(Id, equipmentId));
+    }
 }

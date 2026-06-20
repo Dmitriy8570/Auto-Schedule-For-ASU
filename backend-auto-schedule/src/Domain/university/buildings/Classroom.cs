@@ -1,3 +1,4 @@
+using Domain.calendar;
 using Domain.common;
 using Domain.constraints;
 using Domain.constraints.equipments;
@@ -46,5 +47,20 @@ public class Classroom
         Name = Guard.NotBlank(name, nameof(name));
         Capacity = Guard.Positive(capacity, nameof(capacity));
         BuildingId = Guard.NotEmpty(buildingId, nameof(buildingId));
+    }
+
+    /// <summary>
+    /// Полностью заменить сетку доступности аудитории. Нейтральные слоты не хранятся:
+    /// отсутствие записи равнозначно нейтральной градации.
+    /// </summary>
+    public void ReplaceAvailabilities(IEnumerable<(WeekDayType DayOfWeek, int PairNumber, AvailabilityState State)> cells)
+    {
+        ClassroomAvailabilities.Clear();
+        foreach (var (day, pair, state) in cells)
+        {
+            if (state == AvailabilityState.Neutral) continue;
+            ClassroomAvailabilities.Add(
+                ClassroomAvailability.Create(Id, day, pair, AvailabilityStates.ToPenalty(state)));
+        }
     }
 }

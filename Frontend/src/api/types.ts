@@ -12,7 +12,7 @@ export interface LoginResponse {
 // --- Справочники (каскадные фильтры) ---
 export type TypeDegree =
   | 'Secondary' | 'Bachelor' | 'Specialist' | 'Master' | 'Postgraduate' | 'Doctoral'
-export type Shift = 'First' | 'Second' | 'Evening'
+export type Shift = 'First' | 'Second' | 'Evening' | 'Unspecified'
 
 export interface InstituteDto { id: string; name: string }
 export interface DegreeDto { id: string; typeDegree: TypeDegree; instituteId: string }
@@ -31,6 +31,27 @@ export interface EquipmentDto { id: string; name: string }
 export type ConstraintType =
   | 'TeacherGap' | 'StudentGap' | 'ClassroomAvailability' | 'TeacherAvailability'
 export interface ConstraintConfigDto { id: string; constraintType: ConstraintType; penalty: number }
+
+// --- Конфигурация ограничений солвера (вкладка «Ограничения» → панели справа) ---
+
+// Градация желательности слота. Neutral = ограничение отсутствует (не хранится на бэке).
+export type AvailabilityState =
+  | 'Required' | 'Preferred' | 'Neutral' | 'Discouraged' | 'Prohibited'
+
+// Ячейка сетки доступности: dayOfWeek 0..5 (Пн–Сб), pairNumber 1..8.
+export interface AvailabilityCellDto {
+  dayOfWeek: number
+  pairNumber: number
+  state: AvailabilityState
+}
+
+// По-нагрузочные ограничения учебного плана.
+export interface CurriculumConstraintsDto {
+  requiredEquipmentIds: string[]
+  isParallel: boolean
+  isDouble: boolean
+  preferredBuildingId: string | null
+}
 
 // --- Нагрузка ---
 export type LessonType = 'Lecture' | 'Seminar' | 'Laboratory' | 'Consultation' | 'Examination'

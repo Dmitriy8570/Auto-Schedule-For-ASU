@@ -189,7 +189,7 @@
   GET /api/rooms?buildingId=&search=          -> [ { id, name, capacity, buildingId, buildingName } ]
 
   typeDegree: Secondary|Bachelor|Specialist|Master|Postgraduate|Doctoral
-  shift:      First|Second|Evening
+  shift:      First|Second|Evening|Unspecified   // Unspecified — смена не задана (солвер её не ограничивает)
 
 
 --------------------------------------------------------------------------------
@@ -242,3 +242,34 @@
   PUT /api/constraints/{id}            body { penalty }   -> 200 ConstraintConfigDto | 404
 
   400 (ValidationProblemDetails) — пустое имя, неположительная вместимость, отрицательный вес.
+
+
+--------------------------------------------------------------------------------
+9. КОНФИГУРАЦИЯ ОГРАНИЧЕНИЙ СОЛВЕРА (вкладка «Ограничения» → панели)  [реализовано]
+--------------------------------------------------------------------------------
+  Настройка ограничений, которые потребляет солвер: сетки доступности, по-нагрузочные
+  правила учебных планов и смена групп. Изменения учитываются при следующей генерации.
+
+  Градация доступности (state) и её знак штрафа (минимизируется в целевой функции):
+      Required (-100) | Preferred (-10) | Neutral (0, не хранится) | Discouraged (+10) | Prohibited (+100)
+  Положительный штраф = слот нежелателен; отрицательный = слот поощряется.
+
+  Доступность преподавателя (полная замена сетки «день × пара»):
+  GET /api/availability/teacher/{teacherId}    -> AvailabilityCell[] | 404
+  PUT /api/availability/teacher/{teacherId}    body AvailabilityCell[]  -> 204 | 404
+    AvailabilityCell: { dayOfWeek: int (0 Пн..5 Сб), pairNumber: int (1..8), state: string }
+    // GET возвращает только не-нейтральные ячейки; PUT — полная замена (Neutral можно не слать).
+
+  Доступность аудитории (аналогично):
+  GET /api/availability/classroom/{classroomId}  -> AvailabilityCell[] | 404
+  PUT /api/availability/classroom/{classroomId}  body AvailabilityCell[]  -> 204 | 404
+
+  По-нагрузочные ограничения учебного плана:
+  GET /api/curriculums/{id}/constraints   -> CurriculumConstraints | 404
+  PUT /api/curriculums/{id}/constraints   body CurriculumConstraints  -> 204 | 404
+    CurriculumConstraints:
+      { requiredEquipmentIds: Guid[], isParallel: bool, isDouble: bool, preferredBuildingId: Guid? }
+    400 — указано несуществующее оборудование/корпус.
+
+  Смена группы:
+  PUT /api/groups/{id}/shift   body { shift: "First"|"Second"|"Evening"|"Unspecified" }  -> 204 | 404

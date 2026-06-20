@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<ICalendarRepository, CalendarRepository>();
         services.AddScoped<IScheduleLookupRepository, ScheduleLookupRepository>();
         services.AddScoped<IManagementRepository, ManagementRepository>();
+        services.AddScoped<IConstraintConfigurationRepository, ConstraintConfigurationRepository>();
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IWorkloadRepository, WorkloadRepository>();
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
