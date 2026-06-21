@@ -99,4 +99,13 @@ public class LessonsController : ControllerBase
             return NotFound();
         }
     }
+
+    /// <summary>
+    /// Сбросить черновик расписания института до выгруженного: удалить занятия-черновики (Draft),
+    /// оставив опубликованное расписание (Current). Идемпотентно (нет черновика → удалено 0).
+    /// </summary>
+    [HttpPost("discard/institute/{instituteId:guid}")]
+    public async Task<ActionResult<DiscardInstituteScheduleResult>> DiscardForInstitute(
+        Guid instituteId, CancellationToken ct)
+        => Ok(await _mediator.Send(new DiscardInstituteScheduleCommand { InstituteId = instituteId }, ct));
 }

@@ -335,6 +335,44 @@ async function generate(scope: 'university' | 'teacher' | 'institute') {
     : 'Генерация по преподавателю пока не поддержана бэкендом (есть только по институту).'
 }
 
+// Выгрузить (опубликовать) черновик выбранного института: Draft -> Current.
+async function publish() {
+  if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для выгрузки расписания.'; return }
+  if (!confirm('Выгрузить расписание института? Текущее опубликованное расписание будет заменено черновиком.')) return
+  banner.value = ''
+  lessonsLoading.value = true
+  try {
+    const r = await lessons.publishInstitute(selInstitute.value)
+    banner.value = `Расписание выгружено: опубликовано занятий — ${r.published}.`
+    await loadLessons()
+  } catch (e) {
+    banner.value = e instanceof ApiError
+      ? (e.status === 404 ? 'У института нет черновика для выгрузки.' : e.message)
+      : 'Не удалось выгрузить расписание.'
+  } finally {
+    lessonsLoading.value = false
+  }
+}
+
+// Сбросить до выгруженного: удалить черновик выбранного института, оставив опубликованное.
+async function discard() {
+  if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для сброса черновика.'; return }
+  if (!confirm('Сбросить черновик до выгруженного расписания? Несохранённые изменения института будут удалены.')) return
+  banner.value = ''
+  lessonsLoading.value = true
+  try {
+    const r = await lessons.discardInstitute(selInstitute.value)
+    banner.value = r.discarded > 0
+      ? `Черновик сброшен: удалено занятий — ${r.discarded}.`
+      : 'Черновика нет — сбрасывать нечего.'
+    await loadLessons()
+  } catch (e) {
+    banner.value = e instanceof ApiError ? e.message : 'Не удалось сбросить черновик.'
+  } finally {
+    lessonsLoading.value = false
+  }
+}
+
 onMounted(async () => {
   institutes.value = await lookups.institutes().catch(() => [])
   buildings.value = await lookups.buildings().catch(() => [])
@@ -383,7 +421,9 @@ onMounted(async () => {
       </div>
 
       <div class="right-controls">
-        <BaseButton variant="outline"><RotateCcw :size="16" /> Сбросить до выгруженного</BaseButton>
+        <BaseButton variant="outline" :disabled="lessonsLoading" @click="discard">
+          <RotateCcw :size="16" /> Сбросить до выгруженного
+        </BaseButton>
         <div class="dropdown-wrapper">
           <BaseButton variant="gradient" @click="isAutoGenerateOpen = !isAutoGenerateOpen">
             <Sparkles :size="16" /> Автогенерация
@@ -403,7 +443,9 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <BaseButton variant="outline"><Download :size="16" /> Выгрузить</BaseButton>
+        <BaseButton variant="outline" :disabled="lessonsLoading" @click="publish">
+          <Download :size="16" /> Выгрузить
+        </BaseButton>
       </div>
     </header>
 
