@@ -90,7 +90,8 @@ public sealed class ScheduleBuilderTests
         {
             if (room is { } only && r != only) continue;
             for (int t = 0; t < model.TimeSlotCount; t++)
-                if (solver.Value(model.Lessons[w, r, t]) != 0) count++;
+                // Отсечённые прунингом ячейки (null) — не назначены.
+                if (model.Lessons[w, r, t] is { } var && solver.Value(var) != 0) count++;
         }
         return count;
     }

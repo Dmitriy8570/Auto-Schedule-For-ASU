@@ -14,8 +14,10 @@ public class ScheduleModel
     /// <summary>
     /// Трёхмерный массив булевых переменных: [нагрузка, аудитория, временной слот].
     /// Lessons[w, r, t] == 1 означает, что нагрузка w проводится в аудитории r в слоте t.
+    /// <c>null</c> — тройка статически запрещена (прунинг, см. <see cref="Builder.BuildSections.VariablesSectionBuilder"/>):
+    /// переменная не создаётся, все читатели обязаны такие ячейки пропускать.
     /// </summary>
-    public BoolVar[,,] Lessons { get; }
+    public BoolVar?[,,] Lessons { get; }
 
     public CpModel Model { get; }
 
@@ -30,7 +32,7 @@ public class ScheduleModel
     {
         Data = data;
         Model = new CpModel();
-        Lessons = new BoolVar[data.SemesterWorkloads.Count, data.Classrooms.Count, data.TimeSlots.Count];
+        Lessons = new BoolVar?[data.SemesterWorkloads.Count, data.Classrooms.Count, data.TimeSlots.Count];
         Objective = new List<LinearExpr>();
     }
 }

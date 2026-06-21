@@ -3,7 +3,7 @@ using Application.Common.Interfaces;
 using Domain.schedule;
 using MediatR;
 
-namespace Application.Common.Lessons.Querys;
+namespace Application.Common.Lessons.Queries;
 
 public class GetLessonByIdQuery: IRequest<LessonDTO>
 {

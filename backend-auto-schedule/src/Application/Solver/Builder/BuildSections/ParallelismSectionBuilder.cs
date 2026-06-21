@@ -13,7 +13,10 @@ namespace Application.Solver.Builder.BuildSections;
 /// </summary>
 public class ParallelismSectionBuilder : IModelSectionBuilder
 {
-    private const int Penalty = 2;
+    private readonly SolverPenaltyWeights _weights;
+
+    public ParallelismSectionBuilder(SolverPenaltyWeights? weights = null)
+        => _weights = weights ?? SolverPenaltyWeights.Default;
 
     public void Build(ScheduleModel model)
     {
@@ -34,7 +37,7 @@ public class ParallelismSectionBuilder : IModelSectionBuilder
             PenalizeSpread(model, set, $"par{n++}");
     }
 
-    private static void PenalizeSpread(ScheduleModel model, IReadOnlyList<int> workloads, string prefix)
+    private void PenalizeSpread(ScheduleModel model, IReadOnlyList<int> workloads, string prefix)
     {
         for (int t = 0; t < model.TimeSlotCount; t++)
         {
@@ -42,13 +45,15 @@ public class ParallelismSectionBuilder : IModelSectionBuilder
             var lessons = workloads
                 .SelectMany(w => Enumerable.Range(0, model.ClassroomCount)
                     .Select(r => model.Lessons[w, r, t]))
-                .ToList();
+                .Where(v => v is not null)
+                .Select(v => v!)
+                .ToList<ILiteral>();
 
             model.Model.AddBoolOr(lessons.Append(busy.Not()).ToArray());
             foreach (var lesson in lessons)
                 model.Model.AddImplication(lesson, busy);
 
-            model.Objective.Add(LinearExpr.Term(busy, Penalty));
+            model.Objective.Add(LinearExpr.Term(busy, _weights.Parallelism));
         }
     }
 }

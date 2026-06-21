@@ -1,7 +1,7 @@
 using Application.Common.DTO.Lessons;
 using Application.Common.Generation;
 using Application.Common.Lessons.Commands;
-using Application.Common.Lessons.Querys;
+using Application.Common.Lessons.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

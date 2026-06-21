@@ -10,7 +10,10 @@ namespace Application.Solver.Builder.BuildSections;
 /// </summary>
 public class FavoriteBuildingSectionBuilder : IModelSectionBuilder
 {
-    private const int Penalty = 5;
+    private readonly SolverPenaltyWeights _weights;
+
+    public FavoriteBuildingSectionBuilder(SolverPenaltyWeights? weights = null)
+        => _weights = weights ?? SolverPenaltyWeights.Default;
 
     public void Build(ScheduleModel model)
     {
@@ -24,7 +27,8 @@ public class FavoriteBuildingSectionBuilder : IModelSectionBuilder
                 if (model.Data.Classrooms[r].BuildingId == favorite.Value) continue;
 
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    model.Objective.Add(LinearExpr.Term(model.Lessons[w, r, t], Penalty));
+                    if (model.Lessons[w, r, t] is { } var)
+                        model.Objective.Add(LinearExpr.Term(var, _weights.FavoriteBuilding));
             }
         }
     }

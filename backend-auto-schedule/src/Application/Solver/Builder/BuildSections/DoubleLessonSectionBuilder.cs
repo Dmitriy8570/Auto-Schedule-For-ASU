@@ -33,19 +33,19 @@ public class DoubleLessonSectionBuilder : IModelSectionBuilder
             for (int r = 0; r < model.ClassroomCount; r++)
                 foreach (var slots in days)
                 {
-                    // 1. Нет одиночных занятий.
+                    // 1. Нет одиночных занятий. Ячейки, отсечённые прунингом (null), пропускаем.
                     for (int i = 0; i < slots.Count; i++)
                     {
-                        // Допустимые соседи по спариванию: предыдущий и следующий слот дня.
-                        var neighbours = new List<ILiteral>();
-                        if (i > 0) neighbours.Add(model.Lessons[w, r, slots[i - 1]]);
-                        if (i < slots.Count - 1) neighbours.Add(model.Lessons[w, r, slots[i + 1]]);
+                        if (model.Lessons[w, r, slots[i]] is not { } current) continue;
 
-                        var current = model.Lessons[w, r, slots[i]];
+                        // Допустимые соседи по спариванию: существующие предыдущий и следующий слот дня.
+                        var neighbours = new List<ILiteral>();
+                        if (i > 0 && model.Lessons[w, r, slots[i - 1]] is { } prev) neighbours.Add(prev);
+                        if (i < slots.Count - 1 && model.Lessons[w, r, slots[i + 1]] is { } next) neighbours.Add(next);
 
                         if (neighbours.Count == 0)
                         {
-                            // Единственный слот дня не может быть половиной двойной пары.
+                            // Нет ни одного допустимого соседа — двойную пару здесь не собрать.
                             model.Model.Add(current == 0);
                             continue;
                         }
@@ -54,12 +54,12 @@ public class DoubleLessonSectionBuilder : IModelSectionBuilder
                         model.Model.AddBoolOr(neighbours.Append(current.Not()).ToArray());
                     }
 
-                    // 2. Нет серий из трёх и более: в любом окне из трёх слотов занято не больше двух.
+                    // 2. Нет серий из трёх и более: ограничение нужно, лишь когда все три ячейки существуют.
                     for (int i = 0; i + 2 < slots.Count; i++)
-                        model.Model.Add(
-                            model.Lessons[w, r, slots[i]]
-                            + model.Lessons[w, r, slots[i + 1]]
-                            + model.Lessons[w, r, slots[i + 2]] <= 2);
+                        if (model.Lessons[w, r, slots[i]] is { } a
+                            && model.Lessons[w, r, slots[i + 1]] is { } b
+                            && model.Lessons[w, r, slots[i + 2]] is { } c)
+                            model.Model.Add(a + b + c <= 2);
                 }
         }
     }

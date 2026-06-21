@@ -36,7 +36,7 @@ public class OccupiedResourcesSectionBuilder : IModelSectionBuilder
             if (!slotIndex.TryGetValue(o.TimeSlotId, out int t)) continue;
 
             for (int w = 0; w < model.WorkloadCount; w++)
-                model.Model.Add(model.Lessons[w, r, t] == 0);
+                if (model.Lessons[w, r, t] is { } var) model.Model.Add(var == 0);
         }
     }
 
@@ -58,7 +58,7 @@ public class OccupiedResourcesSectionBuilder : IModelSectionBuilder
 
             foreach (int w in workloadsByTeacher[o.TeacherId])
                 for (int r = 0; r < model.ClassroomCount; r++)
-                    model.Model.Add(model.Lessons[w, r, t] == 0);
+                    if (model.Lessons[w, r, t] is { } var) model.Model.Add(var == 0);
         }
     }
 

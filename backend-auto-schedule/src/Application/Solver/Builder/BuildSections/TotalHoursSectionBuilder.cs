@@ -25,7 +25,7 @@ public class TotalHoursSectionBuilder : IModelSectionBuilder
             var vars = new List<LinearExpr>();
             for (int r = 0; r < model.ClassroomCount; r++)
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    vars.Add(model.Lessons[w, r, t]);
+                    if (model.Lessons[w, r, t] is { } var) vars.Add(var); // пропуск запрещённых (прунинг)
 
             model.Model.Add(LinearExpr.Sum(vars) == hours / 2);
         }

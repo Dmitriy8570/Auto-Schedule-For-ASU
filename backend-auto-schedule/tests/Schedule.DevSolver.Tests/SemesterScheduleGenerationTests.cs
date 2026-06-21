@@ -15,13 +15,18 @@ namespace Schedule.DevSolver.Tests;
 /// проверить жёсткие ограничения → выгрузить читаемое расписание (исходные данные + папки
 /// преподавателей, групп и аудиторий).
 /// </summary>
+[Trait("Category", "SlowIntegration")]
 public class SemesterScheduleGenerationTests
 {
     private readonly ITestOutputHelper _output;
 
     public SemesterScheduleGenerationTests(ITestOutputHelper output) => _output = output;
 
+    // Тяжёлый прогон на масштабе ~50 преподавателей/~100 групп: строит большую модель и
+    // запускает CP-SAT до 180 с. Помечен Category=SlowIntegration и исключается из обычного
+    // прогона тестов (фильтр "Category!=SlowIntegration"), т.к. требует много памяти/времени.
     [Fact]
+    [Trait("Category", "SlowIntegration")]
     public void GenerateSemesterSchedule_Dev_ProducesValidSchedule()
     {
         // 1. Генерируем входные файлы (преподаватели, группы, аудитории).
@@ -76,7 +81,7 @@ public class SemesterScheduleGenerationTests
         for (int w = 0; w < model.WorkloadCount; w++)
             for (int r = 0; r < model.ClassroomCount; r++)
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    if (solver.Value(model.Lessons[w, r, t]) > 0.5)
+                    if (model.Lessons[w, r, t] is { } var && solver.Value(var) > 0.5)
                         result.Add(new Assignment(w, r, t));
         return result;
     }

@@ -112,6 +112,7 @@ public class PublishDiscardScheduleTests
         // Не используется этими тестами.
         public Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task AddAsync(Lesson lesson, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<Application.Common.Exceptions.ScheduleConflict>> FindConflictsAsync(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetByInstituteAndSemesterAsync(Guid instituteId, Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetBySemesterAsync(Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();

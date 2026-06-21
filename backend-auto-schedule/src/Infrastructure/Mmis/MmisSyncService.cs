@@ -22,6 +22,7 @@ public sealed class MmisSyncService(
     ApplicationDbContext db,
     MmisReader reader,
     MmisSyncStatus status,
+    IInfrastructureSeeder seeder,
     ILogger<MmisSyncService> logger) : IMmisSyncService
 {
     private static Guid Id(string type, int mmisId) => DeterministicGuid.For(type, mmisId);
@@ -66,6 +67,10 @@ public sealed class MmisSyncService(
 
                 await tx.CommitAsync(cancellationToken);
             });
+
+            // Недели семестра уже в БД — достраиваем рабочие дни и пары (ось «время» солвера).
+            // Идемпотентно: новые недели получают сетку, существующие пропускаются.
+            await seeder.SeedCalendarGridAsync(cancellationToken);
 
             var result = new MmisSyncResult(added, updated, deleted, refUpserts, sw.Elapsed);
             status.RecordSuccess(result);

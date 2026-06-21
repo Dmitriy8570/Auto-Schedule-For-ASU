@@ -42,6 +42,11 @@ services:
       # Источник нагрузки — контейнер MMIS (MS SQL). Хост = имя сервиса "mmis-db".
       Mmis__ConnectionString: "Server=mmis-db,1433;Database=MMIS;User Id=sa;Password=${MMIS_SA_PASSWORD:-Mmis_Str0ng_Pass!};TrustServerCertificate=True;Encrypt=False"
       Mmis__SyncAtTime: "${MMIS_SYNC_AT_TIME:-03:00}"
+      # Сидер инфраструктуры: аудиторный фонд + календарная сетка (оси «аудитории»/«время»),
+      # которых нет в ММИС. Без него генерация Infeasible. Размерность сетки настраивается.
+      InfrastructureSeed__Enabled: "${SEED_ENABLED:-true}"
+      InfrastructureSeed__WorkingDays: "${SEED_WORKING_DAYS:-6}"
+      InfrastructureSeed__PairsPerDay: "${SEED_PAIRS_PER_DAY:-8}"
       # Аутентификация в Active Directory (хост = имя сервиса "ad-dc").
       ActiveDirectory__Host: ad-dc
       ActiveDirectory__Port: "636"

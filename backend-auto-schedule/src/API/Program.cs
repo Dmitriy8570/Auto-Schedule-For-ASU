@@ -19,6 +19,7 @@ builder.Services.AddControllers()
 
 // Глобальная обработка исключений: неуспешный вход → 401, ошибки валидации → 400.
 builder.Services.AddExceptionHandler<AuthenticationExceptionHandler>();
+builder.Services.AddExceptionHandler<ScheduleConflictExceptionHandler>();
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -50,6 +51,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Аутентификация по JWT (Bearer) + авторизация.
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+// Fail-fast: без ключа подписи токены небезопасны. В prod ключ обязан прийти из env/секретов,
+// в dev — из appsettings.Development.json. Пустой ключ — конфигурационная ошибка, не стартуем.
+if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
+    throw new InvalidOperationException(
+        "Jwt:SigningKey не задан. Укажите его через переменную окружения Jwt__SigningKey " +
+        "(prod) или в appsettings.Development.json (dev).");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -77,9 +84,12 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// Автоматически применяем миграции при старте (создаём БД, если её ещё нет).
-using (var scope = app.Services.CreateScope())
+// Применяем миграции при старте (создаём БД, если её ещё нет) — управляется флагом
+// Database:MigrateOnStartup. Для dev/docker по умолчанию включено; в строгом prod миграции
+// стоит выполнять отдельным шагом деплоя, выставив флаг в false.
+if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }

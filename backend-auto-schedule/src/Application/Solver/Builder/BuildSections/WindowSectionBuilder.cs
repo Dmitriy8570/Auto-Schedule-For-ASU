@@ -54,7 +54,9 @@ public class WindowSectionBuilder : IModelSectionBuilder
                 var lessons = workloads
                     .SelectMany(w => Enumerable.Range(0, model.ClassroomCount)
                         .Select(r => model.Lessons[w, r, slots[i]]))
-                    .ToList();
+                    .Where(v => v is not null)
+                    .Select(v => v!)
+                    .ToList<ILiteral>();
 
                 model.Model.AddBoolOr(lessons.Append(busy[i].Not()).ToArray());
                 foreach (var lesson in lessons)

@@ -11,9 +11,10 @@ namespace Application.Solver.Builder.BuildSections;
 /// </summary>
 public class DailyLessonsLimitSectionBuilder : IModelSectionBuilder
 {
-    private const int GroupDailyLimit = 4;
-    private const int TeacherDailyLimit = 7;
-    private const int OveragePenalty = 50;
+    private readonly SolverPenaltyWeights _weights;
+
+    public DailyLessonsLimitSectionBuilder(SolverPenaltyWeights? weights = null)
+        => _weights = weights ?? SolverPenaltyWeights.Default;
 
     public void Build(ScheduleModel model)
     {
@@ -34,13 +35,13 @@ public class DailyLessonsLimitSectionBuilder : IModelSectionBuilder
             .Select(g => g.ToList());
 
         foreach (var teacher in byTeacher)
-            PenalizeOverage(model, teacher, slotsByDay, TeacherDailyLimit, "tch");
+            PenalizeOverage(model, teacher, slotsByDay, _weights.DailyTeacherLimit, "tch");
 
         foreach (var group in byGroup)
-            PenalizeOverage(model, group, slotsByDay, GroupDailyLimit, "grp");
+            PenalizeOverage(model, group, slotsByDay, _weights.DailyGroupLimit, "grp");
     }
 
-    private static void PenalizeOverage(
+    private void PenalizeOverage(
         ScheduleModel model,
         IReadOnlyList<int> workloads,
         IReadOnlyList<List<int>> slotsByDay,
@@ -53,13 +54,13 @@ public class DailyLessonsLimitSectionBuilder : IModelSectionBuilder
             foreach (int w in workloads)
                 foreach (int r in Enumerable.Range(0, model.ClassroomCount))
                     foreach (int t in day)
-                        vars.Add(model.Lessons[w, r, t]);
+                        if (model.Lessons[w, r, t] is { } var) vars.Add(var);
 
             if (vars.Count == 0) continue;
 
             var excess = model.Model.NewIntVar(0, vars.Count, $"overage_{kind}_{vars.Count}_{day[0]}");
             model.Model.Add(LinearExpr.Sum(vars) - excess <= limit);
-            model.Objective.Add(LinearExpr.Term(excess, OveragePenalty));
+            model.Objective.Add(LinearExpr.Term(excess, _weights.DailyOveragePenalty));
         }
     }
 }

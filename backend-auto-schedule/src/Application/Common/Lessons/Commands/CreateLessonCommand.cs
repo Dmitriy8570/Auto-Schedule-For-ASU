@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Domain.schedule;
 using MediatR;
@@ -26,6 +27,13 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
 
     public async Task<Guid> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
     {
+        // Ручное добавление обходит солвер — проверяем жёсткие ограничения (пересечения по
+        // аудитории/преподавателю/группе в одном слоте) до сохранения.
+        var conflicts = await _lessonRepository.FindConflictsAsync(
+            request.ClassroomId, request.TimeSlotId, request.StreamId, request.CurriculumId, cancellationToken);
+        if (conflicts.Count > 0)
+            throw new ScheduleConflictException(conflicts);
+
         var lessonId = Guid.NewGuid();
         var lesson = Lesson.Create(
             lessonId, request.ClassroomId, request.TimeSlotId, request.StreamId, request.SemesterId, request.CurriculumId);

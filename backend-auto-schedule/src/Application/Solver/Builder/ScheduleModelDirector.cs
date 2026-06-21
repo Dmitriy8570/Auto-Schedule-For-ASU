@@ -18,62 +18,70 @@ public class ScheduleModelDirector
     }
 
     /// <summary>Полный набор ограничений из текста диплома (жёсткие + мягкие + целевая функция).</summary>
-    public static ScheduleModelDirector CreateDefault() => new(new IModelSectionBuilder[]
+    public static ScheduleModelDirector CreateDefault(SolverPenaltyWeights? weights = null)
     {
-        // Переменные.
-        new VariablesSectionBuilder(),
+        var w = weights ?? SolverPenaltyWeights.Default;
+        return new(new IModelSectionBuilder[]
+        {
+            // Переменные.
+            new VariablesSectionBuilder(),
 
-        // Жёсткие ограничения.
-        new TotalHoursSectionBuilder(),
-        new IntersectionSectionBuilder(),
-        new EquipmentSectionBuilder(),
-        new CapacitySectionBuilder(),
-        new ShiftSectionBuilder(),
-        new BuildingTravelSectionBuilder(),
-        new DoubleLessonSectionBuilder(),
+            // Жёсткие ограничения.
+            new TotalHoursSectionBuilder(),
+            new IntersectionSectionBuilder(),
+            new EquipmentSectionBuilder(),
+            new CapacitySectionBuilder(),
+            new ShiftSectionBuilder(),
+            new BuildingTravelSectionBuilder(),
+            new DoubleLessonSectionBuilder(),
 
-        // Мягкие ограничения (штрафы в целевой функции).
-        new DailyLessonsLimitSectionBuilder(),
-        new WindowSectionBuilder(),
-        new AvailabilitySectionBuilder(),
-        new FavoriteBuildingSectionBuilder(),
-        new ParallelismSectionBuilder(),
+            // Мягкие ограничения (штрафы в целевой функции).
+            new DailyLessonsLimitSectionBuilder(w),
+            new WindowSectionBuilder(),
+            new AvailabilitySectionBuilder(),
+            new FavoriteBuildingSectionBuilder(w),
+            new ParallelismSectionBuilder(w),
 
-        // Целевая функция.
-        new ObjectiveSectionBuilder(),
-    });
+            // Целевая функция.
+            new ObjectiveSectionBuilder(),
+        });
+    }
 
     /// <summary>
     /// Набор для генерации по отдельному институту (декомпозиция «B + C»):
     /// к полному набору добавляются жёсткая блокировка ресурсов, занятых другими
     /// институтами этого семестра, и мягкий якорь к расписанию прошлого семестра.
     /// </summary>
-    public static ScheduleModelDirector CreatePerInstitute() => new(new IModelSectionBuilder[]
+    public static ScheduleModelDirector CreatePerInstitute(SolverPenaltyWeights? weights = null)
     {
-        // Переменные.
-        new VariablesSectionBuilder(),
+        var w = weights ?? SolverPenaltyWeights.Default;
+        return new(new IModelSectionBuilder[]
+        {
+            // Переменные.
+            new VariablesSectionBuilder(),
 
-        // Жёсткие ограничения.
-        new TotalHoursSectionBuilder(),
-        new IntersectionSectionBuilder(),
-        new OccupiedResourcesSectionBuilder(), // B: ресурсы других институтов уже заняты.
-        new EquipmentSectionBuilder(),
-        new CapacitySectionBuilder(),
-        new ShiftSectionBuilder(),
-        new BuildingTravelSectionBuilder(),
-        new DoubleLessonSectionBuilder(),
+            // Жёсткие ограничения.
+            new TotalHoursSectionBuilder(),
+            new IntersectionSectionBuilder(),
+            new OccupiedResourcesSectionBuilder(), // B: ресурсы других институтов уже заняты.
+            new EquipmentSectionBuilder(),
+            new CapacitySectionBuilder(),
+            new ShiftSectionBuilder(),
+            new BuildingTravelSectionBuilder(),
+            new DoubleLessonSectionBuilder(),
 
-        // Мягкие ограничения (штрафы в целевой функции).
-        new DailyLessonsLimitSectionBuilder(),
-        new WindowSectionBuilder(),
-        new AvailabilitySectionBuilder(),
-        new FavoriteBuildingSectionBuilder(),
-        new ParallelismSectionBuilder(),
-        new PreviousScheduleAnchorSectionBuilder(), // C: стабильность к прошлому семестру.
+            // Мягкие ограничения (штрафы в целевой функции).
+            new DailyLessonsLimitSectionBuilder(w),
+            new WindowSectionBuilder(),
+            new AvailabilitySectionBuilder(),
+            new FavoriteBuildingSectionBuilder(w),
+            new ParallelismSectionBuilder(w),
+            new PreviousScheduleAnchorSectionBuilder(w), // C: стабильность к прошлому семестру.
 
-        // Целевая функция.
-        new ObjectiveSectionBuilder(),
-    });
+            // Целевая функция.
+            new ObjectiveSectionBuilder(),
+        });
+    }
 
     public ScheduleModel Build(ScheduleData data)
     {

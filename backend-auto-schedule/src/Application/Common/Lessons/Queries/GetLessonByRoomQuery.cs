@@ -2,7 +2,7 @@
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Common.Lessons.Querys;
+namespace Application.Common.Lessons.Queries;
 
 public class GetLessonByRoomQuery: IRequest<IReadOnlyList<LessonDTO>>
 {
