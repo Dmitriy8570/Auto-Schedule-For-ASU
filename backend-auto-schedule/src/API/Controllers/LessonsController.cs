@@ -84,9 +84,16 @@ public class LessonsController : ControllerBase
     /// </summary>
     [HttpPost("generate/semester/{semesterId:guid}/institute/{instituteId:guid}")]
     public async Task<ActionResult<GenerateScheduleResult>> GenerateForInstitute(
-        Guid semesterId, Guid instituteId, CancellationToken ct)
+        Guid semesterId, Guid instituteId, CancellationToken ct,
+        [FromQuery] double? maxTimeInSeconds = null, [FromQuery] int? searchWorkers = null)
         => Ok(await _mediator.Send(
-            new GenerateInstituteScheduleCommand { SemesterId = semesterId, InstituteId = instituteId }, ct));
+            new GenerateInstituteScheduleCommand
+            {
+                SemesterId = semesterId,
+                InstituteId = instituteId,
+                MaxTimeInSeconds = maxTimeInSeconds,
+                SearchWorkers = searchWorkers
+            }, ct));
 
     /// <summary>
     /// Поставить генерацию расписания института в очередь (фоновая, не блокирует HTTP-поток).

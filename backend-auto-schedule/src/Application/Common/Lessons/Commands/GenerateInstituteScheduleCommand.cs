@@ -15,6 +15,12 @@ public sealed class GenerateInstituteScheduleCommand : IRequest<GenerateSchedule
 {
     public Guid SemesterId { get; init; }
     public Guid InstituteId { get; init; }
+
+    /// <summary>Переопределить лимит времени солвера (секунды) для этого запроса; иначе из конфигурации.</summary>
+    public double? MaxTimeInSeconds { get; init; }
+
+    /// <summary>Переопределить число параллельных воркеров солвера для этого запроса; иначе из конфигурации.</summary>
+    public int? SearchWorkers { get; init; }
 }
 
 public sealed class GenerateInstituteScheduleCommandHandler
@@ -24,17 +30,20 @@ public sealed class GenerateInstituteScheduleCommandHandler
     private readonly IScheduleSolver _solver;
     private readonly IScheduleResultMapper _mapper;
     private readonly ILessonRepository _lessonRepository;
+    private readonly SolverOptions _solverOptions;
 
     public GenerateInstituteScheduleCommandHandler(
         IScheduleDataProvider dataProvider,
         IScheduleSolver solver,
         IScheduleResultMapper mapper,
-        ILessonRepository lessonRepository)
+        ILessonRepository lessonRepository,
+        SolverOptions solverOptions)
     {
         _dataProvider = dataProvider;
         _solver = solver;
         _mapper = mapper;
         _lessonRepository = lessonRepository;
+        _solverOptions = solverOptions;
     }
 
     public async Task<GenerateScheduleResult> Handle(
@@ -44,7 +53,13 @@ public sealed class GenerateInstituteScheduleCommandHandler
             request.SemesterId, request.InstituteId, cancellationToken);
 
         var model = ScheduleModelDirector.CreatePerInstitute().Build(data);
-        var solution = _solver.Solve(model);
+
+        // Параметры солвера из конфигурации с необязательным переопределением на запрос.
+        var options = _solverOptions;
+        if (request.MaxTimeInSeconds is { } maxTime) options = options with { MaxTimeInSeconds = maxTime };
+        if (request.SearchWorkers is { } workers) options = options with { SearchWorkers = workers };
+
+        var solution = _solver.Solve(model, options);
 
         if (!solution.IsSuccess)
             return new GenerateScheduleResult(
