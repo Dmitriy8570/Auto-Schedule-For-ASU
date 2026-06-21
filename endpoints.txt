@@ -64,8 +64,10 @@
 --------------------------------------------------------------------------------
 
   POST /api/lessons/generate/semester/{semesterId}/institute/{instituteId}
-    path: semesterId  : Guid — семестр
-          instituteId : Guid — институт
+    path:  semesterId  : Guid — семестр
+           instituteId : Guid — институт
+    query: maxTimeInSeconds : double? — переопределить лимит времени солвера (иначе из конфигурации)
+           searchWorkers    : int?    — переопределить число воркеров солвера (иначе из конфигурации)
     body: нет
 
   Поведение:

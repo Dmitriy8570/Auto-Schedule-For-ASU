@@ -1,5 +1,6 @@
 ﻿using Application.Common.Generation;
 using Application.Common.Interfaces;
+using Application.Solver.Solving;
 using Infrastructure.Auth;
 using Infrastructure.Data;
 using Infrastructure.Mmis;
@@ -9,6 +10,7 @@ using Infrastructure.Schedule.Generation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure;
 public static class DependencyInjection
@@ -32,6 +34,11 @@ public static class DependencyInjection
         services.AddScoped<IWorkloadRepository, WorkloadRepository>();
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
         services.AddScoped<IScheduleDataProvider, ScheduleDataProvider>();
+
+        // Параметры солвера из конфигурации (секция "Solver"): лимит времени, число воркеров, лог.
+        // Хендлеры получают готовое значение SolverOptions (Application не зависит от Options/Configuration).
+        services.Configure<SolverOptions>(configuration.GetSection("Solver"));
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<SolverOptions>>().Value);
 
         // Фоновая генерация расписания: очередь (синглтон) + служба-консьюмер.
         // HTTP-поток лишь ставит задачу в очередь, а солвер (до 180 с) работает в фоне.
