@@ -171,20 +171,29 @@
       semesterId: Guid?     — ограничить семестром
       from      : DateTime? — нижняя граница TimeStamp
       to        : DateTime? — верхняя граница TimeStamp
+      page      : int = 1   — номер страницы (с 1)
+      pageSize  : int = 20  — размер страницы (1..100, иначе клампится)
 
-  200: WorkloadChange[]
+  200: PagedResult<WorkloadChange>
     {
-      "action":       int,      // 0 Add | 1 Update | 2 Delete
-      "oldValue":     int,      // часов до изменения
-      "newValue":     int,      // часов после изменения
-      "timeStamp":    DateTime,
-      "scope":        string,   // "Semester" | "Week"
-      "curriculumId": Guid,
-      "teacherId":    Guid,
-      "subjectId":    Guid,
-      "streamId":     Guid      // поток нагрузки (групп может быть несколько — groupId только фильтр)
+      "items": [ {
+        "action":       int,      // 0 Add | 1 Update | 2 Delete
+        "oldValue":     int,      // часов до изменения
+        "newValue":     int,      // часов после изменения
+        "timeStamp":    DateTime,
+        "scope":        string,   // "Semester" | "Week"
+        "curriculumId": Guid,
+        "teacherId":    Guid,
+        "subjectId":    Guid,
+        "streamId":     Guid      // поток нагрузки (групп может быть несколько — groupId только фильтр)
+      } ],
+      "page":       int,
+      "pageSize":   int,
+      "totalItems": int,
+      "totalPages": int
     }
-  // Сортировка по timeStamp по убыванию.
+  // Семестровый и понедельный журналы объединяются (SQL UNION ALL), сортируются по
+  // timeStamp по убыванию и пагинируются на стороне БД (индексы IX_*Logs_TimeStamp).
 
 
 --------------------------------------------------------------------------------

@@ -22,17 +22,17 @@ const isInstituteSelected = computed(() => selectedInstitute.value !== '')
 const teacherNames = computed<Record<string, string>>(() =>
   Object.fromEntries(teachers.value.map(t => [t.id, t.name])))
 
-const changes = ref<WorkloadChangeDto[]>([])
+const items = ref<WorkloadChangeDto[]>([])
 const loading = ref(false)
 const error = ref('')
 
-// Бэкенд отдаёт весь список — пагинация на клиенте.
+// Пагинация на стороне сервера: страница запрашивается у бэкенда.
 const page = ref(1)
 const pageSize = 10
-const totalPages = computed(() => Math.max(1, Math.ceil(changes.value.length / pageSize)))
-const pageItems = computed(() => changes.value.slice((page.value - 1) * pageSize, page.value * pageSize))
-const rangeFrom = computed(() => changes.value.length === 0 ? 0 : (page.value - 1) * pageSize + 1)
-const rangeTo = computed(() => Math.min(page.value * pageSize, changes.value.length))
+const totalItems = ref(0)
+const totalPages = ref(1)
+const rangeFrom = computed(() => totalItems.value === 0 ? 0 : (page.value - 1) * pageSize + 1)
+const rangeTo = computed(() => Math.min(page.value * pageSize, totalItems.value))
 
 const actionMeta: Record<LogAction, { title: string; type: string; icon: typeof PlusCircle }> = {
   Add: { title: 'Добавлена нагрузка', type: 'add', icon: PlusCircle },
@@ -50,16 +50,28 @@ async function loadChanges() {
   loading.value = true
   error.value = ''
   try {
-    changes.value = await workloads.changes({
+    const res = await workloads.changes({
       teacherId: selectedTeacher.value || undefined,
+      page: page.value,
+      pageSize,
     })
-    page.value = 1
+    items.value = res.items
+    totalItems.value = res.totalItems
+    totalPages.value = res.totalPages
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Не удалось загрузить историю.'
-    changes.value = []
+    items.value = []
+    totalItems.value = 0
+    totalPages.value = 1
   } finally {
     loading.value = false
   }
+}
+
+// Смена фильтра — вернуться на первую страницу.
+function reload() {
+  page.value = 1
+  loadChanges()
 }
 
 watch(selectedInstitute, async (id) => {
@@ -75,10 +87,13 @@ watch(selectedInstitute, async (id) => {
   }
 })
 
-watch(selectedTeacher, loadChanges)
+watch(selectedTeacher, reload)
 
 function goToPage(p: number) {
-  if (p >= 1 && p <= totalPages.value) page.value = p
+  if (p >= 1 && p <= totalPages.value && p !== page.value) {
+    page.value = p
+    loadChanges()
+  }
 }
 
 onMounted(async () => {
@@ -126,10 +141,10 @@ onMounted(async () => {
     <div class="history-list-wrapper">
       <div v-if="loading" class="state-msg">Загрузка…</div>
       <div v-else-if="error" class="state-msg state-error">{{ error }}</div>
-      <div v-else-if="changes.length === 0" class="state-msg">Изменений не найдено.</div>
+      <div v-else-if="totalItems === 0" class="state-msg">Изменений не найдено.</div>
 
       <div v-else class="history-list">
-        <div v-for="(event, idx) in pageItems" :key="idx" class="history-card">
+        <div v-for="(event, idx) in items" :key="idx" class="history-card">
 
           <div class="status-icon-wrapper" :class="`bg-${actionMeta[event.action].type}`">
             <component :is="actionMeta[event.action].icon" :size="20" :class="`icon-${actionMeta[event.action].type}`" />
@@ -153,8 +168,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="!loading && !error && changes.length > 0" class="pagination-bar">
-      <div class="pagination-info">Показано {{ rangeFrom }}–{{ rangeTo }} из {{ changes.length }}</div>
+    <div v-if="!loading && !error && totalItems > 0" class="pagination-bar">
+      <div class="pagination-info">Показано {{ rangeFrom }}–{{ rangeTo }} из {{ totalItems }}</div>
       <div class="pagination-controls">
         <button class="page-btn" :disabled="page <= 1" @click="goToPage(page - 1)"><ChevronLeft :size="18" /></button>
         <div class="page-text">{{ page }} / {{ totalPages }}</div>

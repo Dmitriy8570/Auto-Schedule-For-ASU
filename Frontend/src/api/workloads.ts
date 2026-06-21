@@ -17,6 +17,8 @@ export interface WorkloadChangesFilter {
   semesterId?: string
   from?: string
   to?: string
+  page?: number
+  pageSize?: number
 }
 
 export const workloads = {
@@ -24,7 +26,7 @@ export const workloads = {
   list: (filter: WorkloadsFilter = {}) =>
     http.get<PagedResult<WorkloadItemDto>>('/workloads', { ...filter }),
 
-  // Журнал изменений нагрузки.
+  // Журнал изменений нагрузки с пагинацией.
   changes: (filter: WorkloadChangesFilter = {}) =>
-    http.get<WorkloadChangeDto[]>('/workloads/changes', { ...filter }),
+    http.get<PagedResult<WorkloadChangeDto>>('/workloads/changes', { ...filter }),
 }
