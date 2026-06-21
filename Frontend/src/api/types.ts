@@ -158,6 +158,20 @@ export interface GenerateScheduleResult {
   wallTimeSeconds: number
 }
 
+export type GenerationJobState = 'Queued' | 'Running' | 'Succeeded' | 'Failed'
+
+export interface GenerationJobStatus {
+  jobId: string
+  state: GenerationJobState
+  semesterId: string
+  instituteId: string
+  createdAt: string
+  startedAt: string | null
+  completedAt: string | null
+  result: GenerateScheduleResult | null
+  error: string | null
+}
+
 export interface PublishInstituteScheduleResult { published: number }
 
 export interface DiscardInstituteScheduleResult { discarded: number }

@@ -1,4 +1,5 @@
 using Application.Common.DTO.Lessons;
+using Application.Common.Generation;
 using Application.Common.Lessons.Commands;
 using Application.Common.Lessons.Querys;
 using MediatR;
@@ -12,8 +13,13 @@ namespace API.Controllers;
 public class LessonsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IScheduleGenerationQueue _generationQueue;
 
-    public LessonsController(IMediator mediator) => _mediator = mediator;
+    public LessonsController(IMediator mediator, IScheduleGenerationQueue generationQueue)
+    {
+        _mediator = mediator;
+        _generationQueue = generationQueue;
+    }
 
     /// <summary>Получить занятие по идентификатору.</summary>
     [HttpGet("{id:guid}")]
@@ -81,6 +87,22 @@ public class LessonsController : ControllerBase
         Guid semesterId, Guid instituteId, CancellationToken ct)
         => Ok(await _mediator.Send(
             new GenerateInstituteScheduleCommand { SemesterId = semesterId, InstituteId = instituteId }, ct));
+
+    /// <summary>
+    /// Поставить генерацию расписания института в очередь (фоновая, не блокирует HTTP-поток).
+    /// Возвращает 202 Accepted и статус задачи; за прогрессом следить через GET generate/status/{jobId}.
+    /// </summary>
+    [HttpPost("generate/semester/{semesterId:guid}/institute/{instituteId:guid}/async")]
+    public ActionResult<GenerationJobStatus> EnqueueGenerateForInstitute(Guid semesterId, Guid instituteId)
+    {
+        var status = _generationQueue.Enqueue(semesterId, instituteId);
+        return AcceptedAtAction(nameof(GetGenerationStatus), new { jobId = status.JobId }, status);
+    }
+
+    /// <summary>Статус фоновой задачи генерации расписания.</summary>
+    [HttpGet("generate/status/{jobId:guid}")]
+    public ActionResult<GenerationJobStatus> GetGenerationStatus(Guid jobId)
+        => _generationQueue.TryGetStatus(jobId, out var status) ? Ok(status) : NotFound();
 
     /// <summary>
     /// Опубликовать расписание института: перевести черновик (Draft) в текущее (Current),

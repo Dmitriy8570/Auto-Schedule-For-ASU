@@ -1,6 +1,7 @@
 import { http } from './http'
 import type {
   LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult, DiscardInstituteScheduleResult,
+  GenerationJobStatus,
 } from './types'
 
 export type ScheduleEntity = 'teacher' | 'group' | 'room'
@@ -35,9 +36,17 @@ export const lessons = {
   // Удалить занятие.
   remove: (id: string) => http.del<void>(`/lessons/${id}`),
 
-  // Генерация черновика расписания института на семестр.
+  // Генерация черновика расписания института на семестр (синхронная, держит HTTP-поток).
   generateForInstitute: (semesterId: string, instituteId: string) =>
     http.post<GenerateScheduleResult>(`/lessons/generate/semester/${semesterId}/institute/${instituteId}`),
+
+  // Поставить генерацию института в очередь (фоновая) — возвращает статус задачи (202).
+  generateForInstituteAsync: (semesterId: string, instituteId: string) =>
+    http.post<GenerationJobStatus>(`/lessons/generate/semester/${semesterId}/institute/${instituteId}/async`),
+
+  // Статус фоновой задачи генерации.
+  generationStatus: (jobId: string) =>
+    http.get<GenerationJobStatus>(`/lessons/generate/status/${jobId}`),
 
   // Публикация черновика института (Draft -> Current).
   publishInstitute: (instituteId: string) =>

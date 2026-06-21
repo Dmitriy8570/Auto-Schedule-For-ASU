@@ -1,9 +1,11 @@
-﻿using Application.Common.Interfaces;
+﻿using Application.Common.Generation;
+using Application.Common.Interfaces;
 using Infrastructure.Auth;
 using Infrastructure.Data;
 using Infrastructure.Mmis;
 using Infrastructure.Repositories;
 using Infrastructure.Schedule;
+using Infrastructure.Schedule.Generation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +32,12 @@ public static class DependencyInjection
         services.AddScoped<IWorkloadRepository, WorkloadRepository>();
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
         services.AddScoped<IScheduleDataProvider, ScheduleDataProvider>();
+
+        // Фоновая генерация расписания: очередь (синглтон) + служба-консьюмер.
+        // HTTP-поток лишь ставит задачу в очередь, а солвер (до 180 с) работает в фоне.
+        services.AddSingleton<ScheduleGenerationQueue>();
+        services.AddSingleton<IScheduleGenerationQueue>(sp => sp.GetRequiredService<ScheduleGenerationQueue>());
+        services.AddHostedService<ScheduleGenerationHostedService>();
 
         // Синхронизация с MMIS (MS SQL): фоновая ежедневная выгрузка + журналирование нагрузки.
         services.Configure<MmisSyncOptions>(configuration.GetSection(MmisSyncOptions.SectionName));

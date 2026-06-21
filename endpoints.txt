@@ -81,6 +81,32 @@
       "wallTimeSeconds": number  // время работы солвера
     }
   // При status Infeasible/Unknown текущее расписание института НЕ изменяется.
+  // Синхронный вариант: держит HTTP-поток до 180 с. Для UI используется async ниже.
+
+  --- Асинхронная генерация (фоновая, не блокирует HTTP-поток) ---  [реализовано]
+
+  POST /api/lessons/generate/semester/{semesterId}/institute/{instituteId}/async
+    path: semesterId, instituteId : Guid
+    body: нет
+    202 Accepted: GenerationJobStatus (заголовок Location -> GET generate/status/{jobId})
+    // Задача ставится в очередь; солвер работает в фоновой службе. Задачи выполняются
+    // последовательно. Поведение генерации идентично синхронному варианту.
+
+  GET /api/lessons/generate/status/{jobId}
+    path: jobId : Guid — идентификатор задачи из ответа async-генерации
+    200: GenerationJobStatus
+    {
+      "jobId":       Guid,
+      "state":       string,   // Queued | Running | Succeeded | Failed
+      "semesterId":  Guid,
+      "instituteId": Guid,
+      "createdAt":   DateTime,
+      "startedAt":   DateTime?, // когда задача начала выполняться
+      "completedAt": DateTime?, // когда завершилась
+      "result":      GenerateScheduleResult?, // при state=Succeeded
+      "error":       string?    // при state=Failed
+    }
+    404: задача с таким jobId неизвестна (статусы хранятся в памяти процесса)
 
 
 --------------------------------------------------------------------------------
