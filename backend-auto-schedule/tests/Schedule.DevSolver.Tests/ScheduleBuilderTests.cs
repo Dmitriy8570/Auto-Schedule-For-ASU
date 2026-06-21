@@ -33,6 +33,16 @@ public sealed class ScheduleBuilderTests
     private static TimeSlot Slot(int number) =>
         TimeSlot.Create(Guid.NewGuid(), Guid.NewGuid(), number);
 
+    /// <summary>Нагрузка только со скалярным TeacherId плана — для OccupiedResources (по преподавателю).</summary>
+    private static SemesterWorkload WorkloadWithTeacher(int hours, Guid teacherId)
+    {
+        var curriculum = DomainFactory.New<Curriculum>().Set(nameof(Curriculum.TeacherId), teacherId);
+        return DomainFactory.New<SemesterWorkload>()
+            .Set(nameof(SemesterWorkload.Id), Guid.NewGuid())
+            .Set(nameof(SemesterWorkload.Hours), hours)
+            .Set(nameof(SemesterWorkload.Curriculum), curriculum);
+    }
+
     /// <summary>
     /// Нагрузка с мини-графом навигаций (свой преподаватель, поток с одной группой) — нужна
     /// строителям, читающим Curriculum.Teacher / Curriculum.Stream.StreamGroups (Intersection).
@@ -179,5 +189,49 @@ public sealed class ScheduleBuilderTests
         Assert.True(IsSolved(status));
         Assert.Equal(1, Assigned(solver, model, w: 0));
         Assert.Equal(1, Assigned(solver, model, w: 1));
+    }
+
+    // --- OccupiedResources (декомпозиция B): ресурсы, занятые другими институтами ---
+
+    [Fact]
+    public void OccupiedResources_ForbidsBusyClassroomSlot()
+    {
+        var room = Room(50);
+        var busy = Slot(1);  // индекс слота 0 — занят
+        var free = Slot(2);  // индекс слота 1 — свободен
+        var data = new ScheduleData(
+            new[] { Workload(hours: 2) },                  // 1 пара
+            new[] { room },
+            new[] { busy, free },
+            Array.Empty<ConstraintConfig>(),
+            OccupiedClassroomSlots: new[] { new OccupiedSlot(room.Id, busy.Id) });
+
+        var (status, solver, model) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new OccupiedResourcesSectionBuilder());
+
+        Assert.True(IsSolved(status));
+        Assert.Equal(0L, solver.Value(model.Lessons[0, 0, 0])); // занятая (аудитория, слот) запрещена
+        Assert.Equal(1, Assigned(solver, model, w: 0));         // пара ушла в свободный слот
+    }
+
+    [Fact]
+    public void OccupiedResources_ForbidsBusyTeacherSlot()
+    {
+        var teacher = Guid.NewGuid();
+        var busy = Slot(1);  // индекс слота 0 — преподаватель занят
+        var free = Slot(2);
+        var data = new ScheduleData(
+            new[] { WorkloadWithTeacher(hours: 2, teacherId: teacher) },
+            new[] { Room(50) },
+            new[] { busy, free },
+            Array.Empty<ConstraintConfig>(),
+            OccupiedTeacherSlots: new[] { new OccupiedTeacherSlot(teacher, busy.Id) });
+
+        var (status, solver, model) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new OccupiedResourcesSectionBuilder());
+
+        Assert.True(IsSolved(status));
+        Assert.Equal(0L, solver.Value(model.Lessons[0, 0, 0])); // преподаватель занят в этом слоте
+        Assert.Equal(1, Assigned(solver, model, w: 0));
     }
 }
