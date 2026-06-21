@@ -4,7 +4,7 @@ import { Search, BarChart2, FileText, Users, BookOpen } from 'lucide-vue-next'
 import BaseInput from './BaseInput.vue'
 import { lookups } from '../api/lookups'
 import { workloads } from '../api/workloads'
-import { ApiError } from '../api/http'
+import { useAsync } from '../composables/useAsync'
 import type { InstituteDto, DepartmentDto, TeacherDto, WorkloadItemDto, LessonType } from '../api/types'
 
 // --- Справочники для фильтров ---
@@ -21,8 +21,7 @@ const isInstituteSelected = computed(() => selectedInstitute.value !== '')
 
 // --- Данные нагрузки ---
 const items = ref<WorkloadItemDto[]>([])
-const loading = ref(false)
-const error = ref('')
+const { loading, error, run } = useAsync()
 const page = ref(1)
 const pageSize = 20
 const totalPages = ref(1)
@@ -44,9 +43,8 @@ const hoursOnWeek = (row: WorkloadItemDto, week: number): number =>
   row.weeklyHours.find(w => w.week === week)?.hours ?? 0
 
 async function loadWorkloads() {
-  loading.value = true
-  error.value = ''
-  try {
+  // useAsync отменяет предыдущий запрос (AbortController) и ведёт loading/error.
+  await run(async (signal) => {
     const result = await workloads.list({
       instituteId: selectedInstitute.value || undefined,
       departmentId: selectedDept.value || undefined,
@@ -54,16 +52,12 @@ async function loadWorkloads() {
       subjectSearch: searchQuery.value.trim() || undefined,
       page: page.value,
       pageSize,
-    })
+    }, signal)
     items.value = result.items
     totalPages.value = result.totalPages
     totalItems.value = result.totalItems
-  } catch (e) {
-    error.value = e instanceof ApiError ? e.message : 'Не удалось загрузить нагрузку.'
-    items.value = []
-  } finally {
-    loading.value = false
-  }
+  })
+  if (error.value) items.value = []
 }
 
 // Каскад: при смене института грузим его кафедры/преподавателей и сбрасываем вложенные фильтры.

@@ -41,6 +41,12 @@ async function extractError(response: Response): Promise<string> {
       const messages = Object.values(data.errors as Record<string, string[]>).flat()
       if (messages.length) return messages.join('; ')
     }
+    // 409 коллизия расписания: ProblemDetails с массивом conflicts[{kind, detail}].
+    if (Array.isArray(data?.conflicts) && data.conflicts.length) {
+      const details = (data.conflicts as Array<{ detail?: string }>)
+        .map(c => c?.detail).filter(Boolean)
+      if (details.length) return `Коллизия: ${details.join(' ')}`
+    }
     if (typeof data?.detail === 'string') return data.detail
     if (typeof data?.title === 'string') return data.title
   } catch {

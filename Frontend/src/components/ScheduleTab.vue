@@ -11,6 +11,7 @@ import { lessons } from '../api/lessons'
 import { calendar } from '../api/calendar'
 import { management } from '../api/management'
 import { ApiError } from '../api/http'
+import { useToast } from '../composables/useToast'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
@@ -19,6 +20,7 @@ import type {
 
 type Entity = 'teachers' | 'groups' | 'rooms'
 const currentEntity = ref<Entity>('teachers')
+const toast = useToast()
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 const timeSlots = [
@@ -183,9 +185,11 @@ async function savePair() {
       curriculumId: opt.id,
     })
     editOpen.value = false
+    toast.success('Пара добавлена.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось сохранить пару.'
+    // 409-коллизия (аудитория/преподаватель/группа) приходит сюда читаемым сообщением.
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось сохранить пару.')
   } finally {
     saving.value = false
   }
@@ -204,9 +208,10 @@ async function deleteSelected() {
   try {
     await lessons.remove(selectedLesson.value.id)
     selectedLesson.value = null
+    toast.success('Пара удалена.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось удалить пару.'
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось удалить пару.')
   }
 }
 
@@ -240,9 +245,10 @@ async function onCellClick(dayIdx: number, pair: number) {
       })
       await lessons.remove(src.id)
       cancelMove()
+      toast.success('Пара перемещена.')
       await loadLessons()
     } catch (e) {
-      banner.value = e instanceof ApiError ? e.message : 'Не удалось переместить пару.'
+      toast.error(e instanceof ApiError ? e.message : 'Не удалось переместить пару.')
     }
     return
   }
@@ -325,28 +331,32 @@ async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null
   return null
 }
 
-async function generate(scope: 'university' | 'teacher' | 'institute') {
+// Поставить генерацию одного института в очередь и дождаться результата (текстовая сводка).
+async function runInstituteGeneration(instituteId: string): Promise<string> {
+  // Генерация идёт в фоне — HTTP-запрос не висит до 180 с.
+  const job = await lessons.generateForInstituteAsync(selSemester.value, instituteId)
+  const final = await pollGeneration(job.jobId)
+  if (!final) return 'выполняется дольше обычного — загляните позже'
+  if (final.state === 'Succeeded' && final.result) {
+    const r = final.result
+    return `${r.status}, занятий: ${r.lessonsCreated}, штраф: ${r.objectiveValue}, ` +
+      `время: ${r.wallTimeSeconds.toFixed(1)} с`
+  }
+  return `не удалась: ${final.error ?? final.state}`
+}
+
+async function generate(scope: 'university' | 'institute') {
   isAutoGenerateOpen.value = false
+  if (!selSemester.value) { banner.value = 'Выберите семестр для генерации.'; return }
+
   if (scope === 'institute') {
     if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для генерации по институту.'; return }
-    if (!selSemester.value) { banner.value = 'Выберите семестр для генерации.'; return }
     banner.value = ''
     lessonsLoading.value = true
     try {
-      // Генерация поставлена в очередь и идёт в фоне — HTTP-запрос не висит до 180 с.
-      const job = await lessons.generateForInstituteAsync(selSemester.value, selInstitute.value)
       banner.value = 'Генерация запущена в фоне, ожидаем результат…'
-      const final = await pollGeneration(job.jobId)
-      if (!final) {
-        banner.value = 'Генерация выполняется дольше обычного. Загляните позже или обновите расписание.'
-      } else if (final.state === 'Succeeded' && final.result) {
-        const r = final.result
-        banner.value = `Генерация: ${r.status}, создано занятий: ${r.lessonsCreated}, ` +
-          `штраф: ${r.objectiveValue}, время: ${r.wallTimeSeconds.toFixed(1)} с.`
-        await loadLessons()
-      } else {
-        banner.value = `Генерация не удалась: ${final.error ?? final.state}.`
-      }
+      banner.value = `Генерация: ${await runInstituteGeneration(selInstitute.value)}.`
+      await loadLessons()
     } catch (e) {
       banner.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
     } finally {
@@ -354,9 +364,28 @@ async function generate(scope: 'university' | 'teacher' | 'institute') {
     }
     return
   }
-  banner.value = scope === 'university'
-    ? 'Генерация по всему вузу пока не поддержана бэкендом (есть только по институту).'
-    : 'Генерация по преподавателю пока не поддержана бэкендом (есть только по институту).'
+
+  // scope === 'university': последовательно по всем институтам. Декомпозиция —
+  // каждый следующий институт учитывает ресурсы, уже занятые предыдущими.
+  if (institutes.value.length === 0) { banner.value = 'Список институтов пуст — обновите страницу.'; return }
+  banner.value = ''
+  lessonsLoading.value = true
+  try {
+    const total = institutes.value.length
+    let done = 0
+    for (const inst of institutes.value) {
+      banner.value = `Генерация по вузу: «${inst.name}» (${done + 1}/${total})…`
+      const res = await runInstituteGeneration(inst.id)
+      done++
+      banner.value = `«${inst.name}»: ${res}. (${done}/${total})`
+    }
+    banner.value = `Генерация по вузу завершена: обработано институтов — ${total}.`
+    await loadLessons()
+  } catch (e) {
+    banner.value = e instanceof ApiError ? e.message : 'Ошибка генерации по вузу.'
+  } finally {
+    lessonsLoading.value = false
+  }
 }
 
 // Выгрузить (опубликовать) черновик выбранного института: Draft -> Current.
@@ -367,12 +396,12 @@ async function publish() {
   lessonsLoading.value = true
   try {
     const r = await lessons.publishInstitute(selInstitute.value)
-    banner.value = `Расписание выгружено: опубликовано занятий — ${r.published}.`
+    toast.success(`Расписание выгружено: опубликовано занятий — ${r.published}.`)
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError
+    toast.error(e instanceof ApiError
       ? (e.status === 404 ? 'У института нет черновика для выгрузки.' : e.message)
-      : 'Не удалось выгрузить расписание.'
+      : 'Не удалось выгрузить расписание.')
   } finally {
     lessonsLoading.value = false
   }
@@ -386,12 +415,11 @@ async function discard() {
   lessonsLoading.value = true
   try {
     const r = await lessons.discardInstitute(selInstitute.value)
-    banner.value = r.discarded > 0
-      ? `Черновик сброшен: удалено занятий — ${r.discarded}.`
-      : 'Черновика нет — сбрасывать нечего.'
+    if (r.discarded > 0) toast.success(`Черновик сброшен: удалено занятий — ${r.discarded}.`)
+    else toast.info('Черновика нет — сбрасывать нечего.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось сбросить черновик.'
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось сбросить черновик.')
   } finally {
     lessonsLoading.value = false
   }
@@ -456,14 +484,11 @@ onMounted(async () => {
           </BaseButton>
 
           <div v-if="isAutoGenerateOpen" class="dropdown-menu">
-            <div class="dropdown-item" @click="generate('university')">
-              <GraduationCap :size="18" class="dd-icon" /><span>Для всего университета</span>
-            </div>
-            <div class="dropdown-item" @click="generate('teacher')">
-              <User :size="18" class="dd-icon" /><span>Для выбранного преподавателя</span>
-            </div>
             <div class="dropdown-item" @click="generate('institute')">
               <Building2 :size="18" class="dd-icon" /><span>Для выбранного института</span>
+            </div>
+            <div class="dropdown-item" @click="generate('university')">
+              <GraduationCap :size="18" class="dd-icon" /><span>Для всего университета (по институтам)</span>
             </div>
           </div>
         </div>

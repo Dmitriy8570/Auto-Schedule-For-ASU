@@ -23,8 +23,8 @@ export interface WorkloadChangesFilter {
 
 export const workloads = {
   // Текущая нагрузка (учебный план) с пагинацией.
-  list: (filter: WorkloadsFilter = {}) =>
-    http.get<PagedResult<WorkloadItemDto>>('/workloads', { ...filter }),
+  list: (filter: WorkloadsFilter = {}, signal?: AbortSignal) =>
+    http.get<PagedResult<WorkloadItemDto>>('/workloads', { ...filter }, signal),
 
   // Журнал изменений нагрузки с пагинацией.
   changes: (filter: WorkloadChangesFilter = {}) =>
