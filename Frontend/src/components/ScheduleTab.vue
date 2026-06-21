@@ -14,6 +14,7 @@ import { ApiError } from '../api/http'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
+  GenerationJobStatus,
 } from '../api/types'
 
 type Entity = 'teachers' | 'groups' | 'rooms'
@@ -311,6 +312,19 @@ watch(selSemester, async (id) => {
   selectedWeekId.value = current?.id ?? weeks.value[0]?.id ?? ''
 })
 
+// Поллинг статуса фоновой генерации до завершения (с мягким таймаутом ~200 с).
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+
+async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null> {
+  const deadline = Date.now() + 200_000
+  while (Date.now() < deadline) {
+    await sleep(1500)
+    const s = await lessons.generationStatus(jobId)
+    if (s.state === 'Succeeded' || s.state === 'Failed') return s
+  }
+  return null
+}
+
 async function generate(scope: 'university' | 'teacher' | 'institute') {
   isAutoGenerateOpen.value = false
   if (scope === 'institute') {
@@ -319,10 +333,20 @@ async function generate(scope: 'university' | 'teacher' | 'institute') {
     banner.value = ''
     lessonsLoading.value = true
     try {
-      const r = await lessons.generateForInstitute(selSemester.value, selInstitute.value)
-      banner.value = `Генерация: ${r.status}, создано занятий: ${r.lessonsCreated}, ` +
-        `штраф: ${r.objectiveValue}, время: ${r.wallTimeSeconds.toFixed(1)} с.`
-      await loadLessons()
+      // Генерация поставлена в очередь и идёт в фоне — HTTP-запрос не висит до 180 с.
+      const job = await lessons.generateForInstituteAsync(selSemester.value, selInstitute.value)
+      banner.value = 'Генерация запущена в фоне, ожидаем результат…'
+      const final = await pollGeneration(job.jobId)
+      if (!final) {
+        banner.value = 'Генерация выполняется дольше обычного. Загляните позже или обновите расписание.'
+      } else if (final.state === 'Succeeded' && final.result) {
+        const r = final.result
+        banner.value = `Генерация: ${r.status}, создано занятий: ${r.lessonsCreated}, ` +
+          `штраф: ${r.objectiveValue}, время: ${r.wallTimeSeconds.toFixed(1)} с.`
+        await loadLessons()
+      } else {
+        banner.value = `Генерация не удалась: ${final.error ?? final.state}.`
+      }
     } catch (e) {
       banner.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
     } finally {
