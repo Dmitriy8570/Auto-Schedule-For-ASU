@@ -159,3 +159,5 @@ export interface GenerateScheduleResult {
 }
 
 export interface PublishInstituteScheduleResult { published: number }
+
+export interface DiscardInstituteScheduleResult { discarded: number }

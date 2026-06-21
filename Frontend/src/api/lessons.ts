@@ -1,5 +1,7 @@
 import { http } from './http'
-import type { LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult } from './types'
+import type {
+  LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult, DiscardInstituteScheduleResult,
+} from './types'
 
 export type ScheduleEntity = 'teacher' | 'group' | 'room'
 
@@ -40,4 +42,8 @@ export const lessons = {
   // Публикация черновика института (Draft -> Current).
   publishInstitute: (instituteId: string) =>
     http.post<PublishInstituteScheduleResult>(`/lessons/publish/institute/${instituteId}`),
+
+  // Сброс черновика института до выгруженного (удалить Draft, оставить Current).
+  discardInstitute: (instituteId: string) =>
+    http.post<DiscardInstituteScheduleResult>(`/lessons/discard/institute/${instituteId}`),
 }
