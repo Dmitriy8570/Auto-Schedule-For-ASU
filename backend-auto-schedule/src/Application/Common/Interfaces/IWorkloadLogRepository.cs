@@ -1,3 +1,4 @@
+using Application.Common.DTO;
 using Application.Common.DTO.Workloads;
 
 namespace Application.Common.Interfaces;
@@ -14,7 +15,10 @@ public sealed record WorkloadChangeFilter(
 /// <summary>Доступ к журналам изменений семестровой и понедельной нагрузки.</summary>
 public interface IWorkloadLogRepository
 {
-    /// <summary>Изменения нагрузки, удовлетворяющие фильтру, по убыванию времени.</summary>
-    Task<IReadOnlyList<WorkloadChangeDto>> GetChangesAsync(
-        WorkloadChangeFilter filter, CancellationToken cancellationToken);
+    /// <summary>
+    /// Страница изменений нагрузки, удовлетворяющих фильтру, по убыванию времени.
+    /// Семестровый и понедельный журналы объединяются и пагинируются на стороне БД.
+    /// </summary>
+    Task<PagedResult<WorkloadChangeDto>> GetChangesAsync(
+        WorkloadChangeFilter filter, int page, int pageSize, CancellationToken cancellationToken);
 }

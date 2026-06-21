@@ -24,18 +24,20 @@ public sealed class WorkloadsController(IMediator mediator) : ControllerBase
             new GetWorkloadsQuery(instituteId, departmentId, teacherId, subjectSearch, page, pageSize), ct));
 
     /// <summary>
-    /// Журнал изменений нагрузки с необязательными фильтрами
+    /// Журнал изменений нагрузки с необязательными фильтрами и пагинацией
     /// (преподаватель, группа, предмет, семестр, диапазон дат). Сортировка по времени по убыванию.
     /// </summary>
     [HttpGet("api/workloads/changes")]
-    public async Task<ActionResult<IReadOnlyList<WorkloadChangeDto>>> GetChanges(
+    public async Task<ActionResult<PagedResult<WorkloadChangeDto>>> GetChanges(
         CancellationToken ct,
         [FromQuery] Guid? teacherId = null,
         [FromQuery] Guid? groupId = null,
         [FromQuery] Guid? subjectId = null,
         [FromQuery] Guid? semesterId = null,
         [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null)
+        [FromQuery] DateTime? to = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
         => Ok(await mediator.Send(new GetWorkloadChangesQuery
         {
             TeacherId = teacherId,
@@ -43,6 +45,8 @@ public sealed class WorkloadsController(IMediator mediator) : ControllerBase
             SubjectId = subjectId,
             SemesterId = semesterId,
             From = from,
-            To = to
+            To = to,
+            Page = page,
+            PageSize = pageSize
         }, ct));
 }

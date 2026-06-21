@@ -1,3 +1,4 @@
+using Application.Common.DTO;
 using Application.Common.DTO.Workloads;
 using Application.Common.Interfaces;
 using Infrastructure.Data;
@@ -12,20 +13,33 @@ namespace Infrastructure.Repositories;
 /// </summary>
 public sealed class WorkloadLogRepository : IWorkloadLogRepository
 {
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
+
     private readonly ApplicationDbContext _context;
 
     public WorkloadLogRepository(ApplicationDbContext context) => _context = context;
 
-    public async Task<IReadOnlyList<WorkloadChangeDto>> GetChangesAsync(
-        WorkloadChangeFilter filter, CancellationToken cancellationToken)
+    public async Task<PagedResult<WorkloadChangeDto>> GetChangesAsync(
+        WorkloadChangeFilter filter, int page, int pageSize, CancellationToken cancellationToken)
     {
-        var semesterChanges = await SemesterQuery(filter).ToListAsync(cancellationToken);
-        var weekChanges = await WeekQuery(filter).ToListAsync(cancellationToken);
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? DefaultPageSize : Math.Min(pageSize, MaxPageSize);
 
-        return semesterChanges
-            .Concat(weekChanges)
+        // Семестровый и понедельный журналы объединяются в один запрос (SQL UNION ALL),
+        // сортируются по времени и пагинируются на стороне БД — без выгрузки всего журнала в память.
+        var combined = SemesterQuery(filter).Concat(WeekQuery(filter));
+
+        var totalItems = await combined.CountAsync(cancellationToken);
+
+        var items = await combined
             .OrderByDescending(c => c.TimeStamp)
-            .ToList();
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+        return new PagedResult<WorkloadChangeDto>(items, page, pageSize, totalItems, totalPages);
     }
 
     private IQueryable<WorkloadChangeDto> SemesterQuery(WorkloadChangeFilter f)
