@@ -65,8 +65,13 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
     private async Task<List<SemesterWorkload>> LoadWorkloadsAsync(
         Guid semesterId, CancellationToken ct, Guid? instituteId = null) =>
+        // Identity resolution обязателен: строители (Intersection, Window, DailyLessonsLimit)
+        // группируют нагрузки по ссылке на Teacher/Group. Без него AsNoTracking создаёт несколько
+        // экземпляров одной и той же сущности (преподавателя/группы) при разных путях навигации,
+        // и группировка по ссылке разваливается — преподаватель/группа перестают быть «эксклюзивны»
+        // в слоте (двойные занятия). Заодно меньше дубликатов в памяти.
         await _context.SemesterWorkloads
-            .AsNoTracking()
+            .AsNoTrackingWithIdentityResolution()
             .Where(sw => sw.SemesterId == semesterId)
             // Фильтр института транслируется в SQL (раньше выполнялся в памяти после загрузки всех планов).
             .Where(sw => instituteId == null

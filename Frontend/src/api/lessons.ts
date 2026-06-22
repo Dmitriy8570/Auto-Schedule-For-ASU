@@ -14,6 +14,13 @@ export interface CreateLessonRequest {
   curriculumId?: string
 }
 
+export interface UpdateLessonRequest {
+  classroomId: string
+  timeSlotId: string
+  streamId: string
+  curriculumId?: string
+}
+
 export const lessons = {
   byTeacher: (teacherId: string, weekId?: string) =>
     http.get<LessonDTO[]>(`/lessons/by-teacher/${teacherId}`, { weekId }),
@@ -32,6 +39,9 @@ export const lessons = {
 
   // Создать занятие (черновик). Возвращает GUID нового занятия.
   create: (body: CreateLessonRequest) => http.post<string>('/lessons', body),
+
+  // Изменить занятие (аудитория/слот/учебный план) одной командой.
+  update: (id: string, body: UpdateLessonRequest) => http.put<void>(`/lessons/${id}`, body),
 
   // Удалить занятие.
   remove: (id: string) => http.del<void>(`/lessons/${id}`),

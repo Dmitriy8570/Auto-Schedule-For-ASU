@@ -55,4 +55,17 @@ public class Lesson
     };
 
     public void Publish() => Version = ScheduleVersion.Current;
+
+    /// <summary>
+    /// Переназначить параметры занятия одной операцией: аудитория, временной слот, поток и
+    /// учебный план (дисциплина/преподаватель/тип). Семестр и версия (Draft/Current) сохраняются.
+    /// Используется при ручном редактировании пары в UI.
+    /// </summary>
+    public void Reschedule(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId)
+    {
+        ClassroomId = Guard.NotEmpty(classroomId, nameof(classroomId));
+        TimeSlotId = Guard.NotEmpty(timeSlotId, nameof(timeSlotId));
+        StreamId = Guard.NotEmpty(streamId, nameof(streamId));
+        CurriculumId = curriculumId;
+    }
 }

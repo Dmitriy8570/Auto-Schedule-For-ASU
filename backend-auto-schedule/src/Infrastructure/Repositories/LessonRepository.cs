@@ -12,16 +12,22 @@ public sealed class LessonRepository(ApplicationDbContext context) : ILessonRepo
           => await WithDisplayIncludes(context.Lessons.AsNoTracking())
                 .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
 
+    public async Task<Lesson?> GetTrackedByIdAsync(Guid id, CancellationToken cancellationToken)
+          => await context.Lessons.FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
+
     public async Task AddAsync(Lesson lesson, CancellationToken cancellationToken)
           => await context.Lessons.AddAsync(lesson, cancellationToken);
 
     public async Task<IReadOnlyList<ScheduleConflict>> FindConflictsAsync(
-        Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken ct)
+        Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId,
+        Guid? excludeLessonId, CancellationToken ct)
     {
         // Все занятия в этом же слоте — с навигациями для сравнения преподавателей и групп.
+        // При редактировании исключаем само занятие, иначе оно конфликтовало бы с собой.
         var inSlot = await context.Lessons
             .AsNoTracking()
             .Where(l => l.TimeSlotId == timeSlotId)
+            .Where(l => excludeLessonId == null || l.Id != excludeLessonId.Value)
             .Include(l => l.Curriculum)
             .Include(l => l.Stream).ThenInclude(s => s.Curriculums)
             .Include(l => l.Stream).ThenInclude(s => s.StreamGroups)

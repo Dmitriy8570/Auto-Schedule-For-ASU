@@ -30,6 +30,7 @@ public sealed class LessonConflictTests : IDisposable
     private readonly Guid _groupShared = Guid.NewGuid();
     private readonly Guid _stream1 = Guid.NewGuid();
     private readonly Guid _stream2 = Guid.NewGuid();
+    private readonly Guid _existingLesson = Guid.NewGuid();
 
     public LessonConflictTests()
     {
@@ -47,7 +48,7 @@ public sealed class LessonConflictTests : IDisposable
         var repo = new LessonRepository(_context);
 
         // Стрим 2 в той же аудитории и слоте, что и существующее занятие стрима 1.
-        var conflicts = await repo.FindConflictsAsync(_roomA, _slot1, _stream2, null, CancellationToken.None);
+        var conflicts = await repo.FindConflictsAsync(_roomA, _slot1, _stream2, null, null, CancellationToken.None);
 
         Assert.Contains(conflicts, c => c.Kind == ScheduleConflictKind.Classroom);
     }
@@ -60,7 +61,7 @@ public sealed class LessonConflictTests : IDisposable
         // Другой слот и другая аудитория — конфликтов нет (стрим 2 групп с стримом 1 не делит... делит!).
         // Берём стрим без общих групп: используем _stream2, но в свободном слоте — групповой конфликт
         // проверяется по слоту, поэтому в пустом слоте 2 конфликтов быть не должно.
-        var conflicts = await repo.FindConflictsAsync(_roomB, _slot2, _stream2, null, CancellationToken.None);
+        var conflicts = await repo.FindConflictsAsync(_roomB, _slot2, _stream2, null, null, CancellationToken.None);
 
         Assert.Empty(conflicts);
     }
@@ -71,10 +72,23 @@ public sealed class LessonConflictTests : IDisposable
         var repo = new LessonRepository(_context);
 
         // Другая аудитория (нет конфликта аудитории), но стрим 2 делит группу со стримом 1 в том же слоте.
-        var conflicts = await repo.FindConflictsAsync(_roomB, _slot1, _stream2, null, CancellationToken.None);
+        var conflicts = await repo.FindConflictsAsync(_roomB, _slot1, _stream2, null, null, CancellationToken.None);
 
         Assert.Contains(conflicts, c => c.Kind == ScheduleConflictKind.Group);
         Assert.DoesNotContain(conflicts, c => c.Kind == ScheduleConflictKind.Classroom);
+    }
+
+    [Fact]
+    public async Task FindConflicts_ExcludingSelf_IgnoresOwnOccupancy()
+    {
+        var repo = new LessonRepository(_context);
+
+        // Те же аудитория/слот/группа, что и у существующего занятия, но оно само исключено:
+        // редактирование «на месте» (например, смена только учебного плана) не конфликтует с собой.
+        var conflicts = await repo.FindConflictsAsync(
+            _roomA, _slot1, _stream1, null, _existingLesson, CancellationToken.None);
+
+        Assert.Empty(conflicts);
     }
 
     private void Seed()
@@ -101,7 +115,7 @@ public sealed class LessonConflictTests : IDisposable
         var link2 = StreamGroups.Create(group.Id, stream2.Id);
 
         // Существующее занятие: стрим 1 в аудитории A, слот 1.
-        var lesson = Lesson.Create(Guid.NewGuid(), _roomA, _slot1, _stream1, _semesterId);
+        var lesson = Lesson.Create(_existingLesson, _roomA, _slot1, _stream1, _semesterId);
 
         _context.AddRange(institute, degree, course, group, building, roomA, roomB,
             semester, week, weekDay, slot1, slot2, stream1, stream2, link1, link2, lesson);
