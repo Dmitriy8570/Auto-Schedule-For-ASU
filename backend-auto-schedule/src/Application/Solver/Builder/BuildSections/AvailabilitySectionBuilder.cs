@@ -31,7 +31,8 @@ public class AvailabilitySectionBuilder : IModelSectionBuilder
                     if (slot.WeekDay.DayOfWeek != a.DayOfWeek || slot.Number != a.NumberLesson) continue;
 
                     for (int r = 0; r < model.ClassroomCount; r++)
-                        model.Objective.Add(LinearExpr.Term(model.Lessons[w, r, t], a.Penalty));
+                        if (model.Lessons[w, r, t] is { } var)
+                            model.Objective.Add(LinearExpr.Term(var, a.Penalty));
                 }
         }
     }
@@ -50,7 +51,8 @@ public class AvailabilitySectionBuilder : IModelSectionBuilder
                     if (slot.WeekDay.DayOfWeek != a.DayOfWeek || slot.Number != a.NumberLesson) continue;
 
                     for (int w = 0; w < model.WorkloadCount; w++)
-                        model.Objective.Add(LinearExpr.Term(model.Lessons[w, r, t], a.Penalty));
+                        if (model.Lessons[w, r, t] is { } var)
+                            model.Objective.Add(LinearExpr.Term(var, a.Penalty));
                 }
         }
     }

@@ -53,7 +53,7 @@ public class BuildingTravelSectionBuilder : IModelSectionBuilder
             var lits = new List<ILiteral>();
             foreach (int r in roomsByBuilding[building])
                 foreach (int w in workloads)
-                    lits.Add(model.Lessons[w, r, t]);
+                    if (model.Lessons[w, r, t] is { } var) lits.Add(var); // пропуск запрещённых (прунинг)
 
             // v == OR(lits): если все ложны — v ложно; любой истинный ⇒ v истинно.
             model.Model.AddBoolOr(lits.Append(v.Not()).ToArray());

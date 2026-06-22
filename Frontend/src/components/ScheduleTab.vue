@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import {
-  Calendar, RotateCcw, Sparkles, ChevronDown, ChevronUp, Download,
-  User, Users, MapPin, Plus, CheckCircle2, GraduationCap, Building2,
-  Moon, Sun, X, Save, Trash2, ArrowLeftRight,
+  Calendar, RotateCcw, Sparkles, Download, User, Users, MapPin, Plus, CheckCircle2,
+  GraduationCap, Building2, Moon, Sun, X, Save, Trash2, ArrowLeftRight, Loader2,
 } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import { lookups } from '../api/lookups'
@@ -11,6 +10,8 @@ import { lessons } from '../api/lessons'
 import { calendar } from '../api/calendar'
 import { management } from '../api/management'
 import { ApiError } from '../api/http'
+import { degreeLabels } from '../api/labels'
+import { useToast } from '../composables/useToast'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
@@ -19,6 +20,7 @@ import type {
 
 type Entity = 'teachers' | 'groups' | 'rooms'
 const currentEntity = ref<Entity>('teachers')
+const toast = useToast()
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 const timeSlots = [
@@ -52,7 +54,14 @@ const weekType = computed<'red' | 'blue' | null>(() => {
 const todayIso = new Date().toISOString().slice(0, 10)
 const isCurrentWeek = (w: WeekDto) => w.startDate <= todayIso && todayIso <= w.endDate
 
-// --- Справочники ---
+// Недели показываем датами (а не «1, 2 неделя»): «06.09 – 12.09».
+const fmtShort = (iso: string): string => {
+  const [, m, d] = iso.split('-')
+  return d && m ? `${d}.${m}` : iso
+}
+const weekLabel = (w: WeekDto): string => `${fmtShort(w.startDate)} – ${fmtShort(w.endDate)}`
+
+// --- Справочники (все списки доступны сразу; выбор «родителя» лишь сужает дочерние) ---
 const institutes = ref<InstituteDto[]>([])
 const departments = ref<DepartmentDto[]>([])
 const teachers = ref<TeacherDto[]>([])
@@ -60,7 +69,7 @@ const degrees = ref<DegreeDto[]>([])
 const courses = ref<CourseDto[]>([])
 const groups = ref<GroupDto[]>([])
 const buildings = ref<BuildingDto[]>([])
-const rooms = ref<RoomDto[]>([])
+const allRooms = ref<RoomDto[]>([])
 
 const selInstitute = ref('')
 const selDept = ref('')
@@ -70,6 +79,15 @@ const selCourse = ref('')
 const selGroup = ref('')
 const selBuilding = ref('')
 const selRoom = ref('')
+
+const instName = (id: string): string => institutes.value.find(i => i.id === id)?.name ?? ''
+// Подпись ступени: без выбранного института добавляем институт, чтобы различать одинаковые ступени.
+const degreeOptionLabel = (d: DegreeDto): string =>
+  (degreeLabels[d.typeDegree] ?? d.typeDegree) + (selInstitute.value ? '' : ` · ${instName(d.instituteId)}`)
+
+// Аудитории для выпадающего списка — сузить по выбранному корпусу.
+const roomOptions = computed(() =>
+  selBuilding.value ? allRooms.value.filter(r => r.buildingId === selBuilding.value) : allRooms.value)
 
 const selectedLeafId = computed(() => {
   if (currentEntity.value === 'teachers') return selTeacher.value
@@ -82,7 +100,6 @@ const hasSelection = computed(() => selectedLeafId.value !== '')
 const lessonList = ref<LessonDTO[]>([])
 const lessonsLoading = ref(false)
 const banner = ref('')
-const isAutoGenerateOpen = ref(false)
 
 // Карта «день-пара» → занятие для быстрой раскладки в сетке.
 const lessonsByCell = computed<Record<string, LessonDTO>>(() => {
@@ -114,7 +131,6 @@ async function loadLessons() {
 
 // ───────── Редактор расписания (добавление / удаление / перемещение пары) ─────────
 
-const allRooms = ref<RoomDto[]>([])           // все аудитории для выбора в форме
 const timeslots = ref<TimeSlotDto[]>([])       // слоты выбранной недели
 const timeslotMap = computed<Record<string, string>>(() => {
   const m: Record<string, string> = {}
@@ -169,6 +185,7 @@ function closePanel() {
 
 async function savePair() {
   if (!editFormValid.value || saving.value) return
+  if (!selSemester.value) { toast.error('Выберите семестр.'); return }
   const opt = curriculumOptions.value.find(c => c.id === editCurriculumId.value)
   const timeSlotId = timeSlotIdFor(editDay.value, editPair.value)
   if (!opt || !timeSlotId) return
@@ -183,9 +200,11 @@ async function savePair() {
       curriculumId: opt.id,
     })
     editOpen.value = false
+    toast.success('Пара добавлена.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось сохранить пару.'
+    // 409-коллизия (аудитория/преподаватель/группа) приходит сюда читаемым сообщением.
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось сохранить пару.')
   } finally {
     saving.value = false
   }
@@ -204,9 +223,10 @@ async function deleteSelected() {
   try {
     await lessons.remove(selectedLesson.value.id)
     selectedLesson.value = null
+    toast.success('Пара удалена.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось удалить пару.'
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось удалить пару.')
   }
 }
 
@@ -240,9 +260,10 @@ async function onCellClick(dayIdx: number, pair: number) {
       })
       await lessons.remove(src.id)
       cancelMove()
+      toast.success('Пара перемещена.')
       await loadLessons()
     } catch (e) {
-      banner.value = e instanceof ApiError ? e.message : 'Не удалось переместить пару.'
+      toast.error(e instanceof ApiError ? e.message : 'Не удалось переместить пару.')
     }
     return
   }
@@ -250,41 +271,43 @@ async function onCellClick(dayIdx: number, pair: number) {
   openAddPanel(dayIdx, pair)
 }
 
-// --- Каскады справочников ---
+// --- Каскады справочников: списки сужаются от выбранного «родителя», но не блокируются ---
 watch(currentEntity, () => { banner.value = '' })
 
 watch(selInstitute, async (id) => {
   selDept.value = ''; selTeacher.value = ''; selDegree.value = ''; selCourse.value = ''; selGroup.value = ''
-  departments.value = []; teachers.value = []; degrees.value = []; courses.value = []; groups.value = []
-  if (!id) return
-  if (currentEntity.value === 'teachers') {
-    [departments.value, teachers.value] = await Promise.all([
-      lookups.departments(id), lookups.teachers({ instituteId: id }),
-    ])
-  } else if (currentEntity.value === 'groups') {
-    degrees.value = await lookups.degrees(id)
-  }
+  // Преподавательская ветка.
+  departments.value = await lookups.departments(id || undefined).catch(() => [])
+  teachers.value = await lookups.teachers({ instituteId: id || undefined }).catch(() => [])
+  // Студенческая ветка.
+  degrees.value = await lookups.degrees(id || undefined).catch(() => [])
+  courses.value = await lookups.courses(undefined, id || undefined).catch(() => [])
+  groups.value = await lookups.groups({ instituteId: id || undefined }).catch(() => [])
 })
 
 watch(selDept, async (id) => {
-  if (currentEntity.value !== 'teachers') return
   selTeacher.value = ''
-  teachers.value = await lookups.teachers({ instituteId: selInstitute.value, departmentId: id || undefined })
+  teachers.value = await lookups.teachers({
+    instituteId: selInstitute.value || undefined, departmentId: id || undefined,
+  }).catch(() => [])
 })
 
 watch(selDegree, async (id) => {
-  selCourse.value = ''; selGroup.value = ''; courses.value = []; groups.value = []
-  if (id) courses.value = await lookups.courses(id, selInstitute.value)
+  selCourse.value = ''; selGroup.value = ''
+  courses.value = await lookups.courses(id || undefined, selInstitute.value || undefined).catch(() => [])
+  groups.value = await lookups.groups({
+    degreeId: id || undefined, instituteId: selInstitute.value || undefined,
+  }).catch(() => [])
 })
 watch(selCourse, async (id) => {
-  selGroup.value = ''; groups.value = []
-  if (id) groups.value = await lookups.groups({ courseId: id })
+  selGroup.value = ''
+  groups.value = await lookups.groups({
+    courseId: id || undefined, degreeId: selDegree.value || undefined,
+    instituteId: selInstitute.value || undefined,
+  }).catch(() => [])
 })
 
-watch(selBuilding, async (id) => {
-  selRoom.value = ''; rooms.value = []
-  if (id) rooms.value = await lookups.rooms(id)
-})
+watch(selBuilding, () => { selRoom.value = '' })
 
 function resetEditing() {
   selectedLesson.value = null
@@ -312,6 +335,26 @@ watch(selSemester, async (id) => {
   selectedWeekId.value = current?.id ?? weeks.value[0]?.id ?? ''
 })
 
+// ───────── Автогенерация (модальное окно + блокирующий оверлей) ─────────
+
+const genModalOpen = ref(false)
+const genScope = ref<'institute' | 'university'>('institute')
+const genInstituteId = ref('')
+const generating = ref(false)     // показывает блокирующий оверлей «идёт генерация»
+const genProgress = ref('')       // текст прогресса в оверлее
+const genError = ref('')          // ошибка/подсказка внутри модального окна
+
+function openGenModal() {
+  genError.value = ''
+  genScope.value = 'institute'
+  genInstituteId.value = selInstitute.value || institutes.value[0]?.id || ''
+  genModalOpen.value = true
+}
+function closeGenModal() {
+  if (generating.value) return // во время генерации окно закрыть нельзя
+  genModalOpen.value = false
+}
+
 // Поллинг статуса фоновой генерации до завершения (с мягким таймаутом ~200 с).
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
@@ -325,54 +368,71 @@ async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null
   return null
 }
 
-async function generate(scope: 'university' | 'teacher' | 'institute') {
-  isAutoGenerateOpen.value = false
-  if (scope === 'institute') {
-    if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для генерации по институту.'; return }
-    if (!selSemester.value) { banner.value = 'Выберите семестр для генерации.'; return }
-    banner.value = ''
-    lessonsLoading.value = true
-    try {
-      // Генерация поставлена в очередь и идёт в фоне — HTTP-запрос не висит до 180 с.
-      const job = await lessons.generateForInstituteAsync(selSemester.value, selInstitute.value)
-      banner.value = 'Генерация запущена в фоне, ожидаем результат…'
-      const final = await pollGeneration(job.jobId)
-      if (!final) {
-        banner.value = 'Генерация выполняется дольше обычного. Загляните позже или обновите расписание.'
-      } else if (final.state === 'Succeeded' && final.result) {
-        const r = final.result
-        banner.value = `Генерация: ${r.status}, создано занятий: ${r.lessonsCreated}, ` +
-          `штраф: ${r.objectiveValue}, время: ${r.wallTimeSeconds.toFixed(1)} с.`
-        await loadLessons()
-      } else {
-        banner.value = `Генерация не удалась: ${final.error ?? final.state}.`
-      }
-    } catch (e) {
-      banner.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
-    } finally {
-      lessonsLoading.value = false
-    }
-    return
+// Поставить генерацию одного института в очередь и дождаться результата (текстовая сводка).
+async function runInstituteGeneration(instituteId: string): Promise<string> {
+  const job = await lessons.generateForInstituteAsync(selSemester.value, instituteId)
+  const final = await pollGeneration(job.jobId)
+  if (!final) return 'выполняется дольше обычного — загляните позже'
+  if (final.state === 'Succeeded' && final.result) {
+    const r = final.result
+    return `${r.status}, занятий: ${r.lessonsCreated}, штраф: ${r.objectiveValue}, ` +
+      `время: ${r.wallTimeSeconds.toFixed(1)} с`
   }
-  banner.value = scope === 'university'
-    ? 'Генерация по всему вузу пока не поддержана бэкендом (есть только по институту).'
-    : 'Генерация по преподавателю пока не поддержана бэкендом (есть только по институту).'
+  return `не удалась: ${final.error ?? final.state}`
+}
+
+async function startGeneration() {
+  if (!selSemester.value) { genError.value = 'Выберите семестр (вверху страницы).'; return }
+  if (genScope.value === 'institute' && !genInstituteId.value) {
+    genError.value = 'Выберите институт для генерации.'; return
+  }
+  genError.value = ''
+  generating.value = true
+  try {
+    if (genScope.value === 'institute') {
+      const inst = institutes.value.find(i => i.id === genInstituteId.value)
+      genProgress.value = `Генерация института «${inst?.name ?? ''}»…`
+      const res = await runInstituteGeneration(genInstituteId.value)
+      toast.success(`Генерация института: ${res}.`)
+      // Показать результат в сетке: переключаемся на «Группы» этого института не можем (нужен leaf),
+      // поэтому просто ставим институт в фильтр преподавателей и перезагружаем при наличии выбора.
+      selInstitute.value = genInstituteId.value
+    } else {
+      // По всему вузу: последовательно по институтам (каждый учитывает уже занятые ресурсы).
+      if (institutes.value.length === 0) { genError.value = 'Список институтов пуст.'; generating.value = false; return }
+      const total = institutes.value.length
+      let done = 0
+      for (const inst of institutes.value) {
+        genProgress.value = `Генерация по вузу: «${inst.name}» (${done + 1}/${total})…`
+        await runInstituteGeneration(inst.id)
+        done++
+      }
+      toast.success(`Генерация по вузу завершена: обработано институтов — ${total}.`)
+    }
+    genModalOpen.value = false
+    await loadLessons()
+  } catch (e) {
+    genError.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
+  } finally {
+    generating.value = false
+    genProgress.value = ''
+  }
 }
 
 // Выгрузить (опубликовать) черновик выбранного института: Draft -> Current.
 async function publish() {
-  if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для выгрузки расписания.'; return }
+  if (!selInstitute.value) { toast.info('Выберите институт (в фильтрах) для выгрузки расписания.'); return }
   if (!confirm('Выгрузить расписание института? Текущее опубликованное расписание будет заменено черновиком.')) return
   banner.value = ''
   lessonsLoading.value = true
   try {
     const r = await lessons.publishInstitute(selInstitute.value)
-    banner.value = `Расписание выгружено: опубликовано занятий — ${r.published}.`
+    toast.success(`Расписание выгружено: опубликовано занятий — ${r.published}.`)
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError
+    toast.error(e instanceof ApiError
       ? (e.status === 404 ? 'У института нет черновика для выгрузки.' : e.message)
-      : 'Не удалось выгрузить расписание.'
+      : 'Не удалось выгрузить расписание.')
   } finally {
     lessonsLoading.value = false
   }
@@ -380,27 +440,32 @@ async function publish() {
 
 // Сбросить до выгруженного: удалить черновик выбранного института, оставив опубликованное.
 async function discard() {
-  if (!selInstitute.value) { banner.value = 'Выберите институт (в фильтрах) для сброса черновика.'; return }
+  if (!selInstitute.value) { toast.info('Выберите институт (в фильтрах) для сброса черновика.'); return }
   if (!confirm('Сбросить черновик до выгруженного расписания? Несохранённые изменения института будут удалены.')) return
   banner.value = ''
   lessonsLoading.value = true
   try {
     const r = await lessons.discardInstitute(selInstitute.value)
-    banner.value = r.discarded > 0
-      ? `Черновик сброшен: удалено занятий — ${r.discarded}.`
-      : 'Черновика нет — сбрасывать нечего.'
+    if (r.discarded > 0) toast.success(`Черновик сброшен: удалено занятий — ${r.discarded}.`)
+    else toast.info('Черновика нет — сбрасывать нечего.')
     await loadLessons()
   } catch (e) {
-    banner.value = e instanceof ApiError ? e.message : 'Не удалось сбросить черновик.'
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось сбросить черновик.')
   } finally {
     lessonsLoading.value = false
   }
 }
 
 onMounted(async () => {
+  // Полные списки загружаем сразу, чтобы все выпадающие были доступны без выбора «родителя».
   institutes.value = await lookups.institutes().catch(() => [])
   buildings.value = await lookups.buildings().catch(() => [])
-  // Полный список аудиторий для выбора в форме (lookups.rooms ограничен 20 записями).
+  departments.value = await lookups.departments().catch(() => [])
+  teachers.value = await lookups.teachers().catch(() => [])
+  degrees.value = await lookups.degrees().catch(() => [])
+  courses.value = await lookups.courses().catch(() => [])
+  groups.value = await lookups.groups().catch(() => [])
+  // Полный список аудиторий (lookups.rooms ограничен 20 записями).
   allRooms.value = await management.classrooms().catch(() => [])
   semesters.value = await calendar.semesters().catch(() => [])
   // По умолчанию — текущий семестр, иначе первый (самый свежий).
@@ -429,7 +494,7 @@ onMounted(async () => {
                 v-model="selectedWeekId" :disabled="!selSemester">
           <option value="" disabled hidden>Неделя</option>
           <option v-for="w in weeks" :key="w.id" :value="w.id">
-            {{ w.number }} неделя{{ isCurrentWeek(w) ? ' ★' : '' }}
+            {{ weekLabel(w) }}{{ isCurrentWeek(w) ? ' ★' : '' }}
           </option>
         </select>
 
@@ -448,25 +513,9 @@ onMounted(async () => {
         <BaseButton variant="outline" :disabled="lessonsLoading" @click="discard">
           <RotateCcw :size="16" /> Сбросить до выгруженного
         </BaseButton>
-        <div class="dropdown-wrapper">
-          <BaseButton variant="gradient" @click="isAutoGenerateOpen = !isAutoGenerateOpen">
-            <Sparkles :size="16" /> Автогенерация
-            <ChevronUp v-if="isAutoGenerateOpen" :size="16" />
-            <ChevronDown v-else :size="16" />
-          </BaseButton>
-
-          <div v-if="isAutoGenerateOpen" class="dropdown-menu">
-            <div class="dropdown-item" @click="generate('university')">
-              <GraduationCap :size="18" class="dd-icon" /><span>Для всего университета</span>
-            </div>
-            <div class="dropdown-item" @click="generate('teacher')">
-              <User :size="18" class="dd-icon" /><span>Для выбранного преподавателя</span>
-            </div>
-            <div class="dropdown-item" @click="generate('institute')">
-              <Building2 :size="18" class="dd-icon" /><span>Для выбранного института</span>
-            </div>
-          </div>
-        </div>
+        <BaseButton variant="gradient" @click="openGenModal">
+          <Sparkles :size="16" /> Автогенерация
+        </BaseButton>
         <BaseButton variant="outline" :disabled="lessonsLoading" @click="publish">
           <Download :size="16" /> Выгрузить
         </BaseButton>
@@ -486,7 +535,7 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- 3. ПАНЕЛЬ ФИЛЬТРОВ -->
+    <!-- 3. ПАНЕЛЬ ФИЛЬТРОВ (все списки доступны сразу) -->
     <div class="filters-bar">
       <div class="filters-left">
         <template v-if="currentEntity === 'teachers'">
@@ -494,11 +543,11 @@ onMounted(async () => {
             <option value="">Все институты</option>
             <option v-for="i in institutes" :key="i.id" :value="i.id">{{ i.name }}</option>
           </select>
-          <select class="select-dropdown" v-model="selDept" :disabled="!selInstitute">
+          <select class="select-dropdown" v-model="selDept">
             <option value="">Все кафедры</option>
             <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
           </select>
-          <select class="select-dropdown" v-model="selTeacher" :disabled="!selInstitute">
+          <select class="select-dropdown" v-model="selTeacher">
             <option value="">Выберите преподавателя</option>
             <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
           </select>
@@ -509,15 +558,15 @@ onMounted(async () => {
             <option value="">Все институты</option>
             <option v-for="i in institutes" :key="i.id" :value="i.id">{{ i.name }}</option>
           </select>
-          <select class="select-dropdown" v-model="selDegree" :disabled="!selInstitute">
+          <select class="select-dropdown" v-model="selDegree">
             <option value="">Все уровни</option>
-            <option v-for="d in degrees" :key="d.id" :value="d.id">{{ d.typeDegree }}</option>
+            <option v-for="d in degrees" :key="d.id" :value="d.id">{{ degreeOptionLabel(d) }}</option>
           </select>
-          <select class="select-dropdown" v-model="selCourse" :disabled="!selDegree">
+          <select class="select-dropdown" v-model="selCourse">
             <option value="">Все курсы</option>
             <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.number }} курс</option>
           </select>
-          <select class="select-dropdown" v-model="selGroup" :disabled="!selCourse">
+          <select class="select-dropdown" v-model="selGroup">
             <option value="">Выберите группу</option>
             <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
           </select>
@@ -528,9 +577,9 @@ onMounted(async () => {
             <option value="">Все корпусы</option>
             <option v-for="b in buildings" :key="b.id" :value="b.id">{{ b.name }}</option>
           </select>
-          <select class="select-dropdown" v-model="selRoom" :disabled="!selBuilding">
+          <select class="select-dropdown" v-model="selRoom">
             <option value="">Выберите аудиторию...</option>
-            <option v-for="r in rooms" :key="r.id" :value="r.id">{{ r.name }}</option>
+            <option v-for="r in roomOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
           </select>
         </template>
       </div>
@@ -557,7 +606,7 @@ onMounted(async () => {
         <Moon v-if="weekType === 'red'" :size="14" />
         <Sun v-else :size="14" />
         {{ weekType === 'red' ? 'Красная неделя' : 'Синяя неделя' }}
-        <span v-if="selectedWeek"> · Неделя {{ selectedWeek.number }} из {{ weeks.length }}</span>
+        <span v-if="selectedWeek"> · {{ weekLabel(selectedWeek) }}</span>
       </div>
 
       <div v-if="banner" class="alert-banner is-error">{{ banner }}</div>
@@ -683,6 +732,58 @@ onMounted(async () => {
       <p>Используйте фильтры выше для поиска и<br>выбора объекта расписания.</p>
     </div>
 
+    <!-- Модальное окно автогенерации -->
+    <Teleport to="body">
+      <div v-if="genModalOpen" class="modal-backdrop" @click.self="closeGenModal">
+        <div class="gen-modal">
+          <header class="gm-header">
+            <div class="gm-title"><Sparkles :size="18" /> Автогенерация расписания</div>
+            <button class="gm-close" :disabled="generating" @click="closeGenModal"><X :size="18" /></button>
+          </header>
+
+          <div class="gm-body">
+            <p class="gm-hint">Выберите область генерации. Расписание создаётся как черновик —
+              после проверки выгрузите его кнопкой «Выгрузить».</p>
+
+            <label class="gm-radio" :class="{ active: genScope === 'institute' }">
+              <input type="radio" value="institute" v-model="genScope" :disabled="generating" />
+              <Building2 :size="18" class="gm-radio-icon" />
+              <span>Для выбранного института</span>
+            </label>
+
+            <select v-if="genScope === 'institute'" class="select-dropdown gm-select"
+                    v-model="genInstituteId" :disabled="generating">
+              <option value="" disabled>Выберите институт…</option>
+              <option v-for="i in institutes" :key="i.id" :value="i.id">{{ i.name }}</option>
+            </select>
+
+            <label class="gm-radio" :class="{ active: genScope === 'university' }">
+              <input type="radio" value="university" v-model="genScope" :disabled="generating" />
+              <GraduationCap :size="18" class="gm-radio-icon" />
+              <span>Для всего университета (по институтам)</span>
+            </label>
+
+            <div v-if="genError" class="gm-error">{{ genError }}</div>
+          </div>
+
+          <footer class="gm-footer">
+            <button class="gm-cancel" :disabled="generating" @click="closeGenModal">Отмена</button>
+            <button class="gm-run" :disabled="generating" @click="startGeneration">
+              <Sparkles :size="16" /> Запустить генерацию
+            </button>
+          </footer>
+        </div>
+      </div>
+
+      <!-- Блокирующий оверлей: на время генерации ввод заблокирован, сайт «на паузе» -->
+      <div v-if="generating" class="gen-overlay">
+        <Loader2 :size="48" class="spin" />
+        <p class="go-title">Идёт автогенерация расписания…</p>
+        <p class="go-progress">{{ genProgress }}</p>
+        <p class="go-note">Пожалуйста, подождите — это может занять до нескольких минут.</p>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -714,7 +815,7 @@ onMounted(async () => {
 .filters-left { display: flex; gap: 12px; flex-wrap: wrap; }
 .select-dropdown { padding: 10px 36px 10px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: white; color: #334155; font-size: 14px; outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; min-width: 180px; cursor: pointer; }
 .select-dropdown:hover:not(:disabled) { border-color: #94a3b8; }
-.week-select { min-width: 130px; font-weight: 500; color: #0f172a; }
+.week-select { min-width: 150px; font-weight: 500; color: #0f172a; }
 .sem-select { min-width: 200px; font-weight: 500; color: #0f172a; }
 .select-dropdown.is-placeholder { color: #94a3b8; }
 .select-dropdown option { color: #334155; }
@@ -797,10 +898,36 @@ onMounted(async () => {
 .ep-save:hover:not(:disabled) { background: #143c82; }
 .ep-save:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
-.dropdown-wrapper { position: relative; }
-.dropdown-menu { position: absolute; top: calc(100% + 8px); right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); padding: 8px; min-width: 270px; z-index: 50; display: flex; flex-direction: column; gap: 4px; }
-.dropdown-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; cursor: pointer; color: #1e293b; font-size: 14px; font-weight: 500; transition: all 0.2s ease; }
-.dropdown-item .dd-icon { color: #475569; transition: color 0.2s ease; }
-.dropdown-item:hover { background-color: #f4f6f8; color: #1a4d9c; }
-.dropdown-item:hover .dd-icon { color: #1a4d9c; }
+/* Модальное окно автогенерации */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.gen-modal { width: 460px; max-width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+.gm-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; background: #1a4d9c; color: white; }
+.gm-title { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; }
+.gm-close { background: rgba(255,255,255,0.15); border: none; color: white; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.gm-close:hover:not(:disabled) { background: rgba(255,255,255,0.3); }
+.gm-close:disabled { opacity: 0.5; cursor: not-allowed; }
+.gm-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.gm-hint { margin: 0 0 4px 0; font-size: 13px; color: #64748b; line-height: 1.5; }
+.gm-radio { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; color: #1e293b; transition: all 0.2s; }
+.gm-radio:hover { background: #f8fafc; }
+.gm-radio.active { border-color: #1a4d9c; background: #eff6ff; }
+.gm-radio-icon { color: #475569; }
+.gm-radio.active .gm-radio-icon { color: #1a4d9c; }
+.gm-select { width: 100%; box-sizing: border-box; margin: -4px 0 4px 30px; }
+.gm-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.gm-footer { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+.gm-cancel { flex: 1; padding: 11px; border-radius: 8px; border: none; background: #e2e8f0; color: #475569; font-size: 14px; cursor: pointer; }
+.gm-cancel:hover:not(:disabled) { background: #cbd5e1; }
+.gm-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+.gm-run { flex: 2; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px; border-radius: 8px; border: none; background: linear-gradient(135deg, #1a4d9c, #235fb4); color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+.gm-run:hover:not(:disabled) { filter: brightness(1.05); }
+.gm-run:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Блокирующий оверлей генерации */
+.gen-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: white; text-align: center; padding: 24px; }
+.gen-overlay .spin { animation: gen-spin 1s linear infinite; }
+@keyframes gen-spin { to { transform: rotate(360deg); } }
+.go-title { margin: 12px 0 0 0; font-size: 20px; font-weight: 700; }
+.go-progress { margin: 0; font-size: 15px; opacity: 0.9; min-height: 20px; }
+.go-note { margin: 6px 0 0 0; font-size: 13px; opacity: 0.7; }
 </style>

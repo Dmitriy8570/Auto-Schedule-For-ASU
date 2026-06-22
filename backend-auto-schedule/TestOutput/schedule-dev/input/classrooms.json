@@ -2,7 +2,7 @@
   {
     "Name": "А-101",
     "Building": "Корпус А",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -10,7 +10,7 @@
   {
     "Name": "А-102",
     "Building": "Корпус А",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -66,7 +66,7 @@
   {
     "Name": "А-301",
     "Building": "Корпус А",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -75,7 +75,7 @@
   {
     "Name": "А-302",
     "Building": "Корпус А",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -84,7 +84,7 @@
   {
     "Name": "А-303",
     "Building": "Корпус А",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -93,7 +93,7 @@
   {
     "Name": "А-304",
     "Building": "Корпус А",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -102,7 +102,7 @@
   {
     "Name": "А-305",
     "Building": "Корпус А",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -111,7 +111,7 @@
   {
     "Name": "Б-101",
     "Building": "Корпус Б",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -119,7 +119,7 @@
   {
     "Name": "Б-102",
     "Building": "Корпус Б",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -175,7 +175,7 @@
   {
     "Name": "Б-301",
     "Building": "Корпус Б",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -184,7 +184,7 @@
   {
     "Name": "Б-302",
     "Building": "Корпус Б",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -193,7 +193,7 @@
   {
     "Name": "Б-303",
     "Building": "Корпус Б",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -202,7 +202,7 @@
   {
     "Name": "Б-304",
     "Building": "Корпус Б",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -211,7 +211,7 @@
   {
     "Name": "Б-305",
     "Building": "Корпус Б",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -229,7 +229,7 @@
   {
     "Name": "В-101",
     "Building": "Корпус В",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -237,7 +237,7 @@
   {
     "Name": "В-102",
     "Building": "Корпус В",
-    "Capacity": 120,
+    "Capacity": 150,
     "Equipment": [
       "Проектор"
     ]
@@ -293,7 +293,7 @@
   {
     "Name": "В-301",
     "Building": "Корпус В",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -302,7 +302,7 @@
   {
     "Name": "В-302",
     "Building": "Корпус В",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -311,7 +311,7 @@
   {
     "Name": "В-303",
     "Building": "Корпус В",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -320,7 +320,7 @@
   {
     "Name": "В-304",
     "Building": "Корпус В",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"
@@ -329,7 +329,7 @@
   {
     "Name": "В-305",
     "Building": "Корпус В",
-    "Capacity": 18,
+    "Capacity": 30,
     "Equipment": [
       "Компьютерный класс",
       "Проектор"

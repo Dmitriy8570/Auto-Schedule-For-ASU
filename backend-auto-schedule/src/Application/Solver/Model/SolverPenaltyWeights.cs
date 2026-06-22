@@ -1,0 +1,37 @@
+namespace Application.Solver.Model;
+
+/// <summary>
+/// Централизованные веса мягких ограничений солвера, ранее зашитые отдельными <c>const</c>
+/// в каждом строителе (FavoriteBuilding, Parallelism, DailyLimit, PreviousScheduleAnchor).
+/// Значения по умолчанию совпадают с прежними — поведение модели не меняется. Единый источник
+/// упрощает подбор весов и будущую настройку через конфигурацию (секция Solver).
+///
+/// Веса «жёстко-мягких» ограничений по доступности/окнам берутся из БД (<c>ConstraintConfig</c>)
+/// и здесь не дублируются — этот тип покрывает только ранее «магические» числа.
+/// </summary>
+public sealed record SolverPenaltyWeights
+{
+    /// <summary>Штраф за занятие вне предпочтительного корпуса учебного плана.</summary>
+    public int FavoriteBuilding { get; init; } = 5;
+
+    /// <summary>Штраф за «размазанность» параллельных подгрупп по разным слотам.</summary>
+    public int Parallelism { get; init; } = 2;
+
+    /// <summary>Лимит пар в день для студенческой группы (сверх — штраф).</summary>
+    public int DailyGroupLimit { get; init; } = 4;
+
+    /// <summary>Лимит пар в день для преподавателя (сверх — штраф).</summary>
+    public int DailyTeacherLimit { get; init; } = 7;
+
+    /// <summary>Штраф за каждую пару сверх дневного лимита.</summary>
+    public int DailyOveragePenalty { get; init; } = 50;
+
+    /// <summary>Штраф за отклонение от корпуса прошлого семестра (якорь «C»).</summary>
+    public int AnchorBuilding { get; init; } = 2;
+
+    /// <summary>Штраф за отклонение от слотов прошлого семестра (якорь «C»).</summary>
+    public int AnchorTimeSlot { get; init; } = 1;
+
+    /// <summary>Значения по умолчанию (эквивалентны прежним зашитым константам).</summary>
+    public static SolverPenaltyWeights Default { get; } = new();
+}

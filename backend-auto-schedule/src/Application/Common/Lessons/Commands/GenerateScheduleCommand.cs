@@ -26,17 +26,20 @@ public sealed class GenerateScheduleCommandHandler
     private readonly IScheduleSolver _solver;
     private readonly IScheduleResultMapper _mapper;
     private readonly ILessonRepository _lessonRepository;
+    private readonly ITransactionRunner _transactionRunner;
 
     public GenerateScheduleCommandHandler(
         IScheduleDataProvider dataProvider,
         IScheduleSolver solver,
         IScheduleResultMapper mapper,
-        ILessonRepository lessonRepository)
+        ILessonRepository lessonRepository,
+        ITransactionRunner transactionRunner)
     {
         _dataProvider = dataProvider;
         _solver = solver;
         _mapper = mapper;
         _lessonRepository = lessonRepository;
+        _transactionRunner = transactionRunner;
     }
 
     public async Task<GenerateScheduleResult> Handle(
@@ -51,16 +54,22 @@ public sealed class GenerateScheduleCommandHandler
             return new GenerateScheduleResult(
                 solution.Status.ToString(), 0, solution.ObjectiveValue, solution.WallTimeSeconds);
 
-        // Заменяем прежнее расписание семестра (а не добавляем поверх), удаление и вставка — одним SaveChanges.
-        var existing = await _lessonRepository.GetBySemesterAsync(request.SemesterId, cancellationToken);
-        _lessonRepository.RemoveRange(existing);
+        // Заменяем прежнее расписание семестра (а не добавляем поверх). Поиск солвером выполнен
+        // выше, вне транзакции; короткая запись результата — в SERIALIZABLE-транзакции, где
+        // удаление старого расписания и вставка нового атомарны.
+        var lessonCount = await _transactionRunner.ExecuteSerializableAsync(async ct =>
+        {
+            var existing = await _lessonRepository.GetBySemesterAsync(request.SemesterId, ct);
+            _lessonRepository.RemoveRange(existing);
 
-        var lessons = _mapper.ToLessons(data, solution.Assignments);
-        foreach (var lesson in lessons)
-            await _lessonRepository.AddAsync(lesson, cancellationToken);
-        await _lessonRepository.SaveChangesAsync(cancellationToken);
+            var lessons = _mapper.ToLessons(data, solution.Assignments);
+            foreach (var lesson in lessons)
+                await _lessonRepository.AddAsync(lesson, ct);
+            await _lessonRepository.SaveChangesAsync(ct);
+            return lessons.Count;
+        }, cancellationToken);
 
         return new GenerateScheduleResult(
-            solution.Status.ToString(), lessons.Count, solution.ObjectiveValue, solution.WallTimeSeconds);
+            solution.Status.ToString(), lessonCount, solution.ObjectiveValue, solution.WallTimeSeconds);
     }
 }

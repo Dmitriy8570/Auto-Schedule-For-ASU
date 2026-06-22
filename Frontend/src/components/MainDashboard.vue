@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import TheSidebar from './TheSidebar.vue'
+import NotificationBell from './NotificationBell.vue'
 
 import ScheduleTab from './ScheduleTab.vue'
 import HistoryTab from './HistoryTab.vue'
@@ -9,6 +10,14 @@ import SettingsTab from './SettingsTab.vue'
 
 // Создаем переменную для хранения текущей вкладки.
 const currentTab = ref('schedule')
+
+// Заголовки вкладок для шапки.
+const tabTitles: Record<string, string> = {
+  schedule: 'Расписание',
+  load: 'Нагрузка',
+  history: 'История изменений',
+  settings: 'Ограничения',
+}
 
 // Перехватываем событие выхода
 const emit = defineEmits(['logout'])
@@ -24,7 +33,12 @@ const emit = defineEmits(['logout'])
     />
     
     <div class="main-content">
-      
+
+      <header class="content-topbar">
+        <h1 class="topbar-title">{{ tabTitles[currentTab] }}</h1>
+        <NotificationBell @open-history="currentTab = 'history'" />
+      </header>
+
       <ScheduleTab v-if="currentTab === 'schedule'" />
       <LoadTab v-if="currentTab === 'load'" />
       <HistoryTab v-if="currentTab === 'history'" />
@@ -46,7 +60,22 @@ const emit = defineEmits(['logout'])
 .main-content {
   flex: 1;
   padding: 30px;
-  overflow-y: auto; 
+  overflow-y: auto;
+}
+
+/* Шапка контента с заголовком вкладки и колокольчиком уведомлений */
+.content-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.topbar-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 /* Временные стили для заглушек контента */

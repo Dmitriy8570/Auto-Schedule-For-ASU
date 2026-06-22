@@ -31,7 +31,7 @@ public class PublishDiscardScheduleTests
     {
         var current = Current();
         var repo = new FakeLessonRepository(Draft(), Draft(), current);
-        var handler = new DiscardInstituteScheduleCommandHandler(repo);
+        var handler = new DiscardInstituteScheduleCommandHandler(repo, new FakeTransactionRunner());
 
         var result = await handler.Handle(
             new DiscardInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -47,7 +47,7 @@ public class PublishDiscardScheduleTests
     public async Task Discard_WithoutDrafts_IsIdempotent_NoChanges()
     {
         var repo = new FakeLessonRepository(Current(), Current());
-        var handler = new DiscardInstituteScheduleCommandHandler(repo);
+        var handler = new DiscardInstituteScheduleCommandHandler(repo, new FakeTransactionRunner());
 
         var result = await handler.Handle(
             new DiscardInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -64,7 +64,7 @@ public class PublishDiscardScheduleTests
     {
         var oldCurrent = Current();
         var repo = new FakeLessonRepository(Draft(), Draft(), oldCurrent);
-        var handler = new PublishInstituteScheduleCommandHandler(repo);
+        var handler = new PublishInstituteScheduleCommandHandler(repo, new FakeTransactionRunner(), new FakeRealtimeNotifier());
 
         var result = await handler.Handle(
             new PublishInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -80,7 +80,7 @@ public class PublishDiscardScheduleTests
     public async Task Publish_WithoutDrafts_Throws()
     {
         var repo = new FakeLessonRepository(Current());
-        var handler = new PublishInstituteScheduleCommandHandler(repo);
+        var handler = new PublishInstituteScheduleCommandHandler(repo, new FakeTransactionRunner(), new FakeRealtimeNotifier());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(
             new PublishInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None));
@@ -112,6 +112,7 @@ public class PublishDiscardScheduleTests
         // Не используется этими тестами.
         public Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
         public Task AddAsync(Lesson lesson, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<Application.Common.Exceptions.ScheduleConflict>> FindConflictsAsync(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetByInstituteAndSemesterAsync(Guid instituteId, Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetBySemesterAsync(Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();

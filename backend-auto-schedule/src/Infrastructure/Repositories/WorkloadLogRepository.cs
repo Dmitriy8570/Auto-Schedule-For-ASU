@@ -11,14 +11,10 @@ namespace Infrastructure.Repositories;
 /// и понедельные (<c>WeekLog</c>) записи, проецирует их в единый <see cref="WorkloadChangeDto"/>
 /// и сортирует по времени по убыванию. Фильтры применяются на стороне БД.
 /// </summary>
-public sealed class WorkloadLogRepository : IWorkloadLogRepository
+public sealed class WorkloadLogRepository(ApplicationDbContext context) : IWorkloadLogRepository
 {
     private const int DefaultPageSize = 20;
     private const int MaxPageSize = 100;
-
-    private readonly ApplicationDbContext _context;
-
-    public WorkloadLogRepository(ApplicationDbContext context) => _context = context;
 
     public async Task<PagedResult<WorkloadChangeDto>> GetChangesAsync(
         WorkloadChangeFilter filter, int page, int pageSize, CancellationToken cancellationToken)
@@ -44,7 +40,7 @@ public sealed class WorkloadLogRepository : IWorkloadLogRepository
 
     private IQueryable<WorkloadChangeDto> SemesterQuery(WorkloadChangeFilter f)
     {
-        var query = _context.SemesterLogs.AsNoTracking().AsQueryable();
+        var query = context.SemesterLogs.AsNoTracking().AsQueryable();
 
         if (f.TeacherId is { } teacher)
             query = query.Where(l => l.SemesterWorkload.Curriculum.TeacherId == teacher);
@@ -75,7 +71,7 @@ public sealed class WorkloadLogRepository : IWorkloadLogRepository
 
     private IQueryable<WorkloadChangeDto> WeekQuery(WorkloadChangeFilter f)
     {
-        var query = _context.WeekLogs.AsNoTracking().AsQueryable();
+        var query = context.WeekLogs.AsNoTracking().AsQueryable();
 
         if (f.TeacherId is { } teacher)
             query = query.Where(l => l.WeekWorkload.Curriculum.TeacherId == teacher);

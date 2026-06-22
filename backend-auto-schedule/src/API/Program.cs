@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using API;
+using API.Hubs;
 using Application;
+using Application.Common.Interfaces;
 using Infrastructure;
 using Infrastructure.Auth;
 using Infrastructure.Data;
@@ -19,6 +21,7 @@ builder.Services.AddControllers()
 
 // Глобальная обработка исключений: неуспешный вход → 401, ошибки валидации → 400.
 builder.Services.AddExceptionHandler<AuthenticationExceptionHandler>();
+builder.Services.AddExceptionHandler<ScheduleConflictExceptionHandler>();
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -48,8 +51,19 @@ builder.Services.AddSwaggerGen(option =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Real-time через SignalR: хаб уведомлений + реализация IRealtimeNotifier для рассылки событий
+// (изменение расписания/нагрузки) подключённым клиентам.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
 // Аутентификация по JWT (Bearer) + авторизация.
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+// Fail-fast: без ключа подписи токены небезопасны. В prod ключ обязан прийти из env/секретов,
+// в dev — из appsettings.Development.json. Пустой ключ — конфигурационная ошибка, не стартуем.
+if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
+    throw new InvalidOperationException(
+        "Jwt:SigningKey не задан. Укажите его через переменную окружения Jwt__SigningKey " +
+        "(prod) или в appsettings.Development.json (dev).");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -65,6 +79,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = System.Security.Claims.ClaimTypes.Name,
         };
+
+        // Браузер не может задать заголовок Authorization для WebSocket-соединения SignalR,
+        // поэтому токен передаётся в query-параметре access_token и извлекается здесь.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
+        };
     });
 // Все эндпоинты по умолчанию требуют аутентификацию; исключения — через [AllowAnonymous]
 // (например, /api/auth/login).
@@ -77,9 +105,12 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// Автоматически применяем миграции при старте (создаём БД, если её ещё нет).
-using (var scope = app.Services.CreateScope())
+// Применяем миграции при старте (создаём БД, если её ещё нет) — управляется флагом
+// Database:MigrateOnStartup. Для dev/docker по умолчанию включено; в строгом prod миграции
+// стоит выполнять отдельным шагом деплоя, выставив флаг в false.
+if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
@@ -99,5 +130,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ScheduleHub>("/hubs/schedule");
 
 app.Run();

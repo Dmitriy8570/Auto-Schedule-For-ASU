@@ -28,4 +28,12 @@ public class WeekDay
 
     /// <summary>Временные слоты (пары), доступные в этот день.</summary>
     public List<TimeSlot> TimeSlots { get; private set; } = [];
+
+    /// <summary>Создать рабочий день в составе учебной недели.</summary>
+    public static WeekDay Create(Guid id, Guid weekId, WeekDayType dayOfWeek) => new()
+    {
+        Id = Domain.common.Guard.NotEmpty(id, nameof(id)),
+        WeekId = Domain.common.Guard.NotEmpty(weekId, nameof(weekId)),
+        DayOfWeek = Domain.common.Guard.Defined(dayOfWeek, nameof(dayOfWeek))
+    };
 }

@@ -12,11 +12,12 @@ import { management } from '../api/management'
 import { workloads } from '../api/workloads'
 import { constraints } from '../api/constraints'
 import { ApiError } from '../api/http'
+import { degreeLabels, shiftLabels, lessonTypeLabels } from '../api/labels'
 import type {
   RoomDto, EquipmentDto, ConstraintConfigDto, BuildingDto, ConstraintType,
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto,
   WorkloadItemDto, AvailabilityState, AvailabilityCellDto, CurriculumConstraintsDto,
-  Shift, TypeDegree, LessonType,
+  Shift, LessonType,
 } from '../api/types'
 
 type Tab = 'teachers' | 'rooms' | 'groups' | 'load' | 'objects'
@@ -49,18 +50,6 @@ function toggle(id: string) {
   collapsed.value = s
 }
 
-const degreeLabels: Record<TypeDegree, string> = {
-  Secondary: 'СПО', Bachelor: 'Бакалавриат', Specialist: 'Специалитет',
-  Master: 'Магистратура', Postgraduate: 'Аспирантура', Doctoral: 'Докторантура',
-}
-const lessonTypeLabels: Record<LessonType, string> = {
-  Lecture: 'Лекция', Seminar: 'Семинар', Laboratory: 'Лаб. работа',
-  Consultation: 'Консультация', Examination: 'Экзамен',
-}
-const shiftLabels: Record<Shift, string> = {
-  First: '1-я смена', Second: '2-я смена', Evening: 'Вечерняя', Unspecified: 'Не указана',
-}
-
 // ============ Загрузка данных вкладок (лениво) ============
 async function ensureInstitutes() {
   if (!institutes.value.length) institutes.value = await lookups.institutes()
@@ -77,8 +66,9 @@ async function ensureLoaded(tab: Tab) {
       await ensureInstitutes()
       ;[departments.value, teachers.value] = await Promise.all([lookups.departments(), lookups.teachers()])
     } else if (tab === 'rooms') {
+      // management.classrooms() — полный список (lookups.rooms ограничен 20 записями).
       await ensureBuildings()
-      rooms.value = await lookups.rooms()
+      ;[rooms.value, equipments.value] = await Promise.all([management.classrooms(), management.equipments()])
     } else if (tab === 'groups') {
       await ensureInstitutes()
       ;[degrees.value, courses.value, groups.value] =
@@ -151,6 +141,9 @@ const panelStatus = ref<'' | 'saving' | 'saved'>('')
 const panelError = ref('')
 
 const availabilityGrid = ref<Record<string, AvailabilityState>>({})
+// Оснащение выбранной аудитории оборудованием (EquipmentRoom).
+const roomEquipmentIds = ref<string[]>([])
+const roomEquipmentToAdd = ref('')
 const groupShift = ref<Shift>('Unspecified')
 const curConstraints = ref<CurriculumConstraintsDto>(
   { requiredEquipmentIds: [], isParallel: false, isDouble: false, preferredBuildingId: null })
@@ -166,7 +159,28 @@ async function selectTeacher(t: TeacherDto) {
 async function selectRoom(r: RoomDto) {
   selected.value = { kind: 'room', id: r.id, name: r.name, sublabel: `${r.buildingName} · ${r.capacity} мест` }
   resetPanel()
-  await loadAvailability('classroom', r.id)
+  roomEquipmentToAdd.value = ''
+  await Promise.all([loadAvailability('classroom', r.id), loadRoomEquipment(r.id)])
+}
+
+async function loadRoomEquipment(classroomId: string) {
+  try {
+    roomEquipmentIds.value = await constraints.classroomEquipment(classroomId)
+  } catch (e) {
+    roomEquipmentIds.value = []
+    panelError.value = e instanceof ApiError ? e.message : 'Не удалось загрузить оснащение.'
+  }
+}
+
+const availableRoomEquipment = computed(() =>
+  equipments.value.filter(e => !roomEquipmentIds.value.includes(e.id)))
+function addRoomEquipment() {
+  const id = roomEquipmentToAdd.value
+  if (id && !roomEquipmentIds.value.includes(id)) roomEquipmentIds.value.push(id)
+  roomEquipmentToAdd.value = ''
+}
+function removeRoomEquipment(id: string) {
+  roomEquipmentIds.value = roomEquipmentIds.value.filter(x => x !== id)
 }
 function selectGroup(g: GroupDto) {
   selected.value = { kind: 'group', id: g.id, name: g.name, sublabel: `${g.courseNumber} курс · ${g.studentCount} чел.` }
@@ -241,7 +255,10 @@ async function savePanel() {
   panelStatus.value = 'saving'; panelError.value = ''
   try {
     if (sel.kind === 'teacher') await constraints.setTeacherAvailability(sel.id, cellsFromGrid(availabilityGrid.value))
-    else if (sel.kind === 'room') await constraints.setClassroomAvailability(sel.id, cellsFromGrid(availabilityGrid.value))
+    else if (sel.kind === 'room') {
+      await constraints.setClassroomAvailability(sel.id, cellsFromGrid(availabilityGrid.value))
+      await constraints.setClassroomEquipment(sel.id, [...roomEquipmentIds.value])
+    }
     else if (sel.kind === 'group') await constraints.setGroupShift(sel.id, groupShift.value)
     else if (sel.kind === 'curriculum') await constraints.setCurriculumConstraints(sel.id, { ...curConstraints.value })
     panelStatus.value = 'saved'
@@ -613,6 +630,25 @@ onMounted(() => ensureLoaded(activeTab.value))
         <p class="cp-hint">Клик по ячейке меняет градацию. Зажмите и проведите для заливки нескольких слотов.</p>
         <TimeGrid v-model="availabilityGrid" />
 
+        <template v-if="selected.kind === 'room'">
+          <div class="cp-section-title cp-section-spaced"><Wrench :size="15" /> Оснащение аудитории</div>
+          <p class="cp-hint">Оборудование, установленное в аудитории. Учитывается при подборе аудиторий под занятия.</p>
+          <div class="tags">
+            <span v-for="id in roomEquipmentIds" :key="id" class="tag">
+              {{ equipmentName(id) }}
+              <X :size="12" class="tag-x" @click="removeRoomEquipment(id)" />
+            </span>
+            <span v-if="!roomEquipmentIds.length" class="muted-note small">Оборудование не задано</span>
+          </div>
+          <select v-model="roomEquipmentToAdd" class="custom-select" @change="addRoomEquipment">
+            <option value="">Добавить оборудование…</option>
+            <option v-for="e in availableRoomEquipment" :key="e.id" :value="e.id">{{ e.name }}</option>
+          </select>
+          <p v-if="!equipments.length" class="cp-hint">
+            Каталог оборудования пуст — добавьте типы во вкладке «Объекты → Оборудование».
+          </p>
+        </template>
+
         <div class="cp-actions">
           <span v-if="panelError" class="cp-error">{{ panelError }}</span>
           <span v-else-if="panelStatus === 'saved'" class="cp-saved">✓ Сохранено</span>
@@ -796,6 +832,7 @@ onMounted(() => ensureLoaded(activeTab.value))
 .cp-header h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0 0 3px 0; }
 .cp-header p { font-size: 13px; color: #64748b; margin: 0; }
 .cp-section-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+.cp-section-title.cp-section-spaced { margin-top: 28px; padding-top: 24px; border-top: 1px solid #f1f5f9; }
 .cp-hint { font-size: 12px; color: #94a3b8; margin: 0 0 16px 0; }
 
 .cp-block { padding: 18px 0; border-bottom: 1px solid #f1f5f9; }

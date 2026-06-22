@@ -25,8 +25,8 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
             {
                 var literals = new List<ILiteral>();
                 for (int w = 0; w < model.WorkloadCount; w++)
-                    literals.Add(model.Lessons[w, r, t]);
-                model.Model.AddAtMostOne(literals);
+                    if (model.Lessons[w, r, t] is { } var) literals.Add(var);
+                if (literals.Count > 1) model.Model.AddAtMostOne(literals);
             }
     }
 
@@ -63,9 +63,9 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
             var literals = new List<ILiteral>();
             foreach (int w in workloadIndices)
                 for (int r = 0; r < model.ClassroomCount; r++)
-                    literals.Add(model.Lessons[w, r, t]);
+                    if (model.Lessons[w, r, t] is { } var) literals.Add(var);
 
-            model.Model.AddAtMostOne(literals);
+            if (literals.Count > 1) model.Model.AddAtMostOne(literals);
         }
     }
 }

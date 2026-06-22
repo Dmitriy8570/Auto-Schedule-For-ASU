@@ -50,6 +50,22 @@ public class Classroom
     }
 
     /// <summary>
+    /// Привести оснащение аудитории к заданному набору оборудования. Реализовано через разницу
+    /// (а не Clear + повторное добавление), чтобы не создавать конфликт отслеживания EF при
+    /// сохранении связей с прежним составным ключом (EquipmentId, ClassroomId).
+    /// </summary>
+    public void SetEquipment(IEnumerable<Guid> equipmentIds)
+    {
+        var target = equipmentIds.Distinct().ToHashSet();
+        EquipmentRooms.RemoveAll(er => !target.Contains(er.EquipmentId));
+
+        var existing = EquipmentRooms.Select(er => er.EquipmentId).ToHashSet();
+        foreach (var equipmentId in target)
+            if (existing.Add(equipmentId))
+                EquipmentRooms.Add(EquipmentRoom.Create(equipmentId, Id));
+    }
+
+    /// <summary>
     /// Полностью заменить сетку доступности аудитории. Нейтральные слоты не хранятся:
     /// отсутствие записи равнозначно нейтральной градации.
     /// </summary>

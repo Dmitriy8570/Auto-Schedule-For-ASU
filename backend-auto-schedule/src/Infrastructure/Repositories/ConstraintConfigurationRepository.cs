@@ -80,6 +80,33 @@ public sealed class ConstraintConfigurationRepository(ApplicationDbContext conte
         return true;
     }
 
+    // ----- Оснащение аудитории оборудованием -----
+
+    public async Task<IReadOnlyList<Guid>?> GetClassroomEquipmentAsync(Guid classroomId, CancellationToken ct)
+    {
+        if (!await context.Classrooms.AnyAsync(c => c.Id == classroomId, ct))
+            return null;
+
+        return await context.EquipmentRooms
+            .AsNoTracking()
+            .Where(er => er.ClassroomId == classroomId)
+            .Select(er => er.EquipmentId)
+            .ToListAsync(ct);
+    }
+
+    public async Task<bool> SetClassroomEquipmentAsync(Guid classroomId, IReadOnlyList<Guid> equipmentIds, CancellationToken ct)
+    {
+        var classroom = await context.Classrooms
+            .Include(c => c.EquipmentRooms)
+            .FirstOrDefaultAsync(c => c.Id == classroomId, ct);
+        if (classroom is null) return false;
+
+        await EnsureEquipmentExistAsync(equipmentIds, ct);
+        classroom.SetEquipment(equipmentIds);
+        await context.SaveChangesAsync(ct);
+        return true;
+    }
+
     // ----- По-нагрузочные ограничения учебного плана -----
 
     public async Task<CurriculumConstraintsDto?> GetCurriculumConstraintsAsync(Guid curriculumId, CancellationToken ct) =>

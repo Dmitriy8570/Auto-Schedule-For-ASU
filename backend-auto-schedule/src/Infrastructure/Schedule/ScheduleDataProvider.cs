@@ -45,8 +45,7 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
     public async Task<ScheduleData> GetForInstituteAsync(
         Guid semesterId, Guid instituteId, CancellationToken cancellationToken)
     {
-        var allWorkloads = await LoadWorkloadsAsync(semesterId, cancellationToken);
-        var workloads = allWorkloads.Where(w => BelongsToInstitute(w.Curriculum, instituteId)).ToList();
+        var workloads = await LoadWorkloadsAsync(semesterId, cancellationToken, instituteId);
 
         var classrooms = await LoadClassroomsAsync(cancellationToken);
         var timeSlots = await LoadTimeSlotsAsync(semesterId, cancellationToken);
@@ -64,10 +63,15 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
     // ----- Загрузка осей модели --------------------------------------------------------------
 
-    private async Task<List<SemesterWorkload>> LoadWorkloadsAsync(Guid semesterId, CancellationToken ct) =>
+    private async Task<List<SemesterWorkload>> LoadWorkloadsAsync(
+        Guid semesterId, CancellationToken ct, Guid? instituteId = null) =>
         await _context.SemesterWorkloads
             .AsNoTracking()
             .Where(sw => sw.SemesterId == semesterId)
+            // Фильтр института транслируется в SQL (раньше выполнялся в памяти после загрузки всех планов).
+            .Where(sw => instituteId == null
+                || sw.Curriculum.Stream.StreamGroups
+                    .Any(sg => sg.Group.Course.Degree.InstituteId == instituteId.Value))
             .Include(sw => sw.Curriculum).ThenInclude(c => c.Teacher).ThenInclude(t => t.TeacherAvailabilities)
             .Include(sw => sw.Curriculum).ThenInclude(c => c.Subject)
             .Include(sw => sw.Curriculum).ThenInclude(c => c.FavoriteBuilding)
@@ -195,10 +199,6 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
     }
 
     // ----- Принадлежность институту ----------------------------------------------------------
-
-    private static bool BelongsToInstitute(Curriculum curriculum, Guid instituteId) =>
-        curriculum.Stream.StreamGroups
-            .Any(sg => sg.Group.Course.Degree.InstituteId == instituteId);
 
     private static bool LessonBelongsToInstitute(Lesson lesson, Guid instituteId) =>
         lesson.Stream.StreamGroups

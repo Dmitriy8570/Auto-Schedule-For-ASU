@@ -19,6 +19,10 @@ public interface IConstraintConfigurationRepository
     Task<IReadOnlyList<AvailabilityCellDto>?> GetClassroomAvailabilityAsync(Guid classroomId, CancellationToken ct);
     Task<bool> SetClassroomAvailabilityAsync(Guid classroomId, IReadOnlyList<AvailabilityCellDto> cells, CancellationToken ct);
 
+    // ----- Оснащение аудитории оборудованием -----
+    Task<IReadOnlyList<Guid>?> GetClassroomEquipmentAsync(Guid classroomId, CancellationToken ct);
+    Task<bool> SetClassroomEquipmentAsync(Guid classroomId, IReadOnlyList<Guid> equipmentIds, CancellationToken ct);
+
     // ----- По-нагрузочные ограничения учебного плана -----
     Task<CurriculumConstraintsDto?> GetCurriculumConstraintsAsync(Guid curriculumId, CancellationToken ct);
     Task<bool> SetCurriculumConstraintsAsync(Guid curriculumId, CurriculumConstraintsDto constraints, CancellationToken ct);

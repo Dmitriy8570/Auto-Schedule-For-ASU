@@ -29,8 +29,9 @@ public class EquipmentSectionBuilder : IModelSectionBuilder
                 if (needed.IsSubsetOf(available)) continue;
 
                 // Аудитория не оснащена — запрещаем нагрузку в ней во всех слотах.
+                // (Обычно такие тройки уже отсечены прунингом => ячейки null и пропускаются.)
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    model.Model.Add(model.Lessons[w, r, t] == 0);
+                    if (model.Lessons[w, r, t] is { } var) model.Model.Add(var == 0);
             }
         }
     }

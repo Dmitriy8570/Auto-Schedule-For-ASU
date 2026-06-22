@@ -21,22 +21,32 @@ public sealed class DiscardInstituteScheduleCommandHandler
     : IRequestHandler<DiscardInstituteScheduleCommand, DiscardInstituteScheduleResult>
 {
     private readonly ILessonRepository _lessonRepository;
+    private readonly ITransactionRunner _transactionRunner;
 
-    public DiscardInstituteScheduleCommandHandler(ILessonRepository lessonRepository)
-        => _lessonRepository = lessonRepository;
+    public DiscardInstituteScheduleCommandHandler(
+        ILessonRepository lessonRepository, ITransactionRunner transactionRunner)
+    {
+        _lessonRepository = lessonRepository;
+        _transactionRunner = transactionRunner;
+    }
 
     public async Task<DiscardInstituteScheduleResult> Handle(
         DiscardInstituteScheduleCommand request, CancellationToken cancellationToken)
     {
-        var lessons = await _lessonRepository.GetByInstituteAsync(request.InstituteId, cancellationToken);
+        // Сброс черновика выполняется в SERIALIZABLE-транзакции, согласованно с публикацией и
+        // перегенерацией расписания того же института.
+        return await _transactionRunner.ExecuteSerializableAsync(async ct =>
+        {
+            var lessons = await _lessonRepository.GetByInstituteAsync(request.InstituteId, ct);
 
-        var drafts = lessons.Where(l => l.Version == ScheduleVersion.Draft).ToList();
-        if (drafts.Count == 0)
-            return new DiscardInstituteScheduleResult(0);
+            var drafts = lessons.Where(l => l.Version == ScheduleVersion.Draft).ToList();
+            if (drafts.Count == 0)
+                return new DiscardInstituteScheduleResult(0);
 
-        _lessonRepository.RemoveRange(drafts);
-        await _lessonRepository.SaveChangesAsync(cancellationToken);
+            _lessonRepository.RemoveRange(drafts);
+            await _lessonRepository.SaveChangesAsync(ct);
 
-        return new DiscardInstituteScheduleResult(drafts.Count);
+            return new DiscardInstituteScheduleResult(drafts.Count);
+        }, cancellationToken);
     }
 }

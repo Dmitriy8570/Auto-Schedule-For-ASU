@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Domain.schedule;
 
 namespace Application.Common.Interfaces;
@@ -7,6 +8,14 @@ public interface ILessonRepository
     Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken cancellationToken);
     Task AddAsync(Lesson lesson, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Найти коллизии для нового занятия в слоте <paramref name="timeSlotId"/>: занятость
+    /// аудитории, преподавателя (по плану <paramref name="curriculumId"/>) и групп потока
+    /// <paramref name="streamId"/>. Пустой список — конфликтов нет.
+    /// </summary>
+    Task<IReadOnlyList<ScheduleConflict>> FindConflictsAsync(
+        Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken cancellationToken);
 
     /// <summary>Текущее расписание института (его занятия) — используется перед перегенерацией для удаления.</summary>
     Task<IReadOnlyList<Lesson>> GetByInstituteAsync(Guid instituteId, CancellationToken cancellationToken);

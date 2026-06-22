@@ -22,8 +22,9 @@ public class CapacitySectionBuilder : IModelSectionBuilder
                 if (model.Data.Classrooms[r].Capacity >= students) continue;
 
                 // Аудитория не вмещает поток — запрещаем нагрузку в ней во всех слотах.
+                // (Обычно такие тройки уже отсечены прунингом => ячейки null и пропускаются.)
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    model.Model.Add(model.Lessons[w, r, t] == 0);
+                    if (model.Lessons[w, r, t] is { } var) model.Model.Add(var == 0);
             }
         }
     }

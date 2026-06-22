@@ -58,7 +58,7 @@ CREATE TABLE mmis.Courses (
 IF OBJECT_ID('mmis.Groups') IS NULL
 CREATE TABLE mmis.Groups (
     Id           INT IDENTITY(1,1) PRIMARY KEY,
-    Name         NVARCHAR(50) NOT NULL,      -- шифр группы, напр. ИТ-101
+    Name         NVARCHAR(50) NOT NULL,      -- шифр группы, напр. ИВТ-101
     CourseId     INT NOT NULL REFERENCES mmis.Courses(Id),
     Shift        TINYINT NOT NULL DEFAULT 0, -- 0 первая, 1 вторая, 2 вечерняя
     StudentCount INT NOT NULL                -- численность группы

@@ -17,11 +17,10 @@ namespace Application.Solver.Builder.BuildSections;
 /// </summary>
 public class PreviousScheduleAnchorSectionBuilder : IModelSectionBuilder
 {
-    /// <summary>Штраф за занятие вне корпуса, в котором оно шло в прошлом семестре.</summary>
-    private const int BuildingDeviationPenalty = 2;
+    private readonly SolverPenaltyWeights _weights;
 
-    /// <summary>Штраф за занятие вне слотов, в которых оно шло в прошлом семестре.</summary>
-    private const int TimeSlotDeviationPenalty = 1;
+    public PreviousScheduleAnchorSectionBuilder(SolverPenaltyWeights? weights = null)
+        => _weights = weights ?? SolverPenaltyWeights.Default;
 
     public void Build(ScheduleModel model)
     {
@@ -37,7 +36,7 @@ public class PreviousScheduleAnchorSectionBuilder : IModelSectionBuilder
         }
     }
 
-    private static void AnchorBuilding(ScheduleModel model, WorkloadAnchor anchor)
+    private void AnchorBuilding(ScheduleModel model, WorkloadAnchor anchor)
     {
         if (anchor.PreferredBuildingId is not { } building) return;
 
@@ -47,11 +46,12 @@ public class PreviousScheduleAnchorSectionBuilder : IModelSectionBuilder
             if (model.Data.Classrooms[r].BuildingId == building) continue;
 
             for (int t = 0; t < model.TimeSlotCount; t++)
-                model.Objective.Add(LinearExpr.Term(model.Lessons[w, r, t], BuildingDeviationPenalty));
+                if (model.Lessons[w, r, t] is { } var)
+                    model.Objective.Add(LinearExpr.Term(var, _weights.AnchorBuilding));
         }
     }
 
-    private static void AnchorTimeSlots(ScheduleModel model, WorkloadAnchor anchor)
+    private void AnchorTimeSlots(ScheduleModel model, WorkloadAnchor anchor)
     {
         if (anchor.PreferredTimeSlotIds is null || anchor.PreferredTimeSlotIds.Count == 0) return;
 
@@ -63,7 +63,8 @@ public class PreviousScheduleAnchorSectionBuilder : IModelSectionBuilder
             if (preferred.Contains(model.Data.TimeSlots[t].Id)) continue;
 
             for (int r = 0; r < model.ClassroomCount; r++)
-                model.Objective.Add(LinearExpr.Term(model.Lessons[w, r, t], TimeSlotDeviationPenalty));
+                if (model.Lessons[w, r, t] is { } var)
+                    model.Objective.Add(LinearExpr.Term(var, _weights.AnchorTimeSlot));
         }
     }
 }

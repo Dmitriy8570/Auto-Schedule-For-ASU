@@ -7,6 +7,7 @@ using Infrastructure.Mmis;
 using Infrastructure.Repositories;
 using Infrastructure.Schedule;
 using Infrastructure.Schedule.Generation;
+using Infrastructure.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,10 @@ public static class DependencyInjection
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
         services.AddScoped<IScheduleDataProvider, ScheduleDataProvider>();
 
+        // Транзакции уровня SERIALIZABLE для операций записи расписания (защита от коллизий
+        // при одновременной работе нескольких сотрудников бюро). См. ITransactionRunner.
+        services.AddScoped<ITransactionRunner, TransactionRunner>();
+
         // Параметры солвера из конфигурации (секция "Solver"): лимит времени, число воркеров, лог.
         // Хендлеры получают готовое значение SolverOptions (Application не зависит от Options/Configuration).
         services.Configure<SolverOptions>(configuration.GetSection("Solver"));
@@ -45,6 +50,12 @@ public static class DependencyInjection
         services.AddSingleton<ScheduleGenerationQueue>();
         services.AddSingleton<IScheduleGenerationQueue>(sp => sp.GetRequiredService<ScheduleGenerationQueue>());
         services.AddHostedService<ScheduleGenerationHostedService>();
+
+        // Сидер инфраструктуры: аудиторный фонд + календарная сетка (оси «аудитории»/«время»),
+        // которых нет в ММИС. Прогон при старте + после каждого ММИС-синка (новые недели).
+        services.Configure<InfrastructureSeedOptions>(configuration.GetSection(InfrastructureSeedOptions.SectionName));
+        services.AddScoped<IInfrastructureSeeder, InfrastructureSeeder>();
+        services.AddHostedService<InfrastructureSeedHostedService>();
 
         // Синхронизация с MMIS (MS SQL): фоновая ежедневная выгрузка + журналирование нагрузки.
         services.Configure<MmisSyncOptions>(configuration.GetSection(MmisSyncOptions.SectionName));

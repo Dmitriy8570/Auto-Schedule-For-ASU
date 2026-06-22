@@ -29,7 +29,7 @@ public sealed class ScheduleSolver : IScheduleSolver
         for (int w = 0; w < model.WorkloadCount; w++)
             for (int r = 0; r < model.ClassroomCount; r++)
                 for (int t = 0; t < model.TimeSlotCount; t++)
-                    if (solver.Value(model.Lessons[w, r, t]) > 0.5)
+                    if (model.Lessons[w, r, t] is { } var && solver.Value(var) > 0.5)
                         result.Add(new Assignment(w, r, t));
         return result;
     }

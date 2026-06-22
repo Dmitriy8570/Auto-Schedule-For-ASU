@@ -27,7 +27,7 @@ public class ShiftSectionBuilder : IModelSectionBuilder
                 if (allowed) continue;
 
                 for (int r = 0; r < model.ClassroomCount; r++)
-                    model.Model.Add(model.Lessons[w, r, t] == 0);
+                    if (model.Lessons[w, r, t] is { } var) model.Model.Add(var == 0);
             }
         }
     }
@@ -36,7 +36,7 @@ public class ShiftSectionBuilder : IModelSectionBuilder
     /// Номер пары допустим для смены: 1-я — пары 1..4, 2-я — 5..6, вечерняя — 7+.
     /// Для <see cref="Shift.Unspecified"/> ограничение смены не применяется (допустим любой слот).
     /// </summary>
-    private static bool SlotMatchesShift(Shift shift, int lessonNumber) => shift switch
+    internal static bool SlotMatchesShift(Shift shift, int lessonNumber) => shift switch
     {
         Shift.First => lessonNumber <= 4,
         Shift.Second => lessonNumber is >= 5 and <= 6,

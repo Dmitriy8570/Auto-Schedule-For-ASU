@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import TheHeader from './components/TheHeader.vue'
 import LoginCard from './components/LoginCard.vue'
-import TheFooter from './components/TheFooter.vue'
 import MainDashboard from './components/MainDashboard.vue'
+import ToastHost from './components/ToastHost.vue'
 import { useAuth } from './composables/useAuth'
 
 // Экран определяется наличием действительной сессии (JWT в localStorage).
@@ -13,10 +13,11 @@ const { isAuthenticated, logout } = useAuth()
   <div v-if="!isAuthenticated" class="login-page">
     <TheHeader />
     <LoginCard />
-    <TheFooter />
   </div>
 
   <MainDashboard v-else @logout="logout" />
+
+  <ToastHost />
 </template>
 
 <style scoped>

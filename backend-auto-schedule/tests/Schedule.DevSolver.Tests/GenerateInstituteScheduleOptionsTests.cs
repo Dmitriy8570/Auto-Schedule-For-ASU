@@ -75,7 +75,8 @@ public sealed class GenerateInstituteScheduleOptionsTests
     }
 
     private static GenerateInstituteScheduleCommandHandler NewHandler(IScheduleSolver solver) =>
-        new(new EmptyDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(), ConfigDefaults);
+        new(new EmptyDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(),
+            new FakeTransactionRunner(), ConfigDefaults);
 
     // --- Фейки ---
 
@@ -118,6 +119,7 @@ public sealed class GenerateInstituteScheduleOptionsTests
 
         // Не используются этими тестами.
         public Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<Application.Common.Exceptions.ScheduleConflict>> FindConflictsAsync(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetByInstituteAsync(Guid instituteId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetBySemesterAsync(Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
