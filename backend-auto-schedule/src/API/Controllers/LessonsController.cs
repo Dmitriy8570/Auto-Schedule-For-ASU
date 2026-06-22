@@ -1,5 +1,7 @@
+using Application.Common.DTO.Generation;
 using Application.Common.DTO.Lessons;
 using Application.Common.Generation;
+using Application.Common.Generation.Queries;
 using Application.Common.Lessons.Commands;
 using Application.Common.Lessons.Queries;
 using MediatR;
@@ -135,6 +137,17 @@ public class LessonsController : ControllerBase
     [HttpGet("generate/status/{jobId:guid}")]
     public ActionResult<GenerationJobStatus> GetGenerationStatus(Guid jobId)
         => _generationQueue.TryGetStatus(jobId, out var status) ? Ok(status) : NotFound();
+
+    /// <summary>
+    /// История автогенерации: что и как сгенерировалось (по убыванию времени завершения).
+    /// Необязательные фильтры по семестру и институту.
+    /// </summary>
+    [HttpGet("generate/history")]
+    public async Task<ActionResult<IReadOnlyList<GenerationRunDto>>> GetGenerationHistory(
+        CancellationToken ct,
+        [FromQuery] Guid? semesterId = null, [FromQuery] Guid? instituteId = null,
+        [FromQuery] int limit = 100)
+        => Ok(await _mediator.Send(new GetGenerationHistoryQuery(semesterId, instituteId, limit), ct));
 
     /// <summary>
     /// Опубликовать расписание института: перевести черновик (Draft) в текущее (Current),

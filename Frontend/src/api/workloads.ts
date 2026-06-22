@@ -1,5 +1,12 @@
 import { http } from './http'
-import type { PagedResult, WorkloadItemDto, WorkloadChangeDto } from './types'
+import type { PagedResult, WorkloadItemDto, WorkloadChangeDto, UnplacedWorkloadRow } from './types'
+
+export interface UnplacedWorkloadFilter {
+  semesterId: string
+  instituteId?: string
+  departmentId?: string
+  teacherId?: string
+}
 
 export interface WorkloadsFilter {
   instituteId?: string
@@ -29,4 +36,8 @@ export const workloads = {
   // Журнал изменений нагрузки с пагинацией.
   changes: (filter: WorkloadChangesFilter = {}) =>
     http.get<PagedResult<WorkloadChangeDto>>('/workloads/changes', { ...filter }),
+
+  // Нераспределённая нагрузка за семестр по текущему расписанию (только с дефицитом).
+  unplaced: (filter: UnplacedWorkloadFilter, signal?: AbortSignal) =>
+    http.get<UnplacedWorkloadRow[]>('/workloads/unplaced', { ...filter }, signal),
 }

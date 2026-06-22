@@ -1,4 +1,5 @@
 using Application.Common.DTO;
+using Application.Common.DTO.Generation;
 using Application.Common.DTO.Workloads;
 
 namespace Application.Common.Interfaces;
@@ -16,5 +17,18 @@ public interface IWorkloadRepository
         string? subjectSearch,
         int page,
         int pageSize,
+        CancellationToken ct);
+
+    /// <summary>
+    /// Нераспределённая нагрузка за семестр по текущему расписанию: для каждой нагрузки сравнивает
+    /// план (Hours/2 пар) с фактически поставленными занятиями и возвращает только те, где есть
+    /// дефицит. Фильтры по институту/кафедре/преподавателю опциональны. Сортировка по преподавателю,
+    /// затем по дисциплине.
+    /// </summary>
+    Task<IReadOnlyList<UnplacedWorkloadRow>> GetUnplacedWorkloadAsync(
+        Guid semesterId,
+        Guid? instituteId,
+        Guid? departmentId,
+        Guid? teacherId,
         CancellationToken ct);
 }

@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import {
   Calendar, RotateCcw, Sparkles, Download, User, Users, MapPin, Plus, CheckCircle2,
   GraduationCap, Building2, Moon, Sun, X, Save, Trash2, ArrowLeftRight, Loader2, Pencil,
+  AlertTriangle,
 } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import BaseSelect, { type SelectOption } from './BaseSelect.vue'
@@ -16,7 +17,7 @@ import { useToast } from '../composables/useToast'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
-  GenerationJobStatus,
+  GenerationJobStatus, GenerateScheduleResult, WorkloadShortfall,
 } from '../api/types'
 
 type Entity = 'teachers' | 'groups' | 'rooms'
@@ -377,6 +378,17 @@ const generating = ref(false)     // показывает блокирующий
 const genProgress = ref('')       // текст прогресса в оверлее
 const genError = ref('')          // ошибка/подсказка внутри модального окна
 
+// Итог генерации: нагрузки, которые не удалось разместить полностью («кто и почему»).
+type UnplacedRow = WorkloadShortfall & { institute?: string }
+const genResultOpen = ref(false)  // окно с результатом «кто остался без занятий»
+const genUnplaced = ref<UnplacedRow[]>([])
+function closeGenResult() { genResultOpen.value = false }
+
+// Показывать ли колонку «Институт» (актуально при генерации по всему вузу).
+const genUnplacedHasInstitute = computed(() => genUnplaced.value.some(u => !!u.institute))
+const lessonTypeLabel = (t: WorkloadShortfall['lessonType']) =>
+  lessonTypeMeta[t as DomainLessonType]?.label ?? t
+
 function openGenModal() {
   genError.value = ''
   genScope.value = 'institute'
@@ -388,30 +400,48 @@ function closeGenModal() {
   genModalOpen.value = false
 }
 
-// Поллинг статуса фоновой генерации до завершения (с мягким таймаутом ~200 с).
+// Поллинг статуса фоновой генерации до терминального состояния. Ждём с запасом над бюджетом
+// солвера (30 мин/институт): иначе фронтенд бросает ещё работающую задачу, и окно с результатом
+// («кто и почему») не открывается, т.к. результата ещё нет. Транзиентные ошибки статуса не валят
+// весь процесс — пробуем дальше. В оверлее показываем прошедшее время, чтобы было видно, что живо.
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+const GENERATION_POLL_TIMEOUT_MS = 2_400_000 // ~40 мин: бюджет солвера (30 мин) + очередь/запас
 
 async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null> {
-  const deadline = Date.now() + 200_000
+  const base = genProgress.value
+  const startedAt = Date.now()
+  const deadline = startedAt + GENERATION_POLL_TIMEOUT_MS
   while (Date.now() < deadline) {
-    await sleep(1500)
-    const s = await lessons.generationStatus(jobId)
+    await sleep(2000)
+    let s: GenerationJobStatus
+    try {
+      s = await lessons.generationStatus(jobId)
+    } catch {
+      continue // временная ошибка получения статуса — повторяем, не прерывая генерацию
+    }
     if (s.state === 'Succeeded' || s.state === 'Failed') return s
+    const elapsed = Math.round((Date.now() - startedAt) / 1000)
+    genProgress.value = `${base} (${elapsed >= 60 ? `${Math.floor(elapsed / 60)} мин ${elapsed % 60} с` : `${elapsed} с`})`
   }
   return null
 }
 
-// Поставить генерацию одного института в очередь и дождаться результата (текстовая сводка).
-async function runInstituteGeneration(instituteId: string): Promise<string> {
+// Поставить генерацию одного института в очередь и дождаться результата (сводка + сам результат).
+async function runInstituteGeneration(
+  instituteId: string,
+): Promise<{ text: string; result: GenerateScheduleResult | null }> {
   const job = await lessons.generateForInstituteAsync(selSemester.value, instituteId)
   const final = await pollGeneration(job.jobId)
-  if (!final) return 'выполняется дольше обычного — загляните позже'
+  if (!final) return { text: 'ещё идёт на сервере — откройте расписание позже, оно обновится', result: null }
   if (final.state === 'Succeeded' && final.result) {
     const r = final.result
-    return `${r.status}, занятий: ${r.lessonsCreated}, штраф: ${r.objectiveValue}, ` +
-      `время: ${r.wallTimeSeconds.toFixed(1)} с`
+    return {
+      text: `${r.status}, занятий: ${r.lessonsCreated}, штраф: ${r.objectiveValue}, ` +
+        `время: ${r.wallTimeSeconds.toFixed(1)} с`,
+      result: r,
+    }
   }
-  return `не удалась: ${final.error ?? final.state}`
+  return { text: `не удалась: ${final.error ?? final.state}`, result: null }
 }
 
 async function startGeneration() {
@@ -421,12 +451,14 @@ async function startGeneration() {
   }
   genError.value = ''
   generating.value = true
+  genUnplaced.value = []
   try {
     if (genScope.value === 'institute') {
       const inst = institutes.value.find(i => i.id === genInstituteId.value)
       genProgress.value = `Генерация института «${inst?.name ?? ''}»…`
-      const res = await runInstituteGeneration(genInstituteId.value)
-      toast.success(`Генерация института: ${res}.`)
+      const { text, result } = await runInstituteGeneration(genInstituteId.value)
+      if (result) genUnplaced.value.push(...result.unplaced)
+      toast.success(`Генерация института: ${text}.`)
       // Показать результат в сетке: переключаемся на «Группы» этого института не можем (нужен leaf),
       // поэтому просто ставим институт в фильтр преподавателей и перезагружаем при наличии выбора.
       selInstitute.value = genInstituteId.value
@@ -437,12 +469,15 @@ async function startGeneration() {
       let done = 0
       for (const inst of institutes.value) {
         genProgress.value = `Генерация по вузу: «${inst.name}» (${done + 1}/${total})…`
-        await runInstituteGeneration(inst.id)
+        const { result } = await runInstituteGeneration(inst.id)
+        if (result) genUnplaced.value.push(...result.unplaced.map(u => ({ ...u, institute: inst.name })))
         done++
       }
       toast.success(`Генерация по вузу завершена: обработано институтов — ${total}.`)
     }
     genModalOpen.value = false
+    // Если кто-то остался недоразмещён — открываем окно с разбором «кто и почему».
+    if (genUnplaced.value.length > 0) genResultOpen.value = true
     await loadLessons()
   } catch (e) {
     genError.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
@@ -806,7 +841,56 @@ onMounted(async () => {
         <Loader2 :size="48" class="spin" />
         <p class="go-title">Идёт автогенерация расписания…</p>
         <p class="go-progress">{{ genProgress }}</p>
-        <p class="go-note">Пожалуйста, подождите — это может занять до нескольких минут.</p>
+        <p class="go-note">Пожалуйста, подождите — для большого института это может занять до получаса.</p>
+      </div>
+
+      <!-- Окно результата: кто остался без занятий (полностью/частично) и почему -->
+      <div v-if="genResultOpen" class="modal-backdrop" @click.self="closeGenResult">
+        <div class="gen-modal gr-modal">
+          <header class="gm-header">
+            <div class="gm-title gr-title"><AlertTriangle :size="18" /> Размещены не полностью</div>
+            <button class="gm-close" @click="closeGenResult"><X :size="18" /></button>
+          </header>
+
+          <div class="gm-body gr-body">
+            <p class="gm-hint">
+              Эти нагрузки удалось разместить лишь частично или не удалось вовсе — преподаватели
+              остались без части (или всех) занятий. Проверьте причину и поправьте данные
+              (аудитории/оборудование/доступность) либо разместите занятия вручную.
+            </p>
+
+            <table class="gr-table">
+              <thead>
+                <tr>
+                  <th v-if="genUnplacedHasInstitute">Институт</th>
+                  <th>Преподаватель</th>
+                  <th>Дисциплина</th>
+                  <th>Тип</th>
+                  <th class="gr-num">Пары</th>
+                  <th>Причина</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(u, i) in genUnplaced" :key="i">
+                  <td v-if="genUnplacedHasInstitute" class="gr-inst">{{ u.institute }}</td>
+                  <td class="gr-teacher">{{ u.teacher }}</td>
+                  <td>{{ u.subject }}</td>
+                  <td>{{ lessonTypeLabel(u.lessonType) }}</td>
+                  <td class="gr-num">
+                    <span :class="['gr-pairs', u.placedPairs === 0 ? 'gr-none' : 'gr-partial']">
+                      {{ u.placedPairs }} / {{ u.plannedPairs }}
+                    </span>
+                  </td>
+                  <td class="gr-reason">{{ u.reason }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <footer class="gm-footer">
+            <button class="gm-run" @click="closeGenResult">Понятно</button>
+          </footer>
+        </div>
       </div>
     </Teleport>
 
@@ -959,4 +1043,20 @@ onMounted(async () => {
 .go-title { margin: 12px 0 0 0; font-size: 20px; font-weight: 700; }
 .go-progress { margin: 0; font-size: 15px; opacity: 0.9; min-height: 20px; }
 .go-note { margin: 6px 0 0 0; font-size: 13px; opacity: 0.7; }
+
+/* Окно результата генерации: «кто остался без занятий и почему» */
+.gr-modal { width: 760px; }
+.gr-title { color: #b45309; }
+.gr-body { max-height: 60vh; overflow: auto; }
+.gr-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.gr-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; white-space: nowrap; }
+.gr-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+.gr-table tbody tr:hover { background: #f8fafc; }
+.gr-teacher { font-weight: 600; white-space: nowrap; }
+.gr-inst { color: #64748b; white-space: nowrap; }
+.gr-num { text-align: center; white-space: nowrap; }
+.gr-pairs { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-weight: 700; font-size: 12px; }
+.gr-partial { background: #fef3c7; color: #b45309; }
+.gr-none { background: #fee2e2; color: #b91c1c; }
+.gr-reason { color: #475569; }
 </style>

@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IBuildingRepository, BuildingRepository>();
         services.AddScoped<IWorkloadRepository, WorkloadRepository>();
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
+        services.AddScoped<IGenerationRunRepository, GenerationRunRepository>();
         services.AddScoped<IScheduleDataProvider, ScheduleDataProvider>();
 
         // Транзакции уровня SERIALIZABLE для операций записи расписания (защита от коллизий

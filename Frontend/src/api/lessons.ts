@@ -1,7 +1,7 @@
 import { http } from './http'
 import type {
   LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult, DiscardInstituteScheduleResult,
-  GenerationJobStatus,
+  GenerationJobStatus, GenerationRunDto,
 } from './types'
 
 export type ScheduleEntity = 'teacher' | 'group' | 'room'
@@ -57,6 +57,10 @@ export const lessons = {
   // Статус фоновой задачи генерации.
   generationStatus: (jobId: string) =>
     http.get<GenerationJobStatus>(`/lessons/generate/status/${jobId}`),
+
+  // История автогенерации (по убыванию времени завершения) с фильтрами.
+  generationHistory: (params: { semesterId?: string; instituteId?: string; limit?: number } = {}) =>
+    http.get<GenerationRunDto[]>('/lessons/generate/history', { ...params }),
 
   // Публикация черновика института (Draft -> Current).
   publishInstitute: (instituteId: string) =>

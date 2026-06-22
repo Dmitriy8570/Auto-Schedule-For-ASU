@@ -90,8 +90,11 @@ public sealed class GenerateInstituteScheduleOptionsTests
 
         public ScheduleSolution Solve(ScheduleModel model, SolverOptions? options = null)
         {
-            Captured = options;
-            // Infeasible -> хендлер выходит до маппинга/сохранения.
+            // Фиксируем параметры ПЕРВОГО (основного) прогона. После Infeasible хендлер делает второй,
+            // аварийный (best-effort) прогон с отдельным, заведомо урезанным лимитом времени — эти
+            // тесты проверяют плумбинг конфигурации именно основного прогона, поэтому его и ловим.
+            Captured ??= options;
+            // Infeasible -> основной прогон не приводит к маппингу/сохранению.
             return new ScheduleSolution(ScheduleSolveStatus.Infeasible, Array.Empty<Assignment>(), 0, 0);
         }
     }

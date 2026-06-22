@@ -1,4 +1,5 @@
 using Application.Common.DTO;
+using Application.Common.DTO.Generation;
 using Application.Common.DTO.Workloads;
 using Application.Common.Workloads.Queries;
 using MediatR;
@@ -22,6 +23,18 @@ public sealed class WorkloadsController(IMediator mediator) : ControllerBase
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         => Ok(await mediator.Send(
             new GetWorkloadsQuery(instituteId, departmentId, teacherId, subjectSearch, page, pageSize), ct));
+
+    /// <summary>
+    /// Нераспределённая нагрузка за семестр по текущему расписанию: план (Hours/2 пар) против
+    /// фактически поставленных занятий. Возвращаются только нагрузки с дефицитом. Фильтры опциональны.
+    /// </summary>
+    [HttpGet("api/workloads/unplaced")]
+    public async Task<ActionResult<IReadOnlyList<UnplacedWorkloadRow>>> GetUnplaced(
+        [FromQuery] Guid semesterId, CancellationToken ct,
+        [FromQuery] Guid? instituteId = null, [FromQuery] Guid? departmentId = null,
+        [FromQuery] Guid? teacherId = null)
+        => Ok(await mediator.Send(
+            new GetUnplacedWorkloadQuery(semesterId, instituteId, departmentId, teacherId), ct));
 
     /// <summary>
     /// Журнал изменений нагрузки с необязательными фильтрами и пагинацией

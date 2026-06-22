@@ -151,11 +151,23 @@ export interface LessonDTO {
   studentsCount: number
 }
 
+// Недоразмещённая нагрузка: кто, что, сколько пар из плана поставлено и почему не все.
+export interface WorkloadShortfall {
+  teacher: string
+  subject: string
+  lessonType: LessonType
+  plannedPairs: number
+  placedPairs: number
+  reason: string
+}
+
 export interface GenerateScheduleResult {
   status: string
   lessonsCreated: number
   objectiveValue: number
   wallTimeSeconds: number
+  // Нагрузки, размещённые не полностью (или вовсе не размещённые). Пусто, если расписание целиком.
+  unplaced: WorkloadShortfall[]
 }
 
 export type GenerationJobState = 'Queued' | 'Running' | 'Succeeded' | 'Failed'
@@ -175,3 +187,34 @@ export interface GenerationJobStatus {
 export interface PublishInstituteScheduleResult { published: number }
 
 export interface DiscardInstituteScheduleResult { discarded: number }
+
+// Запись истории автогенерации: что и как сгенерировалось для института на семестр.
+export interface GenerationRunDto {
+  id: string
+  semesterId: string
+  semesterName: string
+  instituteId: string
+  instituteName: string
+  succeeded: boolean
+  status: string
+  lessonsCreated: number
+  objectiveValue: number
+  wallTimeSeconds: number
+  unplacedCount: number
+  unplaced: WorkloadShortfall[]
+  error: string | null
+  createdAt: string
+  completedAt: string
+}
+
+// Строка нераспределённой нагрузки (план Hours/2 пар против фактически поставленных занятий).
+export interface UnplacedWorkloadRow {
+  curriculumId: string
+  teacher: string
+  subject: string
+  groups: string
+  lessonType: LessonType
+  plannedPairs: number
+  placedPairs: number
+  unplacedPairs: number
+}

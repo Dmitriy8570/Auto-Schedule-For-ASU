@@ -83,6 +83,38 @@ public class ScheduleModelDirector
         });
     }
 
+    /// <summary>
+    /// Аварийный (best-effort) набор для одного института: применяется, когда обычная модель
+    /// компонента неразрешима (Infeasible) или не решилась за отведённое время (Unknown). Размещение
+    /// релаксировано (<see cref="BestEffortPlacementSectionBuilder"/>) — максимизируем число
+    /// размещённых пар при сохранении всех жёстких ограничений (пересечения, занятые ресурсы,
+    /// оборудование, вместимость, смена, переезды между корпусами, двойные пары). Мягкие
+    /// предпочтения (доступность, окна, корпус, дневные лимиты, якорь прошлого семестра) опускаются:
+    /// цель — не оставить преподавателей вовсе без занятий, а не выдать идеальное расписание
+    /// (его дорабатывает планировщик вручную по диагностике дефицита).
+    /// </summary>
+    public static ScheduleModelDirector CreatePerInstituteBestEffort()
+    {
+        return new(new IModelSectionBuilder[]
+        {
+            // Переменные.
+            new VariablesSectionBuilder(),
+
+            // Размещение — мягкое (максимум возможного); прочие ограничения остаются жёсткими.
+            new BestEffortPlacementSectionBuilder(),
+            new IntersectionSectionBuilder(),
+            new OccupiedResourcesSectionBuilder(),
+            new EquipmentSectionBuilder(),
+            new CapacitySectionBuilder(),
+            new ShiftSectionBuilder(),
+            new BuildingTravelSectionBuilder(),
+            new DoubleLessonSectionBuilder(),
+
+            // Целевая функция (минимизирует отрицательные слагаемые размещения ⇒ максимум пар).
+            new ObjectiveSectionBuilder(),
+        });
+    }
+
     public ScheduleModel Build(ScheduleData data)
     {
         var model = new ScheduleModel(data);

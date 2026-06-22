@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
 
     // Расписание.
     public DbSet<Lesson> Lessons { get; set; }
+    public DbSet<GenerationRun> GenerationRuns { get; set; }
     public DbSet<AcademicStream> AcademicStreams { get; set; }
     public DbSet<StreamGroups> StreamGroups { get; set; }
     public DbSet<Subject> Subjects { get; set; }

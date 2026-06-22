@@ -7,6 +7,8 @@ import ScheduleTab from './ScheduleTab.vue'
 import HistoryTab from './HistoryTab.vue'
 import LoadTab from './LoadTab.vue'
 import SettingsTab from './SettingsTab.vue'
+import GenerationHistoryTab from './GenerationHistoryTab.vue'
+import UnplacedLoadTab from './UnplacedLoadTab.vue'
 
 // Создаем переменную для хранения текущей вкладки.
 const currentTab = ref('schedule')
@@ -15,6 +17,8 @@ const currentTab = ref('schedule')
 const tabTitles: Record<string, string> = {
   schedule: 'Расписание',
   load: 'Нагрузка',
+  unplaced: 'Нераспределённая нагрузка',
+  generation: 'История автогенерации',
   history: 'История изменений',
   settings: 'Ограничения',
 }
@@ -41,6 +45,8 @@ const emit = defineEmits(['logout'])
 
       <ScheduleTab v-if="currentTab === 'schedule'" />
       <LoadTab v-if="currentTab === 'load'" />
+      <UnplacedLoadTab v-if="currentTab === 'unplaced'" />
+      <GenerationHistoryTab v-if="currentTab === 'generation'" />
       <HistoryTab v-if="currentTab === 'history'" />
 
       <SettingsTab v-if="currentTab === 'settings'" />

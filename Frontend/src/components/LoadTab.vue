@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Search, BarChart2, FileText, Users, BookOpen } from 'lucide-vue-next'
 import BaseInput from './BaseInput.vue'
+import BaseSelect, { type SelectOption } from './BaseSelect.vue'
 import { lookups } from '../api/lookups'
 import { workloads } from '../api/workloads'
 import { useAsync } from '../composables/useAsync'
@@ -17,7 +18,12 @@ const selectedDept = ref('')
 const selectedTeacher = ref('')
 const searchQuery = ref('')
 
-const isInstituteSelected = computed(() => selectedInstitute.value !== '')
+// Опции для выпадающих списков с поиском (BaseSelect). Все доступны сразу; списки сужаются от
+// выбранного «родителя», но не блокируются — как в просмотре расписания.
+const instituteOptions = computed<SelectOption[]>(() => institutes.value.map(i => ({ value: i.id, label: i.name })))
+const departmentOptions = computed<SelectOption[]>(() => departments.value.map(d => ({ value: d.id, label: d.name })))
+const teacherOptions = computed<SelectOption[]>(() =>
+  teachers.value.map(t => ({ value: t.id, label: t.name, sublabel: t.departmentName })))
 
 // --- Данные нагрузки ---
 const items = ref<WorkloadItemDto[]>([])
@@ -60,18 +66,23 @@ async function loadWorkloads() {
   if (error.value) items.value = []
 }
 
-// Каскад: при смене института грузим его кафедры/преподавателей и сбрасываем вложенные фильтры.
+// Каскад: при смене института сужаем кафедры/преподавателей (или возвращаем полный список, если
+// институт сброшен) и обнуляем вложенные выборы. Списки не блокируются — доступны сразу.
 watch(selectedInstitute, async (id) => {
   selectedDept.value = ''
   selectedTeacher.value = ''
-  departments.value = []
-  teachers.value = []
-  if (id) {
-    [departments.value, teachers.value] = await Promise.all([
-      lookups.departments(id),
-      lookups.teachers({ instituteId: id }),
-    ])
-  }
+  ;[departments.value, teachers.value] = await Promise.all([
+    lookups.departments(id || undefined).catch(() => []),
+    lookups.teachers({ instituteId: id || undefined }).catch(() => []),
+  ])
+})
+
+// При смене кафедры сужаем преподавателей (в рамках выбранного института, если он задан).
+watch(selectedDept, async (id) => {
+  selectedTeacher.value = ''
+  teachers.value = await lookups.teachers({
+    instituteId: selectedInstitute.value || undefined, departmentId: id || undefined,
+  }).catch(() => [])
 })
 
 // Любая смена фильтра — на первую страницу и перезагрузка (поиск с задержкой).
@@ -88,7 +99,12 @@ function goToPage(p: number) {
 }
 
 onMounted(async () => {
-  institutes.value = await lookups.institutes().catch(() => [])
+  // Грузим все справочники сразу, чтобы фильтры были доступны без предварительного выбора института.
+  [institutes.value, departments.value, teachers.value] = await Promise.all([
+    lookups.institutes().catch(() => []),
+    lookups.departments().catch(() => []),
+    lookups.teachers().catch(() => []),
+  ])
   await loadWorkloads()
 })
 </script>
@@ -109,26 +125,20 @@ onMounted(async () => {
     <div class="filters-bar">
       <div class="filter-group">
         <label>Институт</label>
-        <select v-model="selectedInstitute" class="select-dropdown">
-          <option value="">Все институты</option>
-          <option v-for="inst in institutes" :key="inst.id" :value="inst.id">{{ inst.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedInstitute" :options="instituteOptions"
+                    placeholder="Все институты" clear-label="Все институты" search-placeholder="Поиск института…" />
       </div>
 
       <div class="filter-group">
         <label>Кафедра</label>
-        <select v-model="selectedDept" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="">Все кафедры</option>
-          <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedDept" :options="departmentOptions"
+                    placeholder="Все кафедры" clear-label="Все кафедры" search-placeholder="Поиск кафедры…" />
       </div>
 
       <div class="filter-group">
         <label>Преподаватель</label>
-        <select v-model="selectedTeacher" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="">Все преподаватели</option>
-          <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedTeacher" :options="teacherOptions"
+                    placeholder="Все преподаватели" clear-label="Все преподаватели" search-placeholder="Поиск преподавателя…" />
       </div>
 
       <div class="filter-group search-group">

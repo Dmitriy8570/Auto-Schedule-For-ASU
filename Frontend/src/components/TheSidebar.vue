@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Calendar, BarChart2, History, Settings, LogOut } from 'lucide-vue-next'
+import { Calendar, BarChart2, History, Settings, LogOut, Sparkles, AlertTriangle } from 'lucide-vue-next'
 
 // 1. ПРИНИМАЕМ ДАННЫЕ ОТ РОДИТЕЛЯ (Props)
 // Спрашиваем: "Какая вкладка сейчас активна?"
@@ -43,8 +43,24 @@ const emit = defineEmits<{
         <span>Нагрузка</span>
       </a>
 
-      <a href="#" 
-         class="nav-item" 
+      <a href="#"
+         class="nav-item"
+         :class="{ active: activeTab === 'unplaced' }"
+         @click.prevent="emit('change-tab', 'unplaced')">
+        <AlertTriangle :size="20" :color="activeTab === 'unplaced' ? '#1e4b8f' : 'white'" />
+        <span>Нераспределённое</span>
+      </a>
+
+      <a href="#"
+         class="nav-item"
+         :class="{ active: activeTab === 'generation' }"
+         @click.prevent="emit('change-tab', 'generation')">
+        <Sparkles :size="20" :color="activeTab === 'generation' ? '#1e4b8f' : 'white'" />
+        <span>Генерации</span>
+      </a>
+
+      <a href="#"
+         class="nav-item"
          :class="{ active: activeTab === 'history' }"
          @click.prevent="emit('change-tab', 'history')">
         <History :size="20" :color="activeTab === 'history' ? '#1e4b8f' : 'white'" />

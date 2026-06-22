@@ -2,6 +2,7 @@ using Application.Common.Interfaces;
 using Application.Solver.Builder;
 using Application.Solver.Mapping;
 using Application.Solver.Solving;
+using Domain.workload;
 using MediatR;
 
 namespace Application.Common.Lessons.Commands;
@@ -17,7 +18,26 @@ public sealed record GenerateScheduleResult(
     string Status,
     int LessonsCreated,
     double ObjectiveValue,
-    double WallTimeSeconds);
+    double WallTimeSeconds)
+{
+    /// <summary>
+    /// Нагрузки, размещённые не полностью (или вовсе не размещённые): для каждой — преподаватель,
+    /// дисциплина, тип занятия и сколько пар из плана удалось поставить. Пусто, если расписание
+    /// размещено целиком. Заполняется при покомпонентной генерации института, когда компонент
+    /// пришлось решать в аварийном (best-effort) режиме — см. диагностику «почему преподаватель
+    /// остался без занятий».
+    /// </summary>
+    public IReadOnlyList<WorkloadShortfall> Unplaced { get; init; } = Array.Empty<WorkloadShortfall>();
+}
+
+/// <summary>Недоразмещённая нагрузка: кто, что, сколько пар поставлено из плана и почему не все.</summary>
+public sealed record WorkloadShortfall(
+    string Teacher,
+    string Subject,
+    LessonType LessonType,
+    int PlannedPairs,
+    int PlacedPairs,
+    string Reason);
 
 public sealed class GenerateScheduleCommandHandler
     : IRequestHandler<GenerateScheduleCommand, GenerateScheduleResult>

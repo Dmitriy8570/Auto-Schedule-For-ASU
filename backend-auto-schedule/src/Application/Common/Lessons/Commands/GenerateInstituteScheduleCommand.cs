@@ -1,6 +1,7 @@
 using System.Runtime;
 using Application.Common.Interfaces;
 using Application.Solver.Builder;
+using Application.Solver.Builder.BuildSections;
 using Application.Solver.Mapping;
 using Application.Solver.Model;
 using Application.Solver.Solving;
@@ -80,12 +81,22 @@ public sealed class GenerateInstituteScheduleCommandHandler
             MaxTimeInSeconds = Math.Max(15, options.MaxTimeInSeconds / Math.Max(1, components.Count)),
         };
 
+        // Аварийный (best-effort) проход запускается лишь для не решившихся компонентов и нужен
+        // только чтобы быстро разместить максимум возможного + собрать диагностику. Ограничиваем его
+        // время отдельно (короче основного слота), чтобы провалившиеся компоненты не удваивали общий
+        // бюджет института и генерация укладывалась в обещанный пользователю лимит.
+        var salvageOptions = perComponentOptions with
+        {
+            MaxTimeInSeconds = Math.Min(perComponentOptions.MaxTimeInSeconds, 60),
+        };
+
         var occupiedRooms = new HashSet<OccupiedSlot>(data.OccupiedClassroomSlots ?? Array.Empty<OccupiedSlot>());
         var occupiedTeachers = new HashSet<OccupiedTeacherSlot>(data.OccupiedTeacherSlots ?? Array.Empty<OccupiedTeacherSlot>());
 
         var placed = new List<Lesson>();
+        var shortfalls = new List<WorkloadShortfall>();
         double objective = 0, wallSeconds = 0;
-        int optimal = 0, feasible = 0, failed = 0;
+        int optimal = 0, feasible = 0, degraded = 0, failed = 0;
 
         foreach (var indices in components)
         {
@@ -109,19 +120,29 @@ public sealed class GenerateInstituteScheduleCommandHandler
                 objective += solution.ObjectiveValue;
 
                 placed.AddRange(_mapper.ToLessons(subData, solution.Assignments)); // Lesson.Create() => Draft.
-
-                // Накопить занятые ресурсы для следующих компонентов.
-                foreach (var a in solution.Assignments)
-                {
-                    var slotId = subData.TimeSlots[a.Slot].Id;
-                    occupiedRooms.Add(new OccupiedSlot(subData.Classrooms[a.Room].Id, slotId));
-                    occupiedTeachers.Add(new OccupiedTeacherSlot(
-                        subData.SemesterWorkloads[a.Workload].Curriculum.TeacherId, slotId));
-                }
+                Occupy(subData, solution.Assignments, occupiedRooms, occupiedTeachers);
             }
             else
             {
-                failed++;
+                // Жёсткая модель компонента неразрешима/не решилась за время — иначе все его нагрузки
+                // теряются целиком (преподаватели остаются вовсе без занятий). Пробуем разместить
+                // столько, сколько физически возможно, сохраняя все жёсткие ограничения.
+                var salvage = SolveComponentBestEffort(subData, salvageOptions);
+                wallSeconds += salvage.WallTimeSeconds;
+
+                if (salvage.IsSuccess && salvage.Assignments.Count > 0)
+                {
+                    degraded++;
+                    placed.AddRange(_mapper.ToLessons(subData, salvage.Assignments));
+                    Occupy(subData, salvage.Assignments, occupiedRooms, occupiedTeachers);
+                    shortfalls.AddRange(CollectShortfalls(subData, salvage.Assignments));
+                }
+                else
+                {
+                    // Не удалось разместить даже частично — компонент целиком без занятий.
+                    failed++;
+                    shortfalls.AddRange(CollectShortfalls(subData, Array.Empty<Assignment>()));
+                }
             }
 
             // Возвращаем память ОС между компонентами (с уплотнением LOH): без этого рабочий набор
@@ -134,7 +155,8 @@ public sealed class GenerateInstituteScheduleCommandHandler
         // Ничего не разместили — не трогаем БД (сохраняем прежнее расписание), сообщаем статус.
         if (placed.Count == 0)
             return new GenerateScheduleResult(
-                failed > 0 ? "Infeasible" : "Empty", 0, objective, wallSeconds);
+                failed > 0 ? "Infeasible" : "Empty", 0, objective, wallSeconds)
+            { Unplaced = shortfalls };
 
         // Заменяем расписание института новым черновиком одной SERIALIZABLE-транзакцией (поиск
         // выполнен выше, вне транзакции): удаление прежнего и вставка нового атомарны и согласованы
@@ -152,9 +174,13 @@ public sealed class GenerateInstituteScheduleCommandHandler
             return placed.Count;
         }, cancellationToken);
 
-        var status = failed > 0 ? $"Partial ({optimal + feasible}/{components.Count})"
+        // Полностью решены не все компоненты (часть пришлось доразмещать частично или они вовсе без
+        // занятий) — статус «Partial» с разбивкой; иначе обычный Optimal/Feasible.
+        var status = (degraded > 0 || failed > 0)
+            ? $"Partial ({optimal + feasible}/{components.Count}, частично {degraded}, без занятий {failed})"
             : feasible > 0 ? "Feasible" : "Optimal";
-        return new GenerateScheduleResult(status, lessonCount, objective, wallSeconds);
+        return new GenerateScheduleResult(status, lessonCount, objective, wallSeconds)
+        { Unplaced = shortfalls };
     }
 
     /// <summary>Построить модель компонента и решить её. Модель локальна — освобождается GC после возврата.</summary>
@@ -162,6 +188,71 @@ public sealed class GenerateInstituteScheduleCommandHandler
     {
         var model = ScheduleModelDirector.CreatePerInstitute().Build(subData);
         return _solver.Solve(model, options);
+    }
+
+    /// <summary>Аварийный прогон компонента: разместить максимум возможного при жёстких ограничениях.</summary>
+    private ScheduleSolution SolveComponentBestEffort(ScheduleData subData, SolverOptions options)
+    {
+        var model = ScheduleModelDirector.CreatePerInstituteBestEffort().Build(subData);
+        return _solver.Solve(model, options);
+    }
+
+    /// <summary>Накопить занятые (аудитория, слот) и (преподаватель, слот) для следующих компонентов.</summary>
+    private static void Occupy(
+        ScheduleData subData, IReadOnlyList<Assignment> assignments,
+        HashSet<OccupiedSlot> occupiedRooms, HashSet<OccupiedTeacherSlot> occupiedTeachers)
+    {
+        foreach (var a in assignments)
+        {
+            var slotId = subData.TimeSlots[a.Slot].Id;
+            occupiedRooms.Add(new OccupiedSlot(subData.Classrooms[a.Room].Id, slotId));
+            occupiedTeachers.Add(new OccupiedTeacherSlot(
+                subData.SemesterWorkloads[a.Workload].Curriculum.TeacherId, slotId));
+        }
+    }
+
+    /// <summary>
+    /// Нагрузки компонента, размещённые меньше плана (включая нулевое размещение): для диагностики
+    /// «почему преподаватель остался без занятий». Сравнивает фактически поставленные пары с плановыми
+    /// (<c>Hours/2</c>) и возвращает дефицит по каждой недоразмещённой нагрузке.
+    /// </summary>
+    private static IEnumerable<WorkloadShortfall> CollectShortfalls(
+        ScheduleData subData, IReadOnlyList<Assignment> assignments)
+    {
+        var placedByWorkload = new int[subData.SemesterWorkloads.Count];
+        foreach (var a in assignments) placedByWorkload[a.Workload]++;
+
+        for (int w = 0; w < subData.SemesterWorkloads.Count; w++)
+        {
+            var workload = subData.SemesterWorkloads[w];
+            int planned = workload.Hours / 2;
+            int placedPairs = placedByWorkload[w];
+            if (placedPairs >= planned) continue;
+
+            var curriculum = workload.Curriculum;
+            yield return new WorkloadShortfall(
+                curriculum.Teacher.Name, curriculum.Subject.Name,
+                curriculum.LessonType, planned, placedPairs, ShortfallReason(workload, subData));
+        }
+    }
+
+    /// <summary>
+    /// Объяснить, почему нагрузку не удалось разместить полностью — для диагностики в интерфейсе.
+    /// Если ни одна аудитория не подходит статически (вместимость/оборудование), причина в аудиториях;
+    /// иначе подходящие аудитории есть, но не осталось свободных слотов (конфликты с другими занятиями
+    /// или недоступность преподавателя).
+    /// </summary>
+    private static string ShortfallReason(SemesterWorkload workload, ScheduleData subData)
+    {
+        bool anyRoomFits = subData.Classrooms.Any(c => !StaticFeasibility.RoomForbidden(workload, c));
+        if (anyRoomFits)
+            return "не хватило свободных слотов (конфликты с другими занятиями или недоступность преподавателя)";
+
+        int students = workload.Curriculum?.Stream?.StudentsCount ?? 0;
+        if (students > 0 && !subData.Classrooms.Any(c => c.CanAccommodate(students)))
+            return $"ни одна аудитория не вмещает {students} студентов";
+
+        return "нет аудитории с требуемым оборудованием";
     }
 
     /// <summary>
