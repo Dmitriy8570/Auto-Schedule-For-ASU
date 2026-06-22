@@ -6,7 +6,13 @@ import {
 import { lookups } from '../api/lookups'
 import { workloads } from '../api/workloads'
 import { ApiError } from '../api/http'
+import BaseSelect, { type SelectOption } from './BaseSelect.vue'
+import { useLookupsStore } from '../stores/lookups'
+import { useRealtimeStore } from '../stores/realtime'
 import type { InstituteDto, DepartmentDto, TeacherDto, WorkloadChangeDto, LogAction } from '../api/types'
+
+const lookupsStore = useLookupsStore()
+const realtime = useRealtimeStore()
 
 const institutes = ref<InstituteDto[]>([])
 const departments = ref<DepartmentDto[]>([])
@@ -16,7 +22,12 @@ const selectedInstitute = ref('')
 const selectedDept = ref('')
 const selectedTeacher = ref('')
 
-const isInstituteSelected = computed(() => selectedInstitute.value !== '')
+// Опции для выпадающих списков с поиском (BaseSelect). Все доступны сразу; списки сужаются от
+// выбранного «родителя», но не блокируются — как в просмотре расписания.
+const instituteOptions = computed<SelectOption[]>(() => institutes.value.map(i => ({ value: i.id, label: i.name })))
+const departmentOptions = computed<SelectOption[]>(() => departments.value.map(d => ({ value: d.id, label: d.name })))
+const teacherOptions = computed<SelectOption[]>(() =>
+  teachers.value.map(t => ({ value: t.id, label: t.name, sublabel: t.departmentName })))
 
 // id преподавателя -> имя, чтобы показать ФИО (журнал хранит только id).
 const teacherNames = computed<Record<string, string>>(() =>
@@ -74,20 +85,29 @@ function reload() {
   loadChanges()
 }
 
+// Каскад: при смене института сужаем кафедры/преподавателей (или полный список, если сброшен),
+// обнуляя вложенные выборы. Списки не блокируются — доступны сразу.
 watch(selectedInstitute, async (id) => {
   selectedDept.value = ''
   selectedTeacher.value = ''
-  departments.value = []
-  teachers.value = []
-  if (id) {
-    [departments.value, teachers.value] = await Promise.all([
-      lookups.departments(id),
-      lookups.teachers({ instituteId: id }),
-    ])
-  }
+  ;[departments.value, teachers.value] = await Promise.all([
+    lookups.departments(id || undefined).catch(() => []),
+    lookups.teachers({ instituteId: id || undefined }).catch(() => []),
+  ])
+})
+
+// При смене кафедры сужаем преподавателей (в рамках выбранного института, если он задан).
+watch(selectedDept, async (id) => {
+  selectedTeacher.value = ''
+  teachers.value = await lookups.teachers({
+    instituteId: selectedInstitute.value || undefined, departmentId: id || undefined,
+  }).catch(() => [])
 })
 
 watch(selectedTeacher, reload)
+
+// Реальное время: журнал меняется при синхронизации с ММИС — перечитываем по событию.
+watch(() => realtime.workloadTick, () => loadChanges())
 
 function goToPage(p: number) {
   if (p >= 1 && p <= totalPages.value && p !== page.value) {
@@ -97,7 +117,13 @@ function goToPage(p: number) {
 }
 
 onMounted(async () => {
-  institutes.value = await lookups.institutes().catch(() => [])
+  // Грузим все справочники сразу, чтобы фильтры были доступны без выбора института
+  // (и чтобы ФИО преподавателей в журнале отображались независимо от фильтра).
+  institutes.value = await lookupsStore.ensureInstitutes()
+  ;[departments.value, teachers.value] = await Promise.all([
+    lookups.departments().catch(() => []),
+    lookups.teachers().catch(() => []),
+  ])
   await loadChanges()
 })
 </script>
@@ -115,26 +141,20 @@ onMounted(async () => {
     <div class="filters-bar">
       <div class="filter-group">
         <label>Институт</label>
-        <select v-model="selectedInstitute" class="select-dropdown">
-          <option value="">Все институты</option>
-          <option v-for="inst in institutes" :key="inst.id" :value="inst.id">{{ inst.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedInstitute" :options="instituteOptions"
+                    placeholder="Все институты" clear-label="Все институты" search-placeholder="Поиск института…" />
       </div>
 
       <div class="filter-group">
         <label>Кафедра</label>
-        <select v-model="selectedDept" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="">Все кафедры</option>
-          <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedDept" :options="departmentOptions"
+                    placeholder="Все кафедры" clear-label="Все кафедры" search-placeholder="Поиск кафедры…" />
       </div>
 
       <div class="filter-group">
         <label>Преподаватель</label>
-        <select v-model="selectedTeacher" class="select-dropdown" :disabled="!isInstituteSelected">
-          <option value="">Все преподаватели</option>
-          <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
-        </select>
+        <BaseSelect v-model="selectedTeacher" :options="teacherOptions"
+                    placeholder="Все преподаватели" clear-label="Все преподаватели" search-placeholder="Поиск преподавателя…" />
       </div>
     </div>
 
