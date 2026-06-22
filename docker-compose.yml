@@ -27,6 +27,14 @@ services:
       dockerfile: Dockerfile
     container_name: auto-schedule-backend
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G          # 6G-12G в зависимости от хоста
+        reservations:
+          cpus: '0.5'
+          memory: 3G
     depends_on:
       db:
         condition: service_healthy
