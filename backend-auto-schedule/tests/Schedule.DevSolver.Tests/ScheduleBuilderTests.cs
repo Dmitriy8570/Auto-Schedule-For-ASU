@@ -65,6 +65,43 @@ public sealed class ScheduleBuilderTests
             .Set(nameof(SemesterWorkload.Curriculum), curriculum);
     }
 
+    /// <summary>
+    /// Нагрузка с заданными идентификаторами преподавателя и группы (экземпляры сущностей —
+    /// каждый раз новые, как при AsNoTracking без identity resolution). Нужна для проверки, что
+    /// эксклюзивность считается по Id, а не по ссылке на объект.
+    /// </summary>
+    private static SemesterWorkload WorkloadFor(int hours, Guid teacherId, Guid groupId)
+    {
+        var group = DomainFactory.New<Group>().Set(nameof(Group.Id), groupId);
+        var streamGroup = DomainFactory.New<StreamGroups>()
+            .Set(nameof(StreamGroups.GroupId), groupId)
+            .Set(nameof(StreamGroups.Group), group);
+        var stream = DomainFactory.New<AcademicStream>()
+            .Set(nameof(AcademicStream.Id), Guid.NewGuid())
+            .Set(nameof(AcademicStream.StudentsCount), 1)
+            .Set(nameof(AcademicStream.StreamGroups), new List<StreamGroups> { streamGroup });
+        var teacher = DomainFactory.New<Teacher>().Set(nameof(Teacher.Id), teacherId);
+        var curriculum = DomainFactory.New<Curriculum>()
+            .Set(nameof(Curriculum.Teacher), teacher)
+            .Set(nameof(Curriculum.TeacherId), teacherId)
+            .Set(nameof(Curriculum.Stream), stream)
+            .Set(nameof(Curriculum.StreamId), stream.Id);
+        return DomainFactory.New<SemesterWorkload>()
+            .Set(nameof(SemesterWorkload.Id), Guid.NewGuid())
+            .Set(nameof(SemesterWorkload.Hours), hours)
+            .Set(nameof(SemesterWorkload.Curriculum), curriculum);
+    }
+
+    /// <summary>Сдвоенная нагрузка (Curriculum.Double = true) — для DoubleLessonSectionBuilder.</summary>
+    private static SemesterWorkload WorkloadDouble(int hours)
+    {
+        var curriculum = DomainFactory.New<Curriculum>().Set(nameof(Curriculum.Double), true);
+        return DomainFactory.New<SemesterWorkload>()
+            .Set(nameof(SemesterWorkload.Id), Guid.NewGuid())
+            .Set(nameof(SemesterWorkload.Hours), hours)
+            .Set(nameof(SemesterWorkload.Curriculum), curriculum);
+    }
+
     private static ScheduleData Data(
         IReadOnlyList<SemesterWorkload> workloads,
         IReadOnlyList<Classroom> classrooms,
@@ -190,6 +227,80 @@ public sealed class ScheduleBuilderTests
         Assert.True(IsSolved(status));
         Assert.Equal(1, Assigned(solver, model, w: 0));
         Assert.Equal(1, Assigned(solver, model, w: 1));
+    }
+
+    [Fact]
+    public void Intersection_SameTeacherDifferentInstances_CannotShareSlot()
+    {
+        // Две нагрузки одного преподавателя (разные экземпляры с одним Id — как при AsNoTracking),
+        // две аудитории, один слот: преподаватель не может вести оба занятия одновременно -> Infeasible.
+        // Регрессия: раньше эксклюзивность группировалась по ссылке и такие занятия не блокировались.
+        var teacherId = Guid.NewGuid();
+        var data = Data(
+            new[] { WorkloadFor(2, teacherId, Guid.NewGuid()), WorkloadFor(2, teacherId, Guid.NewGuid()) },
+            new[] { Room(50), Room(50) },
+            new[] { Slot(1) });
+
+        var (status, _, _) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new IntersectionSectionBuilder());
+
+        Assert.False(IsSolved(status));
+    }
+
+    [Fact]
+    public void Intersection_SameGroupDifferentInstances_CannotShareSlot()
+    {
+        // Аналогично для группы: одна группа в двух разных потоках (разные экземпляры с одним Id),
+        // две аудитории, один слот -> группа не может быть на двух занятиях сразу -> Infeasible.
+        var groupId = Guid.NewGuid();
+        var data = Data(
+            new[] { WorkloadFor(2, Guid.NewGuid(), groupId), WorkloadFor(2, Guid.NewGuid(), groupId) },
+            new[] { Room(50), Room(50) },
+            new[] { Slot(1) });
+
+        var (status, _, _) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new IntersectionSectionBuilder());
+
+        Assert.False(IsSolved(status));
+    }
+
+    // --- DoubleLesson: сдвоенные пары идут двумя смежными слотами в одной аудитории ---
+
+    [Fact]
+    public void DoubleLesson_PlacesTwoAdjacentSlotsInSameRoom()
+    {
+        // Сдвоенная нагрузка на 2 пары обязана встать одним блоком из двух смежных слотов.
+        var data = Data(
+            new[] { WorkloadDouble(hours: 4) },
+            new[] { Room(50) },
+            new[] { Slot(1), Slot(2), Slot(3), Slot(4) });
+
+        var (status, solver, model) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new DoubleLessonSectionBuilder());
+
+        Assert.True(IsSolved(status));
+
+        var slots = new List<int>();
+        for (int t = 0; t < model.TimeSlotCount; t++)
+            if (model.Lessons[0, 0, t] is { } v && solver.Value(v) != 0) slots.Add(t);
+
+        Assert.Equal(2, slots.Count);
+        Assert.Equal(1, slots[1] - slots[0]); // ровно два соседних слота — сдвоенная пара
+    }
+
+    [Fact]
+    public void DoubleLesson_OddNumberOfPairs_IsInfeasible()
+    {
+        // Одиночная пара не образует сдвоенный блок: для Double число пар должно быть чётным.
+        var data = Data(
+            new[] { WorkloadDouble(hours: 2) },                 // всего 1 пара
+            new[] { Room(50) },
+            new[] { Slot(1), Slot(2), Slot(3), Slot(4) });
+
+        var (status, _, _) = Solve(data,
+            new VariablesSectionBuilder(), new TotalHoursSectionBuilder(), new DoubleLessonSectionBuilder());
+
+        Assert.False(IsSolved(status));
     }
 
     // --- OccupiedResources (декомпозиция B): ресурсы, занятые другими институтами ---

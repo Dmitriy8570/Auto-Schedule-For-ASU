@@ -6,7 +6,10 @@ using Application.Solver.Solving;
 using Domain.constraints.penalty;
 using Domain.schedule;
 using Domain.university.buildings;
+using Domain.university.groups;
+using Domain.university.teachers;
 using Domain.workload;
+using Schedule.DevSolver.Tests.Reflection;
 using Xunit;
 
 namespace Schedule.DevSolver.Tests;
@@ -14,7 +17,8 @@ namespace Schedule.DevSolver.Tests;
 /// <summary>
 /// Параметры солвера в генерации по институту берутся из конфигурации (SolverOptions),
 /// но переопределяются на конкретный запрос. Солвер подменён фейком, фиксирующим переданные
-/// параметры; данные пустые → генерация сразу возвращает Infeasible и БД не трогается.
+/// параметры; данные — один компонент → фейк-солвер возвращает Infeasible, маппинг не вызывается
+/// и БД не трогается.
 /// </summary>
 public sealed class GenerateInstituteScheduleOptionsTests
 {
@@ -75,7 +79,7 @@ public sealed class GenerateInstituteScheduleOptionsTests
     }
 
     private static GenerateInstituteScheduleCommandHandler NewHandler(IScheduleSolver solver) =>
-        new(new EmptyDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(),
+        new(new MinimalDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(),
             new FakeTransactionRunner(), ConfigDefaults);
 
     // --- Фейки ---
@@ -92,15 +96,39 @@ public sealed class GenerateInstituteScheduleOptionsTests
         }
     }
 
-    private sealed class EmptyDataProvider : IScheduleDataProvider
+    private sealed class MinimalDataProvider : IScheduleDataProvider
     {
-        private static ScheduleData Empty => new(
-            Array.Empty<SemesterWorkload>(), Array.Empty<Classroom>(),
-            Array.Empty<TimeSlot>(), Array.Empty<ConstraintConfig>());
+        // Один компонент (одна нагрузка с группой) — без аудиторий и слотов, поэтому модель строится
+        // тривиально (переменных нет), но декомпозиция находит ровно один компонент и вызывает солвер.
+        private static ScheduleData OneComponent()
+        {
+            var group = DomainFactory.New<Group>().Set(nameof(Group.Id), Guid.NewGuid());
+            var streamGroup = DomainFactory.New<StreamGroups>()
+                .Set(nameof(StreamGroups.GroupId), group.Id)
+                .Set(nameof(StreamGroups.Group), group);
+            var stream = DomainFactory.New<AcademicStream>()
+                .Set(nameof(AcademicStream.Id), Guid.NewGuid())
+                .Set(nameof(AcademicStream.StudentsCount), 1)
+                .Set(nameof(AcademicStream.StreamGroups), new List<StreamGroups> { streamGroup });
+            var teacher = DomainFactory.New<Teacher>().Set(nameof(Teacher.Id), Guid.NewGuid());
+            var curriculum = DomainFactory.New<Curriculum>()
+                .Set(nameof(Curriculum.Teacher), teacher)
+                .Set(nameof(Curriculum.TeacherId), teacher.Id)
+                .Set(nameof(Curriculum.Stream), stream)
+                .Set(nameof(Curriculum.StreamId), stream.Id);
+            var workload = DomainFactory.New<SemesterWorkload>()
+                .Set(nameof(SemesterWorkload.Id), Guid.NewGuid())
+                .Set(nameof(SemesterWorkload.Hours), 0)
+                .Set(nameof(SemesterWorkload.Curriculum), curriculum);
 
-        public Task<ScheduleData> GetAsync(Guid semesterId, CancellationToken ct) => Task.FromResult(Empty);
+            return new ScheduleData(
+                new[] { workload }, Array.Empty<Classroom>(),
+                Array.Empty<TimeSlot>(), Array.Empty<ConstraintConfig>());
+        }
+
+        public Task<ScheduleData> GetAsync(Guid semesterId, CancellationToken ct) => Task.FromResult(OneComponent());
         public Task<ScheduleData> GetForInstituteAsync(Guid semesterId, Guid instituteId, CancellationToken ct)
-            => Task.FromResult(Empty);
+            => Task.FromResult(OneComponent());
     }
 
     private sealed class ThrowingMapper : IScheduleResultMapper
@@ -119,7 +147,8 @@ public sealed class GenerateInstituteScheduleOptionsTests
 
         // Не используются этими тестами.
         public Task<Lesson?> GetLessonByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
-        public Task<IReadOnlyList<Application.Common.Exceptions.ScheduleConflict>> FindConflictsAsync(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<Lesson?> GetTrackedByIdAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<Application.Common.Exceptions.ScheduleConflict>> FindConflictsAsync(Guid classroomId, Guid timeSlotId, Guid streamId, Guid? curriculumId, Guid? excludeLessonId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetByInstituteAsync(Guid instituteId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetBySemesterAsync(Guid semesterId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();

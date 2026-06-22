@@ -33,8 +33,11 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
     /// <summary>Один преподаватель не ведёт два занятия одновременно.</summary>
     private static void TeacherExclusivity(ScheduleModel model)
     {
+        // Группируем по идентификатору, а не по ссылке: при AsNoTracking без identity resolution
+        // одна и та же сущность может прийти разными экземплярами, и группировка по ссылке
+        // перестала бы объединять нагрузки одного преподавателя.
         var byTeacher = Enumerable.Range(0, model.WorkloadCount)
-            .GroupBy(w => model.Data.SemesterWorkloads[w].Curriculum.Teacher);
+            .GroupBy(w => model.Data.SemesterWorkloads[w].Curriculum.TeacherId);
 
         foreach (var group in byTeacher)
             SubjectExclusivity(model, group.ToList());
@@ -45,8 +48,8 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
     {
         var byGroup = Enumerable.Range(0, model.WorkloadCount)
             .SelectMany(w => model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups
-                .Select(sg => (Workload: w, sg.Group)))
-            .GroupBy(x => x.Group, x => x.Workload);
+                .Select(sg => (Workload: w, sg.GroupId)))
+            .GroupBy(x => x.GroupId, x => x.Workload);
 
         foreach (var group in byGroup)
             SubjectExclusivity(model, group.ToList());

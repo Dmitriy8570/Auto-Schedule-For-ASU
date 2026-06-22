@@ -39,7 +39,7 @@ public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, G
         await _transactionRunner.ExecuteSerializableAsync(async ct =>
         {
             var conflicts = await _lessonRepository.FindConflictsAsync(
-                request.ClassroomId, request.TimeSlotId, request.StreamId, request.CurriculumId, ct);
+                request.ClassroomId, request.TimeSlotId, request.StreamId, request.CurriculumId, null, ct);
             if (conflicts.Count > 0)
                 throw new ScheduleConflictException(conflicts);
 

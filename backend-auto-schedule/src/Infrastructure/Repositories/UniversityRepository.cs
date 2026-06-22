@@ -11,9 +11,6 @@ namespace Infrastructure.Repositories;
 /// </summary>
 public sealed class UniversityRepository(ApplicationDbContext context) : IUniversityRepository
 {
-    /// <summary>Потолок размера выборки для «листовых» справочников (группы, преподаватели), чтобы не грузить БД на каждый вызов.</summary>
-    private const int MaxResults = 20;
-
     public async Task<IReadOnlyList<InstituteDto>> GetInstitutesAsync(string? search, CancellationToken ct)
     {
         var query = context.Institutes.AsNoTracking();
@@ -71,7 +68,6 @@ public sealed class UniversityRepository(ApplicationDbContext context) : IUniver
 
         return await query
             .OrderBy(g => g.Name)
-            .Take(MaxResults)
             .Select(g => new GroupDto(g.Id, g.Name, g.Shift, g.StudentCount, g.CourseId, g.Course.Number))
             .ToListAsync(ct);
     }
@@ -105,7 +101,6 @@ public sealed class UniversityRepository(ApplicationDbContext context) : IUniver
 
         return await query
             .OrderBy(t => t.Name)
-            .Take(MaxResults)
             .Select(t => new TeacherDto(t.Id, t.Name, t.DepartmentId, t.Department.Name))
             .ToListAsync(ct);
     }

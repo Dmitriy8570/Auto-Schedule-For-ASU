@@ -2,9 +2,10 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import {
   Calendar, RotateCcw, Sparkles, Download, User, Users, MapPin, Plus, CheckCircle2,
-  GraduationCap, Building2, Moon, Sun, X, Save, Trash2, ArrowLeftRight, Loader2,
+  GraduationCap, Building2, Moon, Sun, X, Save, Trash2, ArrowLeftRight, Loader2, Pencil,
 } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
+import BaseSelect, { type SelectOption } from './BaseSelect.vue'
 import { lookups } from '../api/lookups'
 import { lessons } from '../api/lessons'
 import { calendar } from '../api/calendar'
@@ -145,8 +146,9 @@ const selectedLesson = ref<LessonDTO | null>(null)
 const moveMode = ref(false)
 const movingLesson = ref<LessonDTO | null>(null)
 
-// Панель добавления.
+// Панель добавления/редактирования. editId === null — добавление, иначе правим занятие с этим id.
 const editOpen = ref(false)
+const editId = ref<string | null>(null)
 const editDay = ref(0)
 const editPair = ref(1)
 const editCurriculumId = ref('')
@@ -170,6 +172,7 @@ function openAddPanel(dayIdx = 0, pair = 1) {
   selectedLesson.value = null
   moveMode.value = false
   movingLesson.value = null
+  editId.value = null
   editDay.value = dayIdx
   editPair.value = pair
   editCurriculumId.value = ''
@@ -179,8 +182,26 @@ function openAddPanel(dayIdx = 0, pair = 1) {
   loadCurriculumOptions()
 }
 
+// Открыть панель в режиме редактирования выбранной пары (смена дисциплины/аудитории/слота).
+async function openEditPanel(l: LessonDTO) {
+  selectedLesson.value = null
+  moveMode.value = false
+  movingLesson.value = null
+  editId.value = l.id
+  editDay.value = l.dayOfWeek
+  editPair.value = l.pairNumber
+  editRoomId.value = l.classroomId
+  editCurriculumId.value = ''
+  editOpen.value = true
+  // Грузим планы выбранного объекта, затем подставляем план занятия, если он есть в списке.
+  await loadCurriculumOptions()
+  if (l.curriculumId && curriculumOptions.value.some(c => c.id === l.curriculumId))
+    editCurriculumId.value = l.curriculumId
+}
+
 function closePanel() {
   editOpen.value = false
+  editId.value = null
 }
 
 async function savePair() {
@@ -192,15 +213,26 @@ async function savePair() {
   saving.value = true
   banner.value = ''
   try {
-    await lessons.create({
-      classroomId: editRoomId.value,
-      timeSlotId,
-      streamId: opt.streamId,
-      semesterId: selSemester.value,
-      curriculumId: opt.id,
-    })
+    if (editId.value) {
+      await lessons.update(editId.value, {
+        classroomId: editRoomId.value,
+        timeSlotId,
+        streamId: opt.streamId,
+        curriculumId: opt.id,
+      })
+      toast.success('Пара обновлена.')
+    } else {
+      await lessons.create({
+        classroomId: editRoomId.value,
+        timeSlotId,
+        streamId: opt.streamId,
+        semesterId: selSemester.value,
+        curriculumId: opt.id,
+      })
+      toast.success('Пара добавлена.')
+    }
     editOpen.value = false
-    toast.success('Пара добавлена.')
+    editId.value = null
     await loadLessons()
   } catch (e) {
     // 409-коллизия (аудитория/преподаватель/группа) приходит сюда читаемым сообщением.
@@ -314,6 +346,7 @@ function resetEditing() {
   moveMode.value = false
   movingLesson.value = null
   editOpen.value = false
+  editId.value = null
 }
 
 // Перезагрузка занятий при смене объекта или недели.
@@ -456,6 +489,24 @@ async function discard() {
   }
 }
 
+// ───────── Опции для выпадающих списков с поиском (BaseSelect) ─────────
+const instituteOptions = computed<SelectOption[]>(() => institutes.value.map(i => ({ value: i.id, label: i.name })))
+const departmentOptions = computed<SelectOption[]>(() => departments.value.map(d => ({ value: d.id, label: d.name })))
+const teacherSelectOptions = computed<SelectOption[]>(() =>
+  teachers.value.map(t => ({ value: t.id, label: t.name, sublabel: t.departmentName })))
+const degreeSelectOptions = computed<SelectOption[]>(() => degrees.value.map(d => ({ value: d.id, label: degreeOptionLabel(d) })))
+const courseSelectOptions = computed<SelectOption[]>(() => courses.value.map(c => ({ value: c.id, label: `${c.number} курс` })))
+const groupSelectOptions = computed<SelectOption[]>(() => groups.value.map(g => ({ value: g.id, label: g.name })))
+const buildingOptions = computed<SelectOption[]>(() => buildings.value.map(b => ({ value: b.id, label: b.name })))
+const roomFilterOptions = computed<SelectOption[]>(() =>
+  roomOptions.value.map(r => ({ value: r.id, label: r.name, sublabel: r.buildingName })))
+const roomEditOptions = computed<SelectOption[]>(() =>
+  allRooms.value.map(r => ({ value: r.id, label: r.name, sublabel: `${r.buildingName} · ${r.capacity} мест` })))
+const curriculumSelectOptions = computed<SelectOption[]>(() =>
+  curriculumOptions.value.map(c => ({
+    value: c.id, label: `${c.subjectName} — ${c.teacherName}`, sublabel: lessonTypeMeta[c.lessonType].label,
+  })))
+
 onMounted(async () => {
   // Полные списки загружаем сразу, чтобы все выпадающие были доступны без выбора «родителя».
   institutes.value = await lookups.institutes().catch(() => [])
@@ -539,48 +590,30 @@ onMounted(async () => {
     <div class="filters-bar">
       <div class="filters-left">
         <template v-if="currentEntity === 'teachers'">
-          <select class="select-dropdown" v-model="selInstitute">
-            <option value="">Все институты</option>
-            <option v-for="i in institutes" :key="i.id" :value="i.id">{{ i.name }}</option>
-          </select>
-          <select class="select-dropdown" v-model="selDept">
-            <option value="">Все кафедры</option>
-            <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-          </select>
-          <select class="select-dropdown" v-model="selTeacher">
-            <option value="">Выберите преподавателя</option>
-            <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
-          </select>
+          <BaseSelect v-model="selInstitute" :options="instituteOptions"
+                      placeholder="Все институты" clear-label="Все институты" search-placeholder="Поиск института…" />
+          <BaseSelect v-model="selDept" :options="departmentOptions"
+                      placeholder="Все кафедры" clear-label="Все кафедры" search-placeholder="Поиск кафедры…" />
+          <BaseSelect v-model="selTeacher" :options="teacherSelectOptions"
+                      placeholder="Выберите преподавателя" search-placeholder="Поиск преподавателя…" />
         </template>
 
         <template v-if="currentEntity === 'groups'">
-          <select class="select-dropdown" v-model="selInstitute">
-            <option value="">Все институты</option>
-            <option v-for="i in institutes" :key="i.id" :value="i.id">{{ i.name }}</option>
-          </select>
-          <select class="select-dropdown" v-model="selDegree">
-            <option value="">Все уровни</option>
-            <option v-for="d in degrees" :key="d.id" :value="d.id">{{ degreeOptionLabel(d) }}</option>
-          </select>
-          <select class="select-dropdown" v-model="selCourse">
-            <option value="">Все курсы</option>
-            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.number }} курс</option>
-          </select>
-          <select class="select-dropdown" v-model="selGroup">
-            <option value="">Выберите группу</option>
-            <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
-          </select>
+          <BaseSelect v-model="selInstitute" :options="instituteOptions"
+                      placeholder="Все институты" clear-label="Все институты" search-placeholder="Поиск института…" />
+          <BaseSelect v-model="selDegree" :options="degreeSelectOptions"
+                      placeholder="Все уровни" clear-label="Все уровни" search-placeholder="Поиск уровня…" />
+          <BaseSelect v-model="selCourse" :options="courseSelectOptions"
+                      placeholder="Все курсы" clear-label="Все курсы" search-placeholder="Поиск курса…" />
+          <BaseSelect v-model="selGroup" :options="groupSelectOptions"
+                      placeholder="Выберите группу" search-placeholder="Поиск группы…" />
         </template>
 
         <template v-if="currentEntity === 'rooms'">
-          <select class="select-dropdown" v-model="selBuilding">
-            <option value="">Все корпусы</option>
-            <option v-for="b in buildings" :key="b.id" :value="b.id">{{ b.name }}</option>
-          </select>
-          <select class="select-dropdown" v-model="selRoom">
-            <option value="">Выберите аудиторию...</option>
-            <option v-for="r in roomOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
-          </select>
+          <BaseSelect v-model="selBuilding" :options="buildingOptions"
+                      placeholder="Все корпусы" clear-label="Все корпусы" search-placeholder="Поиск корпуса…" />
+          <BaseSelect v-model="selRoom" :options="roomFilterOptions"
+                      placeholder="Выберите аудиторию..." search-placeholder="Поиск аудитории…" />
         </template>
       </div>
 
@@ -590,6 +623,7 @@ onMounted(async () => {
           <button class="tool-btn" @click="cancelMove"><X :size="14" /> Отмена</button>
         </template>
         <template v-else-if="selectedLesson">
+          <button class="tool-btn tool-edit" @click="openEditPanel(selectedLesson)"><Pencil :size="14" /> Редактировать</button>
           <button class="tool-btn tool-danger" @click="deleteSelected"><Trash2 :size="14" /> Удалить пару</button>
           <button class="tool-btn tool-info" @click="startMove"><ArrowLeftRight :size="14" /> Переместить</button>
         </template>
@@ -658,8 +692,8 @@ onMounted(async () => {
       <aside v-if="editOpen" class="edit-panel">
         <header class="ep-header">
           <div>
-            <p class="ep-eyebrow">Добавление пары</p>
-            <p class="ep-title">Новое занятие</p>
+            <p class="ep-eyebrow">{{ editId ? 'Редактирование пары' : 'Добавление пары' }}</p>
+            <p class="ep-title">{{ editId ? 'Изменить занятие' : 'Новое занятие' }}</p>
           </div>
           <button class="ep-close" @click="closePanel"><X :size="16" /></button>
         </header>
@@ -686,12 +720,8 @@ onMounted(async () => {
 
           <div class="ep-field">
             <label>Дисциплина · преподаватель · тип</label>
-            <select class="select-dropdown ep-select" v-model="editCurriculumId">
-              <option value="">Выберите учебный план…</option>
-              <option v-for="c in curriculumOptions" :key="c.id" :value="c.id">
-                {{ c.subjectName }} — {{ c.teacherName }} ({{ lessonTypeMeta[c.lessonType].label }})
-              </option>
-            </select>
+            <BaseSelect class="ep-select" v-model="editCurriculumId" :options="curriculumSelectOptions"
+                        placeholder="Выберите учебный план…" search-placeholder="Поиск дисциплины / преподавателя…" />
             <p v-if="curriculumOptions.length === 0" class="ep-hint">
               Нет учебных планов для выбранного объекта/семестра.
             </p>
@@ -699,12 +729,8 @@ onMounted(async () => {
 
           <div class="ep-field">
             <label>Аудитория</label>
-            <select class="select-dropdown ep-select" v-model="editRoomId">
-              <option value="">Выберите аудиторию…</option>
-              <option v-for="r in allRooms" :key="r.id" :value="r.id">
-                {{ r.name }} · {{ r.buildingName }} ({{ r.capacity }} мест)
-              </option>
-            </select>
+            <BaseSelect class="ep-select" v-model="editRoomId" :options="roomEditOptions"
+                        placeholder="Выберите аудиторию…" search-placeholder="Поиск аудитории…" />
           </div>
         </div>
 
@@ -863,6 +889,8 @@ onMounted(async () => {
 .tool-danger:hover { background: #fef2f2; }
 .tool-info { color: #2563eb; border-color: #bfdbfe; }
 .tool-info:hover { background: #eff6ff; }
+.tool-edit { color: #7c3aed; border-color: #ddd6fe; }
+.tool-edit:hover { background: #f5f3ff; }
 .move-hint { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: #eff6ff; color: #1d4ed8; font-size: 13px; font-weight: 500; }
 
 /* Сетка + панель */
@@ -876,9 +904,10 @@ onMounted(async () => {
 .empty-cell.cell-movable { background: #f0fdf4; border-color: #86efac; }
 .cell-plus { opacity: 0.8; }
 
-/* Панель добавления пары */
-.edit-panel { width: 340px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.ep-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #1a4d9c; color: white; }
+/* Панель добавления пары. overflow: visible — чтобы выпадающие списки BaseSelect не обрезались
+   краем панели; скруглённый вид сохраняем радиусами на шапке и подвале. */
+.edit-panel { width: 340px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.ep-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #1a4d9c; color: white; border-radius: 12px 12px 0 0; }
 .ep-eyebrow { margin: 0; font-size: 11px; opacity: 0.75; }
 .ep-title { margin: 2px 0 0 0; font-size: 15px; font-weight: 600; }
 .ep-close { background: rgba(255,255,255,0.15); border: none; color: white; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -891,7 +920,7 @@ onMounted(async () => {
 .ep-select { width: 100%; min-width: 0; box-sizing: border-box; }
 .ep-hint { margin: 0; font-size: 12px; color: #94a3b8; }
 .ep-warn { font-size: 12px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 10px; }
-.ep-footer { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+.ep-footer { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid #f1f5f9; background: #f8fafc; border-radius: 0 0 12px 12px; }
 .ep-cancel { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #e2e8f0; color: #475569; font-size: 14px; cursor: pointer; }
 .ep-cancel:hover { background: #cbd5e1; }
 .ep-save { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 8px; border: none; background: #1a4d9c; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }

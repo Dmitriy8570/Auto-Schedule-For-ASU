@@ -62,6 +62,31 @@ public class LessonsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, id);
     }
 
+    /// <summary>Изменить занятие: сменить аудиторию, временной слот и/или учебный план одной командой.</summary>
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateLessonRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new UpdateLessonCommand
+            {
+                Id = id,
+                ClassroomId = body.ClassroomId,
+                TimeSlotId = body.TimeSlotId,
+                StreamId = body.StreamId,
+                CurriculumId = body.CurriculumId,
+            }, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>Тело запроса изменения занятия (идентификатор берётся из маршрута).</summary>
+    public sealed record UpdateLessonRequest(Guid ClassroomId, Guid TimeSlotId, Guid StreamId, Guid? CurriculumId);
+
     /// <summary>Удалить занятие.</summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
