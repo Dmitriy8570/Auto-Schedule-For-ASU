@@ -3,10 +3,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { Sparkles, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle } from 'lucide-vue-next'
 import BaseSelect, { type SelectOption } from './BaseSelect.vue'
 import { lessons } from '../api/lessons'
-import { lookups } from '../api/lookups'
-import { calendar } from '../api/calendar'
 import { useAsync } from '../composables/useAsync'
+import { useLookupsStore } from '../stores/lookups'
+import { useRealtimeStore } from '../stores/realtime'
 import type { InstituteDto, SemesterDto, GenerationRunDto, LessonType } from '../api/types'
+
+const lookupsStore = useLookupsStore()
+const realtime = useRealtimeStore()
 
 const semesters = ref<SemesterDto[]>([])
 const institutes = ref<InstituteDto[]>([])
@@ -56,11 +59,12 @@ async function load() {
 
 watch([selSemester, selInstitute], load)
 
+// Реальное время: новая генерация добавляет запись — обновляем историю по событию.
+watch(() => realtime.scheduleTick, load)
+
 onMounted(async () => {
-  [semesters.value, institutes.value] = await Promise.all([
-    calendar.semesters().catch(() => []),
-    lookups.institutes().catch(() => []),
-  ])
+  semesters.value = await lookupsStore.ensureSemesters()
+  institutes.value = await lookupsStore.ensureInstitutes()
   await load()
 })
 </script>

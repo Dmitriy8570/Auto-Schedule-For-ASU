@@ -3,13 +3,19 @@ import { token, clearSession } from './session'
 // Базовый префикс. В dev он проксируется vite на бэкенд, в проде — nginx.
 const BASE = '/api'
 
+/** Одна коллизия расписания (409): вид ресурса и человекочитаемая деталь. */
+export interface ScheduleConflictItem { kind: 'Classroom' | 'Teacher' | 'Group' | string; detail: string }
+
 /** Ошибка обращения к API с человекочитаемым сообщением и HTTP-статусом. */
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** Для 409-коллизий расписания — структурированный перечень конфликтов (см. бэкенд). */
+  conflicts?: ScheduleConflictItem[]
+  constructor(status: number, message: string, conflicts?: ScheduleConflictItem[]) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.conflicts = conflicts
   }
 }
 
@@ -33,28 +39,30 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
   return qs ? `${url}?${qs}` : url
 }
 
-async function extractError(response: Response): Promise<string> {
+async function extractError(response: Response): Promise<{ message: string; conflicts?: ScheduleConflictItem[] }> {
   // Бэкенд отдаёт ProblemDetails / ValidationProblemDetails.
   try {
     const data = await response.json()
     if (data?.errors && typeof data.errors === 'object') {
       const messages = Object.values(data.errors as Record<string, string[]>).flat()
-      if (messages.length) return messages.join('; ')
+      if (messages.length) return { message: messages.join('; ') }
     }
     // 409 коллизия расписания: ProblemDetails с массивом conflicts[{kind, detail}].
     if (Array.isArray(data?.conflicts) && data.conflicts.length) {
-      const details = (data.conflicts as Array<{ detail?: string }>)
-        .map(c => c?.detail).filter(Boolean)
-      if (details.length) return `Коллизия: ${details.join(' ')}`
+      const conflicts = (data.conflicts as ScheduleConflictItem[]).filter(c => c?.detail)
+      const message = conflicts.length
+        ? `Коллизия: ${conflicts.map(c => c.detail).join(' ')}`
+        : 'Коллизия расписания.'
+      return { message, conflicts: conflicts.length ? conflicts : undefined }
     }
-    if (typeof data?.detail === 'string') return data.detail
-    if (typeof data?.title === 'string') return data.title
+    if (typeof data?.detail === 'string') return { message: data.detail }
+    if (typeof data?.title === 'string') return { message: data.title }
   } catch {
     /* тело не JSON — используем статус ниже */
   }
-  if (response.status === 401) return 'Требуется вход в систему.'
-  if (response.status === 403) return 'Недостаточно прав.'
-  return `Ошибка запроса (${response.status}).`
+  if (response.status === 401) return { message: 'Требуется вход в систему.' }
+  if (response.status === 403) return { message: 'Недостаточно прав.' }
+  return { message: `Ошибка запроса (${response.status}).` }
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -72,10 +80,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   // Истёкший/невалидный токен — завершаем сессию, UI вернётся на экран входа.
   if (response.status === 401) {
     clearSession()
-    throw new ApiError(401, await extractError(response))
+    throw new ApiError(401, (await extractError(response)).message)
   }
 
-  if (!response.ok) throw new ApiError(response.status, await extractError(response))
+  if (!response.ok) {
+    const { message, conflicts } = await extractError(response)
+    throw new ApiError(response.status, message, conflicts)
+  }
 
   if (response.status === 204) return undefined as T
   const text = await response.text()

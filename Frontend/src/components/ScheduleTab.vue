@@ -11,9 +11,11 @@ import { lookups } from '../api/lookups'
 import { lessons } from '../api/lessons'
 import { calendar } from '../api/calendar'
 import { management } from '../api/management'
-import { ApiError } from '../api/http'
+import { ApiError, type ScheduleConflictItem } from '../api/http'
 import { degreeLabels } from '../api/labels'
 import { useToast } from '../composables/useToast'
+import { useRealtimeStore } from '../stores/realtime'
+import { useLookupsStore } from '../stores/lookups'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
@@ -23,6 +25,8 @@ import type {
 type Entity = 'teachers' | 'groups' | 'rooms'
 const currentEntity = ref<Entity>('teachers')
 const toast = useToast()
+const realtime = useRealtimeStore()
+const lookupsStore = useLookupsStore()
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 const timeSlots = [
@@ -147,6 +151,25 @@ const selectedLesson = ref<LessonDTO | null>(null)
 const moveMode = ref(false)
 const movingLesson = ref<LessonDTO | null>(null)
 
+// Коллизия расписания (409) при добавлении/перемещении пары — показываем структурированным бейджем.
+const collision = ref<ScheduleConflictItem[] | null>(null)
+const conflictKindMeta: Record<string, { label: string; icon: typeof MapPin }> = {
+  Classroom: { label: 'Аудитория', icon: MapPin },
+  Teacher: { label: 'Преподаватель', icon: User },
+  Group: { label: 'Группа', icon: Users },
+}
+// Перехватить коллизию из ошибки API в бейдж; вернуть true, если это была коллизия.
+function captureCollision(e: unknown): boolean {
+  if (e instanceof ApiError && e.conflicts?.length) { collision.value = e.conflicts; return true }
+  return false
+}
+
+// Неблокирующие предупреждения о переходах между корпусами (после успешного добавления/перемещения).
+const travelWarnings = ref<string[]>([])
+async function loadTravelWarnings(lessonId: string) {
+  travelWarnings.value = await lessons.warnings(lessonId).catch(() => [])
+}
+
 // Панель добавления/редактирования. editId === null — добавление, иначе правим занятие с этим id.
 const editOpen = ref(false)
 const editId = ref<string | null>(null)
@@ -173,6 +196,8 @@ function openAddPanel(dayIdx = 0, pair = 1) {
   selectedLesson.value = null
   moveMode.value = false
   movingLesson.value = null
+  collision.value = null
+  travelWarnings.value = []
   editId.value = null
   editDay.value = dayIdx
   editPair.value = pair
@@ -188,6 +213,8 @@ async function openEditPanel(l: LessonDTO) {
   selectedLesson.value = null
   moveMode.value = false
   movingLesson.value = null
+  collision.value = null
+  travelWarnings.value = []
   editId.value = l.id
   editDay.value = l.dayOfWeek
   editPair.value = l.pairNumber
@@ -203,6 +230,7 @@ async function openEditPanel(l: LessonDTO) {
 function closePanel() {
   editOpen.value = false
   editId.value = null
+  collision.value = null
 }
 
 async function savePair() {
@@ -213,8 +241,12 @@ async function savePair() {
   if (!opt || !timeSlotId) return
   saving.value = true
   banner.value = ''
+  collision.value = null
+  travelWarnings.value = []
   try {
+    let savedId: string
     if (editId.value) {
+      savedId = editId.value
       await lessons.update(editId.value, {
         classroomId: editRoomId.value,
         timeSlotId,
@@ -223,7 +255,7 @@ async function savePair() {
       })
       toast.success('Пара обновлена.')
     } else {
-      await lessons.create({
+      savedId = await lessons.create({
         classroomId: editRoomId.value,
         timeSlotId,
         streamId: opt.streamId,
@@ -235,9 +267,10 @@ async function savePair() {
     editOpen.value = false
     editId.value = null
     await loadLessons()
+    await loadTravelWarnings(savedId) // неблокирующие предупреждения о переходах между корпусами
   } catch (e) {
-    // 409-коллизия (аудитория/преподаватель/группа) приходит сюда читаемым сообщением.
-    toast.error(e instanceof ApiError ? e.message : 'Не удалось сохранить пару.')
+    // 409-коллизия (аудитория/преподаватель/группа) — показываем бейджем; прочее — тостом.
+    if (!captureCollision(e)) toast.error(e instanceof ApiError ? e.message : 'Не удалось сохранить пару.')
   } finally {
     saving.value = false
   }
@@ -279,29 +312,61 @@ async function onCellClick(dayIdx: number, pair: number) {
   const existing = cellAt(dayIdx, pair)
   if (moveMode.value && movingLesson.value) {
     if (existing) return // занятая ячейка — переместить нельзя
-    const targetSlot = timeSlotIdFor(dayIdx, pair)
-    if (!targetSlot) { banner.value = 'Для этой ячейки нет временного слота в выбранной неделе.'; return }
-    const src = movingLesson.value
-    banner.value = ''
-    try {
-      await lessons.create({
-        classroomId: src.classroomId,
-        timeSlotId: targetSlot,
-        streamId: src.streamId,
-        semesterId: selSemester.value,
-        curriculumId: src.curriculumId ?? undefined,
-      })
-      await lessons.remove(src.id)
-      cancelMove()
-      toast.success('Пара перемещена.')
-      await loadLessons()
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Не удалось переместить пару.')
-    }
+    await moveLessonToSlot(movingLesson.value, dayIdx, pair)
     return
   }
   if (existing) { selectLesson(existing); return }
   openAddPanel(dayIdx, pair)
+}
+
+// Перемещение пары в свободную ячейку — общая логика для режима «Переместить» (клик) и drag&drop.
+// Используем атомарный PUT (сервер проверяет коллизии, исключая само занятие) вместо create+remove.
+async function moveLessonToSlot(src: LessonDTO, dayIdx: number, pair: number) {
+  if (cellAt(dayIdx, pair)) return // ячейка занята
+  const targetSlot = timeSlotIdFor(dayIdx, pair)
+  if (!targetSlot) { banner.value = 'Для этой ячейки нет временного слота в выбранной неделе.'; return }
+  banner.value = ''
+  collision.value = null
+  travelWarnings.value = []
+  try {
+    await lessons.update(src.id, {
+      classroomId: src.classroomId,
+      timeSlotId: targetSlot,
+      streamId: src.streamId,
+      curriculumId: src.curriculumId ?? undefined,
+    })
+    cancelMove()
+    toast.success('Пара перемещена.')
+    await loadLessons()
+    await loadTravelWarnings(src.id)
+  } catch (e) {
+    if (!captureCollision(e)) toast.error(e instanceof ApiError ? e.message : 'Не удалось переместить пару.')
+  }
+}
+
+// ───────── Drag & drop занятий по сетке ─────────
+const draggingLesson = ref<LessonDTO | null>(null)
+const dragOverKey = ref<string | null>(null)
+const cellKey = (dayIdx: number, pair: number) => `${dayIdx}-${pair}`
+
+function onDragStart(l: LessonDTO, e: DragEvent) {
+  draggingLesson.value = l
+  selectedLesson.value = null
+  if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', l.id) }
+}
+function onDragEnd() { draggingLesson.value = null; dragOverKey.value = null }
+
+function onCellDragOver(dayIdx: number, pair: number, e: DragEvent) {
+  if (!draggingLesson.value) return
+  if (cellAt(dayIdx, pair) || !timeSlotIdFor(dayIdx, pair)) return // занято или нет слота — не цель
+  e.preventDefault() // разрешаем drop
+  dragOverKey.value = cellKey(dayIdx, pair)
+}
+function onCellDrop(dayIdx: number, pair: number) {
+  const src = draggingLesson.value
+  draggingLesson.value = null
+  dragOverKey.value = null
+  if (src) moveLessonToSlot(src, dayIdx, pair)
 }
 
 // --- Каскады справочников: списки сужаются от выбранного «родителя», но не блокируются ---
@@ -543,9 +608,11 @@ const curriculumSelectOptions = computed<SelectOption[]>(() =>
   })))
 
 onMounted(async () => {
-  // Полные списки загружаем сразу, чтобы все выпадающие были доступны без выбора «родителя».
-  institutes.value = await lookups.institutes().catch(() => [])
-  buildings.value = await lookups.buildings().catch(() => [])
+  // Глобальные справочники — из кэша стора (грузятся один раз за сессию, а не на каждой вкладке).
+  institutes.value = await lookupsStore.ensureInstitutes()
+  buildings.value = await lookupsStore.ensureBuildings()
+  semesters.value = await lookupsStore.ensureSemesters()
+  // Остальные полные списки загружаем сразу, чтобы все выпадающие были доступны без выбора «родителя».
   departments.value = await lookups.departments().catch(() => [])
   teachers.value = await lookups.teachers().catch(() => [])
   degrees.value = await lookups.degrees().catch(() => [])
@@ -553,11 +620,13 @@ onMounted(async () => {
   groups.value = await lookups.groups().catch(() => [])
   // Полный список аудиторий (lookups.rooms ограничен 20 записями).
   allRooms.value = await management.classrooms().catch(() => [])
-  semesters.value = await calendar.semesters().catch(() => [])
   // По умолчанию — текущий семестр, иначе первый (самый свежий).
   const cur = semesters.value.find(s => s.isCurrent)
   selSemester.value = cur?.id ?? semesters.value[0]?.id ?? ''
 })
+
+// Реальное время: при серверном событии об изменении расписания перезагружаем текущую сетку.
+watch(() => realtime.scheduleTick, () => { loadLessons() })
 </script>
 
 <template>
@@ -678,6 +747,37 @@ onMounted(async () => {
         <span v-if="selectedWeek"> · {{ weekLabel(selectedWeek) }}</span>
       </div>
 
+      <!-- Бейдж коллизии расписания: что именно занято (аудитория/преподаватель/группа). -->
+      <div v-if="collision" class="collision-card">
+        <div class="cc-head">
+          <AlertTriangle :size="18" />
+          <span class="cc-title">Конфликт расписания — пара не сохранена</span>
+          <button class="cc-close" @click="collision = null"><X :size="16" /></button>
+        </div>
+        <ul class="cc-list">
+          <li v-for="(c, i) in collision" :key="i" class="cc-item">
+            <span class="cc-kind">
+              <component :is="(conflictKindMeta[c.kind]?.icon ?? AlertTriangle)" :size="14" />
+              {{ conflictKindMeta[c.kind]?.label ?? c.kind }}
+            </span>
+            <span class="cc-detail">{{ c.detail }}</span>
+          </li>
+        </ul>
+        <p class="cc-hint">Освободите ресурс или выберите другой слот/аудиторию и попробуйте снова.</p>
+      </div>
+
+      <!-- Неблокирующее предупреждение о переходе между корпусами (пара уже сохранена). -->
+      <div v-if="travelWarnings.length" class="travel-card">
+        <div class="tc-head">
+          <Building2 :size="18" />
+          <span class="tc-title">Внимание: переход между корпусами</span>
+          <button class="tc-close" @click="travelWarnings = []"><X :size="16" /></button>
+        </div>
+        <ul class="tc-list">
+          <li v-for="(w, i) in travelWarnings" :key="i">{{ w }}</li>
+        </ul>
+      </div>
+
       <div v-if="banner" class="alert-banner is-error">{{ banner }}</div>
       <div v-else-if="lessonsLoading" class="alert-banner">Загрузка занятий…</div>
       <div v-else-if="!selectedWeekId" class="alert-banner">Выберите неделю, чтобы увидеть занятия.</div>
@@ -697,11 +797,18 @@ onMounted(async () => {
           </div>
           <template v-for="(day, dayIdx) in daysOfWeek" :key="day">
             <div v-if="cellAt(dayIdx, slot.id)" class="lesson-cell"
+                 draggable="true"
                  :class="[
                    cellAt(dayIdx, slot.id)!.lessonType ? lessonTypeMeta[cellAt(dayIdx, slot.id)!.lessonType as DomainLessonType].cls : 'lt-default',
-                   { 'cell-selected': selectedLesson?.id === cellAt(dayIdx, slot.id)!.id, 'cell-dim': moveMode },
+                   {
+                     'cell-selected': selectedLesson?.id === cellAt(dayIdx, slot.id)!.id,
+                     'cell-dim': moveMode,
+                     'cell-dragging': draggingLesson?.id === cellAt(dayIdx, slot.id)!.id,
+                   },
                  ]"
-                 @click="onCellClick(dayIdx, slot.id)">
+                 @click="onCellClick(dayIdx, slot.id)"
+                 @dragstart="onDragStart(cellAt(dayIdx, slot.id)!, $event)"
+                 @dragend="onDragEnd">
               <span class="lc-subject">{{ cellAt(dayIdx, slot.id)!.subjectName || 'Занятие' }}</span>
               <span v-if="currentEntity !== 'teachers' && cellAt(dayIdx, slot.id)!.teacherName" class="lc-line">
                 {{ cellAt(dayIdx, slot.id)!.teacherName }}
@@ -715,9 +822,16 @@ onMounted(async () => {
               </span>
             </div>
             <div v-else class="empty-cell"
-                 :class="{ 'cell-movable': moveMode && timeSlotIdFor(dayIdx, slot.id) }"
-                 @click="onCellClick(dayIdx, slot.id)">
-              <Plus v-if="moveMode && timeSlotIdFor(dayIdx, slot.id)" :size="16" color="#16a34a" class="cell-plus" />
+                 :class="{
+                   'cell-movable': moveMode && timeSlotIdFor(dayIdx, slot.id),
+                   'cell-droppable': draggingLesson && timeSlotIdFor(dayIdx, slot.id),
+                   'cell-drop-over': dragOverKey === cellKey(dayIdx, slot.id),
+                 }"
+                 @click="onCellClick(dayIdx, slot.id)"
+                 @dragover="onCellDragOver(dayIdx, slot.id, $event)"
+                 @dragleave="dragOverKey = null"
+                 @drop="onCellDrop(dayIdx, slot.id)">
+              <Plus v-if="(moveMode || draggingLesson) && timeSlotIdFor(dayIdx, slot.id)" :size="16" color="#16a34a" class="cell-plus" />
             </div>
           </template>
         </div>
@@ -941,6 +1055,26 @@ onMounted(async () => {
 .alert-banner { display: flex; align-items: center; gap: 8px; background-color: #eff6ff; color: #1d4ed8; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; margin-bottom: 20px; }
 .alert-banner.is-error { background-color: #fef2f2; color: #dc2626; }
 
+/* Бейдж коллизии расписания */
+.collision-card { background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 10px; padding: 12px 14px; margin-bottom: 20px; }
+.cc-head { display: flex; align-items: center; gap: 8px; color: #c2410c; font-weight: 700; font-size: 14px; }
+.cc-title { flex: 1; }
+.cc-close { background: transparent; border: none; color: #c2410c; cursor: pointer; padding: 2px; border-radius: 6px; display: flex; }
+.cc-close:hover { background: #ffedd5; }
+.cc-list { list-style: none; margin: 10px 0 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cc-item { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+.cc-kind { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; min-width: 130px; font-weight: 700; color: #9a3412; background: #ffedd5; padding: 3px 8px; border-radius: 9999px; }
+.cc-detail { color: #7c2d12; }
+.cc-hint { margin: 10px 0 0 0; font-size: 12px; color: #9a3412; opacity: 0.85; }
+
+/* Предупреждение о переходе между корпусами (неблокирующее) */
+.travel-card { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 12px 14px; margin-bottom: 20px; }
+.tc-head { display: flex; align-items: center; gap: 8px; color: #b45309; font-weight: 700; font-size: 14px; }
+.tc-title { flex: 1; }
+.tc-close { background: transparent; border: none; color: #b45309; cursor: pointer; padding: 2px; border-radius: 6px; display: flex; }
+.tc-close:hover { background: #fef3c7; }
+.tc-list { margin: 8px 0 0 0; padding-left: 20px; color: #92400e; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+
 .schedule-table { display: flex; flex-direction: column; gap: 12px; }
 .grid-row { display: grid; grid-template-columns: 60px repeat(6, 1fr); gap: 12px; }
 .time-col-header { font-size: 13px; color: #94a3b8; display: flex; align-items: center; justify-content: center; }
@@ -984,8 +1118,15 @@ onMounted(async () => {
 /* Состояния ячеек */
 .lesson-cell.cell-selected { box-shadow: 0 0 0 2px #1a4d9c; }
 .lesson-cell.cell-dim { opacity: 0.55; }
+/* Drag&drop: занятие можно «схватить»; перетаскиваемое — приглушаем. */
+.lesson-cell { cursor: grab; }
+.lesson-cell:active { cursor: grabbing; }
+.lesson-cell.cell-dragging { opacity: 0.4; }
 .empty-cell { display: flex; align-items: center; justify-content: center; }
 .empty-cell.cell-movable { background: #f0fdf4; border-color: #86efac; }
+/* Подсветка возможных целей при перетаскивании и активной цели под курсором. */
+.empty-cell.cell-droppable { background: #f0fdf4; border-color: #86efac; border-style: dashed; }
+.empty-cell.cell-drop-over { background: #dcfce7; border-color: #22c55e; box-shadow: inset 0 0 0 2px #22c55e; }
 .cell-plus { opacity: 0.8; }
 
 /* Панель добавления пары. overflow: visible — чтобы выпадающие списки BaseSelect не обрезались

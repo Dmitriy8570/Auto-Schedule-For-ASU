@@ -1,56 +1,39 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import TheSidebar from './TheSidebar.vue'
 import NotificationBell from './NotificationBell.vue'
+import { useSessionStore } from '../stores/session'
+import { useRealtimeStore } from '../stores/realtime'
 
-import ScheduleTab from './ScheduleTab.vue'
-import HistoryTab from './HistoryTab.vue'
-import LoadTab from './LoadTab.vue'
-import SettingsTab from './SettingsTab.vue'
-import GenerationHistoryTab from './GenerationHistoryTab.vue'
-import UnplacedLoadTab from './UnplacedLoadTab.vue'
+// Layout дашборда: сайдбар + шапка + маршрутизируемое содержимое вкладки (router-view).
+// Активная вкладка и заголовок шапки определяются текущим маршрутом.
+const route = useRoute()
+const router = useRouter()
+const session = useSessionStore()
+const realtime = useRealtimeStore()
 
-// Создаем переменную для хранения текущей вкладки.
-const currentTab = ref('schedule')
+const title = computed(() => (route.meta.title as string | undefined) ?? '')
 
-// Заголовки вкладок для шапки.
-const tabTitles: Record<string, string> = {
-  schedule: 'Расписание',
-  load: 'Нагрузка',
-  unplaced: 'Нераспределённая нагрузка',
-  generation: 'История автогенерации',
-  history: 'История изменений',
-  settings: 'Ограничения',
+function logout() {
+  realtime.disconnect()
+  session.logout()
+  router.push({ name: 'login' })
 }
-
-// Перехватываем событие выхода
-const emit = defineEmits(['logout'])
 </script>
 
 <template>
   <div class="dashboard-layout">
-    
-    <TheSidebar 
-      :active-tab="currentTab" 
-      @change-tab="(tabName) => currentTab = tabName"
-      @logout="emit('logout')"
-    />
-    
-    <div class="main-content">
 
+    <TheSidebar @logout="logout" />
+
+    <div class="main-content">
       <header class="content-topbar">
-        <h1 class="topbar-title">{{ tabTitles[currentTab] }}</h1>
-        <NotificationBell @open-history="currentTab = 'history'" />
+        <h1 class="topbar-title">{{ title }}</h1>
+        <NotificationBell @open-history="router.push({ name: 'history' })" />
       </header>
 
-      <ScheduleTab v-if="currentTab === 'schedule'" />
-      <LoadTab v-if="currentTab === 'load'" />
-      <UnplacedLoadTab v-if="currentTab === 'unplaced'" />
-      <GenerationHistoryTab v-if="currentTab === 'generation'" />
-      <HistoryTab v-if="currentTab === 'history'" />
-
-      <SettingsTab v-if="currentTab === 'settings'" />
-
+      <router-view />
     </div>
   </div>
 </template>
@@ -58,9 +41,9 @@ const emit = defineEmits(['logout'])
 <style scoped>
 .dashboard-layout {
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   min-height: 100vh;
-  background-color: #f8fafc; 
+  background-color: #f8fafc;
 }
 
 .main-content {
@@ -81,19 +64,6 @@ const emit = defineEmits(['logout'])
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #1e293b;
-}
-
-/* Временные стили для заглушек контента */
-.page-content {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.page-content h1 {
-  margin-top: 0;
   color: #1e293b;
 }
 </style>

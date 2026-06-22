@@ -1,12 +1,13 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { workloads } from '../api/workloads'
+import { useRealtimeStore } from '../stores/realtime'
 import type { WorkloadChangeDto } from '../api/types'
 
 // Уведомления об изменении нагрузки. Источник — журнал изменений (`/workloads/changes`),
 // который наполняется при синхронизации с ММИС. «Непрочитанные» — изменения новее отметки
-// последнего просмотра (хранится в localStorage, переживает перезагрузку). Журнал опрашивается
-// периодически; SignalR-хаб `WorkloadChanged` на бэкенде также рассылает события, но для бейджа
-// достаточно лёгкого поллинга без дополнительной зависимости.
+// последнего просмотра (хранится в localStorage, переживает перезагрузку). Обновление —
+// мгновенное по событию SignalR `WorkloadChanged`, с лёгким периодическим поллингом как запасным
+// каналом на случай разрыва соединения.
 const LS_LAST_SEEN = 'notif:workload:lastSeenUtc'
 const POLL_INTERVAL_MS = 60_000
 const FEED_SIZE = 20
@@ -52,6 +53,10 @@ export function useWorkloadNotifications() {
       localStorage.setItem(LS_LAST_SEEN, newest)
     }
   }
+
+  // Мгновенное обновление по событию реального времени.
+  const realtime = useRealtimeStore()
+  watch(() => realtime.workloadTick, refresh)
 
   onMounted(() => {
     refresh()

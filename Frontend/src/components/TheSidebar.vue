@@ -1,23 +1,27 @@
 <script setup lang="ts">
 import { Calendar, BarChart2, History, Settings, LogOut, Sparkles, AlertTriangle } from 'lucide-vue-next'
+import { useRoute } from 'vue-router'
 
-// 1. ПРИНИМАЕМ ДАННЫЕ ОТ РОДИТЕЛЯ (Props)
-// Спрашиваем: "Какая вкладка сейчас активна?"
-defineProps<{
-  activeTab: string
-}>()
+// Навигация по разделам через vue-router: каждый пункт ведёт на именованный маршрут, активный
+// определяется текущим маршрутом. Выход пробрасывается родителю (он чистит сессию и SignalR).
+const emit = defineEmits<{ (e: 'logout'): void }>()
+const route = useRoute()
 
-// 2. СОЗДАЕМ "РУПОР" (Emits)
-// Чтобы сообщать родителю, если на кнопку нажали
-const emit = defineEmits<{
-  (e: 'change-tab', tabName: string): void
-  (e: 'logout'): void
-}>()
+const items = [
+  { name: 'schedule', label: 'Расписание', icon: Calendar },
+  { name: 'load', label: 'Нагрузка', icon: BarChart2 },
+  { name: 'unplaced', label: 'Нераспределённое', icon: AlertTriangle },
+  { name: 'generation', label: 'Генерации', icon: Sparkles },
+  { name: 'history', label: 'История', icon: History },
+  { name: 'settings', label: 'Ограничения', icon: Settings },
+]
+
+const isActive = (name: string) => route.name === name
 </script>
 
 <template>
   <aside class="sidebar">
-    
+
     <div class="logo-area">
       <Calendar :size="28" color="white" />
       <div class="text-group">
@@ -27,53 +31,15 @@ const emit = defineEmits<{
     </div>
 
     <nav class="nav-menu">
-      <a href="#" 
-         class="nav-item" 
-         :class="{ active: activeTab === 'schedule' }"
-         @click.prevent="emit('change-tab', 'schedule')">
-        <Calendar :size="20" :color="activeTab === 'schedule' ? '#1e4b8f' : 'white'" />
-        <span>Расписание</span>
-      </a>
-      
-      <a href="#" 
-         class="nav-item" 
-         :class="{ active: activeTab === 'load' }"
-         @click.prevent="emit('change-tab', 'load')">
-        <BarChart2 :size="20" :color="activeTab === 'load' ? '#1e4b8f' : 'white'" />
-        <span>Нагрузка</span>
-      </a>
-
-      <a href="#"
-         class="nav-item"
-         :class="{ active: activeTab === 'unplaced' }"
-         @click.prevent="emit('change-tab', 'unplaced')">
-        <AlertTriangle :size="20" :color="activeTab === 'unplaced' ? '#1e4b8f' : 'white'" />
-        <span>Нераспределённое</span>
-      </a>
-
-      <a href="#"
-         class="nav-item"
-         :class="{ active: activeTab === 'generation' }"
-         @click.prevent="emit('change-tab', 'generation')">
-        <Sparkles :size="20" :color="activeTab === 'generation' ? '#1e4b8f' : 'white'" />
-        <span>Генерации</span>
-      </a>
-
-      <a href="#"
-         class="nav-item"
-         :class="{ active: activeTab === 'history' }"
-         @click.prevent="emit('change-tab', 'history')">
-        <History :size="20" :color="activeTab === 'history' ? '#1e4b8f' : 'white'" />
-        <span>История</span>
-      </a>
-
-      <a href="#" 
-         class="nav-item" 
-         :class="{ active: activeTab === 'settings' }"
-         @click.prevent="emit('change-tab', 'settings')">
-        <Settings :size="20" :color="activeTab === 'settings' ? '#1e4b8f' : 'white'" />
-        <span>Ограничения</span>
-      </a>
+      <router-link
+        v-for="item in items" :key="item.name"
+        :to="{ name: item.name }"
+        class="nav-item"
+        :class="{ active: isActive(item.name) }"
+      >
+        <component :is="item.icon" :size="20" :color="isActive(item.name) ? '#1e4b8f' : 'white'" />
+        <span>{{ item.label }}</span>
+      </router-link>
     </nav>
 
     <div class="logout-area">
@@ -147,7 +113,7 @@ const emit = defineEmits<{
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 4. Стиль для АКТИВНОЙ кнопки (Расписание) */
+/* 4. Стиль для АКТИВНОЙ кнопки */
 .nav-item.active {
   background-color: white;
   color: #1e4b8f;

@@ -46,6 +46,9 @@ export const lessons = {
   // Удалить занятие.
   remove: (id: string) => http.del<void>(`/lessons/${id}`),
 
+  // Неблокирующие предупреждения для занятия (переходы между корпусами в соседних парах).
+  warnings: (id: string) => http.get<string[]>(`/lessons/${id}/warnings`),
+
   // Генерация черновика расписания института на семестр (синхронная, держит HTTP-поток).
   generateForInstitute: (semesterId: string, instituteId: string) =>
     http.post<GenerateScheduleResult>(`/lessons/generate/semester/${semesterId}/institute/${instituteId}`),

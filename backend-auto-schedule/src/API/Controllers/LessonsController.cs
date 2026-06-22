@@ -56,6 +56,14 @@ public class LessonsController : ControllerBase
         Guid teacherId, CancellationToken ct, [FromQuery] Guid? weekId = null)
         => Ok(await _mediator.Send(new GetLessonByTeacherQuery { TeacherId = teacherId, WeekId = weekId }, ct));
 
+    /// <summary>
+    /// Неблокирующие предупреждения для занятия (переходы между корпусами в соседних парах
+    /// у группы/преподавателя). Запрашивается после ручного добавления/изменения пары.
+    /// </summary>
+    [HttpGet("{id:guid}/warnings")]
+    public async Task<ActionResult<IReadOnlyList<string>>> GetWarnings(Guid id, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetLessonWarningsQuery(id), ct));
+
     /// <summary>Создать занятие.</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLessonCommand command, CancellationToken ct)

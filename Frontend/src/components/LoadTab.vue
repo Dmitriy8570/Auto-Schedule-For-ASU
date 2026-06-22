@@ -6,7 +6,10 @@ import BaseSelect, { type SelectOption } from './BaseSelect.vue'
 import { lookups } from '../api/lookups'
 import { workloads } from '../api/workloads'
 import { useAsync } from '../composables/useAsync'
+import { useLookupsStore } from '../stores/lookups'
 import type { InstituteDto, DepartmentDto, TeacherDto, WorkloadItemDto, LessonType } from '../api/types'
+
+const lookupsStore = useLookupsStore()
 
 // --- Справочники для фильтров ---
 const institutes = ref<InstituteDto[]>([])
@@ -99,9 +102,10 @@ function goToPage(p: number) {
 }
 
 onMounted(async () => {
-  // Грузим все справочники сразу, чтобы фильтры были доступны без предварительного выбора института.
-  [institutes.value, departments.value, teachers.value] = await Promise.all([
-    lookups.institutes().catch(() => []),
+  // Институты — из кэша стора; кафедры/преподаватели грузим полностью, чтобы фильтры были
+  // доступны без предварительного выбора института.
+  institutes.value = await lookupsStore.ensureInstitutes()
+  ;[departments.value, teachers.value] = await Promise.all([
     lookups.departments().catch(() => []),
     lookups.teachers().catch(() => []),
   ])

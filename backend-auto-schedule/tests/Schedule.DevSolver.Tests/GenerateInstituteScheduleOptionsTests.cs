@@ -158,5 +158,6 @@ public sealed class GenerateInstituteScheduleOptionsTests
         public Task<IReadOnlyList<Lesson>> GetLessonByTeacherAsync(Guid teacherId, Guid? weekId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetLessonByRoomAsync(Guid classroomId, Guid? weekId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<Lesson>> GetLessonByGroupAsync(Guid groupId, Guid? weekId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<string>> GetBuildingTravelWarningsAsync(Guid lessonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }

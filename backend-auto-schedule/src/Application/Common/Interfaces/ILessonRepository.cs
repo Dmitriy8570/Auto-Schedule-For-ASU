@@ -47,4 +47,11 @@ public interface ILessonRepository
 
     /// <summary>Занятия учебной группы; при заданном <paramref name="weekId"/> — только в пределах этой недели.</summary>
     Task<IReadOnlyList<Lesson>> GetLessonByGroupAsync(Guid groupId, Guid? weekId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Неблокирующие предупреждения о переходе между корпусами для занятия: у его группы или
+    /// преподавателя есть занятие в соседней паре того же дня в другом корпусе (на переход нужно
+    /// время). Пустой список — переходов нет. Используется после ручного добавления/изменения пары.
+    /// </summary>
+    Task<IReadOnlyList<string>> GetBuildingTravelWarningsAsync(Guid lessonId, CancellationToken cancellationToken);
 }

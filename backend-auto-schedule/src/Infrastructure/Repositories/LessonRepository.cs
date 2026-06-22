@@ -146,4 +146,59 @@ public sealed class LessonRepository(ApplicationDbContext context) : ILessonRepo
         await context.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    public async Task<IReadOnlyList<string>> GetBuildingTravelWarningsAsync(Guid lessonId, CancellationToken ct)
+    {
+        // Параметры самого занятия: день, номер пары, корпус, преподаватель и группы.
+        var self = await context.Lessons.AsNoTracking()
+            .Where(l => l.Id == lessonId)
+            .Select(l => new
+            {
+                l.SemesterId,
+                Day = l.TimeSlot.WeekDay.DayOfWeek,
+                Number = l.TimeSlot.Number,
+                BuildingId = l.Classroom.BuildingId,
+                BuildingName = l.Classroom.Building.Name,
+                TeacherId = l.CurriculumId == null ? (Guid?)null : l.Curriculum!.TeacherId,
+                TeacherName = l.CurriculumId == null ? null : l.Curriculum!.Teacher.Name,
+                GroupIds = l.Stream.StreamGroups.Select(sg => sg.GroupId).ToList(),
+            })
+            .FirstOrDefaultAsync(ct);
+        if (self is null) return Array.Empty<string>();
+
+        // Занятия в соседней паре того же дня и семестра, но в ДРУГОМ корпусе.
+        var neighbours = await context.Lessons.AsNoTracking()
+            .Where(l => l.Id != lessonId
+                && l.SemesterId == self.SemesterId
+                && l.TimeSlot.WeekDay.DayOfWeek == self.Day
+                && (l.TimeSlot.Number == self.Number - 1 || l.TimeSlot.Number == self.Number + 1)
+                && l.Classroom.BuildingId != self.BuildingId)
+            .Select(l => new
+            {
+                Number = l.TimeSlot.Number,
+                BuildingName = l.Classroom.Building.Name,
+                TeacherId = l.CurriculumId == null ? (Guid?)null : l.Curriculum!.TeacherId,
+                Groups = l.Stream.StreamGroups.Select(sg => new { sg.GroupId, sg.Group.Name }).ToList(),
+            })
+            .ToListAsync(ct);
+
+        var warnings = new List<string>();
+        foreach (var n in neighbours)
+        {
+            bool selfFirst = self.Number < n.Number;
+            string from = selfFirst ? self.BuildingName : n.BuildingName;
+            string to = selfFirst ? n.BuildingName : self.BuildingName;
+            int p1 = Math.Min(self.Number, n.Number), p2 = Math.Max(self.Number, n.Number);
+
+            // Один преподаватель в соседних парах в разных корпусах.
+            if (self.TeacherId is { } tid && n.TeacherId == tid && self.TeacherName is { } tname)
+                warnings.Add($"Преподаватель {tname}: переход между {p1}-й и {p2}-й парами из корпуса «{from}» в «{to}».");
+
+            // Общая группа в соседних парах в разных корпусах.
+            foreach (var name in n.Groups.Where(g => self.GroupIds.Contains(g.GroupId)).Select(g => g.Name))
+                warnings.Add($"Группа {name}: переход между {p1}-й и {p2}-й парами из корпуса «{from}» в «{to}».");
+        }
+
+        return warnings.Distinct().ToList();
+    }
 }

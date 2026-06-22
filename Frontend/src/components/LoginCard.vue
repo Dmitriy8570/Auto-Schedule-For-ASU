@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { User, Lock, Eye, EyeOff } from 'lucide-vue-next'
 import BaseButton from './BaseButton.vue'
 import BaseInput from './BaseInput.vue'
-import { useAuth } from '../composables/useAuth'
+import { useSessionStore } from '../stores/session'
 import { ApiError } from '../api/http'
 
-const { login: doLogin } = useAuth()
+const session = useSessionStore()
+const router = useRouter()
 
 const username = ref('')
 const password = ref('')
@@ -25,8 +27,8 @@ async function submit() {
 
   loading.value = true
   try {
-    await doLogin(username.value.trim(), password.value)
-    // Успех: useAuth обновит сессию, App переключится на дашборд автоматически.
+    await session.login(username.value.trim(), password.value)
+    router.push({ name: 'schedule' }) // успех: уходим на дашборд (гвард пропустит)
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : 'Не удалось войти. Попробуйте позже.'
   } finally {

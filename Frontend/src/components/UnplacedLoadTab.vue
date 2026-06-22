@@ -4,11 +4,15 @@ import { AlertTriangle, Users, BookOpen, Layers } from 'lucide-vue-next'
 import BaseSelect, { type SelectOption } from './BaseSelect.vue'
 import { lookups } from '../api/lookups'
 import { workloads } from '../api/workloads'
-import { calendar } from '../api/calendar'
 import { useAsync } from '../composables/useAsync'
+import { useLookupsStore } from '../stores/lookups'
+import { useRealtimeStore } from '../stores/realtime'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, SemesterDto, UnplacedWorkloadRow, LessonType,
 } from '../api/types'
+
+const lookupsStore = useLookupsStore()
+const realtime = useRealtimeStore()
 
 const semesters = ref<SemesterDto[]>([])
 const institutes = ref<InstituteDto[]>([])
@@ -75,11 +79,14 @@ watch(selDept, async (id) => {
 
 watch([selSemester, selInstitute, selDept, selTeacher], load)
 
+// Реальное время: размещение/сброс занятий меняет дефицит — перечитываем при событии.
+watch(() => realtime.scheduleTick, load)
+
 onMounted(async () => {
-  // Грузим все справочники сразу, чтобы фильтры были доступны без предварительного выбора института.
-  [semesters.value, institutes.value, departments.value, teachers.value] = await Promise.all([
-    calendar.semesters().catch(() => []),
-    lookups.institutes().catch(() => []),
+  // Семестры/институты — из кэша стора; кафедры/преподаватели грузим полностью.
+  semesters.value = await lookupsStore.ensureSemesters()
+  institutes.value = await lookupsStore.ensureInstitutes()
+  ;[departments.value, teachers.value] = await Promise.all([
     lookups.departments().catch(() => []),
     lookups.teachers().catch(() => []),
   ])
