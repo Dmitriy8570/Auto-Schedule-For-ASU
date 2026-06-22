@@ -36,6 +36,10 @@ public static class DependencyInjection
         services.AddScoped<IWorkloadLogRepository, WorkloadLogRepository>();
         services.AddScoped<IScheduleDataProvider, ScheduleDataProvider>();
 
+        // Транзакции уровня SERIALIZABLE для операций записи расписания (защита от коллизий
+        // при одновременной работе нескольких сотрудников бюро). См. ITransactionRunner.
+        services.AddScoped<ITransactionRunner, TransactionRunner>();
+
         // Параметры солвера из конфигурации (секция "Solver"): лимит времени, число воркеров, лог.
         // Хендлеры получают готовое значение SolverOptions (Application не зависит от Options/Configuration).
         services.Configure<SolverOptions>(configuration.GetSection("Solver"));

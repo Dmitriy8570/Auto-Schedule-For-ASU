@@ -19,26 +19,36 @@ public class CreateLessonCommand : IRequest<Guid>
 public class CreateLessonCommandHandler : IRequestHandler<CreateLessonCommand, Guid>
 {
     private readonly ILessonRepository _lessonRepository;
+    private readonly ITransactionRunner _transactionRunner;
 
-    public CreateLessonCommandHandler(ILessonRepository lessonRepository)
+    public CreateLessonCommandHandler(ILessonRepository lessonRepository, ITransactionRunner transactionRunner)
     {
         _lessonRepository = lessonRepository;
+        _transactionRunner = transactionRunner;
     }
 
     public async Task<Guid> Handle(CreateLessonCommand request, CancellationToken cancellationToken)
     {
-        // Ручное добавление обходит солвер — проверяем жёсткие ограничения (пересечения по
-        // аудитории/преподавателю/группе в одном слоте) до сохранения.
-        var conflicts = await _lessonRepository.FindConflictsAsync(
-            request.ClassroomId, request.TimeSlotId, request.StreamId, request.CurriculumId, cancellationToken);
-        if (conflicts.Count > 0)
-            throw new ScheduleConflictException(conflicts);
-
         var lessonId = Guid.NewGuid();
-        var lesson = Lesson.Create(
-            lessonId, request.ClassroomId, request.TimeSlotId, request.StreamId, request.SemesterId, request.CurriculumId);
-        await _lessonRepository.AddAsync(lesson, cancellationToken);
-        await _lessonRepository.SaveChangesAsync(cancellationToken);
+
+        // Ручное добавление обходит солвер, поэтому жёсткие ограничения (пересечения по
+        // аудитории/преподавателю/группе в одном слоте) проверяются здесь. Проверка и вставка
+        // выполняются в одной SERIALIZABLE-транзакции: при одновременном добавлении двух занятий
+        // в один слот проверка не может «проскочить» (TOCTOU) — конфликтующая транзакция будет
+        // отменена СУБД и автоматически повторена.
+        await _transactionRunner.ExecuteSerializableAsync(async ct =>
+        {
+            var conflicts = await _lessonRepository.FindConflictsAsync(
+                request.ClassroomId, request.TimeSlotId, request.StreamId, request.CurriculumId, ct);
+            if (conflicts.Count > 0)
+                throw new ScheduleConflictException(conflicts);
+
+            var lesson = Lesson.Create(
+                lessonId, request.ClassroomId, request.TimeSlotId, request.StreamId, request.SemesterId, request.CurriculumId);
+            await _lessonRepository.AddAsync(lesson, ct);
+            await _lessonRepository.SaveChangesAsync(ct);
+        }, cancellationToken);
+
         return lessonId;
     }
 }

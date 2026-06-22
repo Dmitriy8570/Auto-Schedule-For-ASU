@@ -30,6 +30,7 @@ public sealed class GenerateInstituteScheduleCommandHandler
     private readonly IScheduleSolver _solver;
     private readonly IScheduleResultMapper _mapper;
     private readonly ILessonRepository _lessonRepository;
+    private readonly ITransactionRunner _transactionRunner;
     private readonly SolverOptions _solverOptions;
 
     public GenerateInstituteScheduleCommandHandler(
@@ -37,12 +38,14 @@ public sealed class GenerateInstituteScheduleCommandHandler
         IScheduleSolver solver,
         IScheduleResultMapper mapper,
         ILessonRepository lessonRepository,
+        ITransactionRunner transactionRunner,
         SolverOptions solverOptions)
     {
         _dataProvider = dataProvider;
         _solver = solver;
         _mapper = mapper;
         _lessonRepository = lessonRepository;
+        _transactionRunner = transactionRunner;
         _solverOptions = solverOptions;
     }
 
@@ -65,19 +68,25 @@ public sealed class GenerateInstituteScheduleCommandHandler
             return new GenerateScheduleResult(
                 solution.Status.ToString(), 0, solution.ObjectiveValue, solution.WallTimeSeconds);
 
-        // Решение найдено — заменяем текущее расписание института новым черновиком.
-        // Удаление и вставка фиксируются одним SaveChanges, чтобы не оставить институт без расписания.
-        var existing = await _lessonRepository.GetByInstituteAndSemesterAsync(
-            request.InstituteId, request.SemesterId, cancellationToken);
-        _lessonRepository.RemoveRange(existing);
+        // Решение найдено — заменяем текущее расписание института новым черновиком. Сам поиск
+        // солвером (до нескольких минут) выполнен выше, вне транзакции, чтобы не удерживать
+        // блокировки; короткая запись результата идёт в одной SERIALIZABLE-транзакции — удаление
+        // прежнего расписания и вставка нового атомарны и согласованы с параллельной генерацией.
+        var lessonCount = await _transactionRunner.ExecuteSerializableAsync(async ct =>
+        {
+            var existing = await _lessonRepository.GetByInstituteAndSemesterAsync(
+                request.InstituteId, request.SemesterId, ct);
+            _lessonRepository.RemoveRange(existing);
 
-        var lessons = _mapper.ToLessons(data, solution.Assignments); // Lesson.Create() => Version = Draft.
-        foreach (var lesson in lessons)
-            await _lessonRepository.AddAsync(lesson, cancellationToken);
+            var lessons = _mapper.ToLessons(data, solution.Assignments); // Lesson.Create() => Version = Draft.
+            foreach (var lesson in lessons)
+                await _lessonRepository.AddAsync(lesson, ct);
 
-        await _lessonRepository.SaveChangesAsync(cancellationToken);
+            await _lessonRepository.SaveChangesAsync(ct);
+            return lessons.Count;
+        }, cancellationToken);
 
         return new GenerateScheduleResult(
-            solution.Status.ToString(), lessons.Count, solution.ObjectiveValue, solution.WallTimeSeconds);
+            solution.Status.ToString(), lessonCount, solution.ObjectiveValue, solution.WallTimeSeconds);
     }
 }

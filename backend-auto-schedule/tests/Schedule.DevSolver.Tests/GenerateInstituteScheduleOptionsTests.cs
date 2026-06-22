@@ -75,7 +75,8 @@ public sealed class GenerateInstituteScheduleOptionsTests
     }
 
     private static GenerateInstituteScheduleCommandHandler NewHandler(IScheduleSolver solver) =>
-        new(new EmptyDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(), ConfigDefaults);
+        new(new EmptyDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(),
+            new FakeTransactionRunner(), ConfigDefaults);
 
     // --- Фейки ---
 

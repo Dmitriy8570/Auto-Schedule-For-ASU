@@ -48,7 +48,16 @@ public sealed class MmisSyncHostedService(
         {
             using var scope = scopeFactory.CreateScope();
             var sync = scope.ServiceProvider.GetRequiredService<IMmisSyncService>();
-            await sync.SyncAsync(ct);
+            var result = await sync.SyncAsync(ct);
+
+            // Если нагрузка изменилась — оповещаем клиентов в реальном времени, чтобы сотрудникам
+            // бюро не приходилось вручную сверять нагрузку преподавателей (одна из ключевых задач).
+            if (result.HasWorkloadChanges)
+            {
+                var notifier = scope.ServiceProvider.GetRequiredService<IRealtimeNotifier>();
+                await notifier.NotifyWorkloadChangedAsync(
+                    result.WorkloadsAdded, result.WorkloadsUpdated, result.WorkloadsDeleted, ct);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

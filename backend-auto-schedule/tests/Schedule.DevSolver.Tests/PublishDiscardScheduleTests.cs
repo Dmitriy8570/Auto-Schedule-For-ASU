@@ -31,7 +31,7 @@ public class PublishDiscardScheduleTests
     {
         var current = Current();
         var repo = new FakeLessonRepository(Draft(), Draft(), current);
-        var handler = new DiscardInstituteScheduleCommandHandler(repo);
+        var handler = new DiscardInstituteScheduleCommandHandler(repo, new FakeTransactionRunner());
 
         var result = await handler.Handle(
             new DiscardInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -47,7 +47,7 @@ public class PublishDiscardScheduleTests
     public async Task Discard_WithoutDrafts_IsIdempotent_NoChanges()
     {
         var repo = new FakeLessonRepository(Current(), Current());
-        var handler = new DiscardInstituteScheduleCommandHandler(repo);
+        var handler = new DiscardInstituteScheduleCommandHandler(repo, new FakeTransactionRunner());
 
         var result = await handler.Handle(
             new DiscardInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -64,7 +64,7 @@ public class PublishDiscardScheduleTests
     {
         var oldCurrent = Current();
         var repo = new FakeLessonRepository(Draft(), Draft(), oldCurrent);
-        var handler = new PublishInstituteScheduleCommandHandler(repo);
+        var handler = new PublishInstituteScheduleCommandHandler(repo, new FakeTransactionRunner(), new FakeRealtimeNotifier());
 
         var result = await handler.Handle(
             new PublishInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None);
@@ -80,7 +80,7 @@ public class PublishDiscardScheduleTests
     public async Task Publish_WithoutDrafts_Throws()
     {
         var repo = new FakeLessonRepository(Current());
-        var handler = new PublishInstituteScheduleCommandHandler(repo);
+        var handler = new PublishInstituteScheduleCommandHandler(repo, new FakeTransactionRunner(), new FakeRealtimeNotifier());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(
             new PublishInstituteScheduleCommand { InstituteId = Institute }, CancellationToken.None));

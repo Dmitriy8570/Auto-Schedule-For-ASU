@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using API;
+using API.Hubs;
 using Application;
+using Application.Common.Interfaces;
 using Infrastructure;
 using Infrastructure.Auth;
 using Infrastructure.Data;
@@ -49,6 +51,11 @@ builder.Services.AddSwaggerGen(option =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Real-time через SignalR: хаб уведомлений + реализация IRealtimeNotifier для рассылки событий
+// (изменение расписания/нагрузки) подключённым клиентам.
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
+
 // Аутентификация по JWT (Bearer) + авторизация.
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 // Fail-fast: без ключа подписи токены небезопасны. В prod ключ обязан прийти из env/секретов,
@@ -71,6 +78,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             RoleClaimType = System.Security.Claims.ClaimTypes.Role,
             NameClaimType = System.Security.Claims.ClaimTypes.Name,
+        };
+
+        // Браузер не может задать заголовок Authorization для WebSocket-соединения SignalR,
+        // поэтому токен передаётся в query-параметре access_token и извлекается здесь.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
         };
     });
 // Все эндпоинты по умолчанию требуют аутентификацию; исключения — через [AllowAnonymous]
@@ -109,5 +130,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ScheduleHub>("/hubs/schedule");
 
 app.Run();
