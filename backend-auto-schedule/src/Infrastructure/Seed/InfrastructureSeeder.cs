@@ -1,5 +1,7 @@
 using Application.Common.Interfaces;
 using Domain.calendar;
+using Domain.constraints.equipments;
+using Domain.constraints.penalty;
 using Domain.schedule;
 using Domain.university.buildings;
 using Infrastructure.Data;
@@ -52,6 +54,77 @@ public sealed class InfrastructureSeeder(
         logger.LogInformation("Сидинг аудиторного фонда: {Buildings} корпусов, {Rooms} аудиторий.",
             buildings.Length, rooms);
         return rooms;
+    }
+
+    public async Task<int> SeedEquipmentAsync(CancellationToken ct)
+    {
+        if (!_options.SeedEquipment) return 0;
+
+        // Каталог оборудования статичен: если хотя бы один тип уже есть — считаем каталог наполненным.
+        if (await db.Equipments.AnyAsync(ct)) return 0;
+
+        var names = _options.Equipment is { Length: > 0 }
+            ? _options.Equipment
+            : InfrastructureSeedOptions.DefaultEquipment();
+
+        var equipmentIds = new List<Guid>();
+        foreach (var name in names)
+        {
+            var id = DeterministicGuid.For($"Equipment:{name}", 0);
+            db.Equipments.Add(Equipment.Create(id, name));
+            equipmentIds.Add(id);
+        }
+
+        // Оснащаем часть аудиторий «универсальным» оборудованием (первые два типа каталога —
+        // проектор и ПК), чтобы ограничение оборудования в солвере имело данные. Детерминированно
+        // по индексу аудитории, поэтому повторный прогон дал бы тот же набор (но он гейтится выше).
+        int links = 0;
+        var fraction = Math.Clamp(_options.EquipRoomsFraction, 0, 1);
+        if (fraction > 0 && equipmentIds.Count > 0)
+        {
+            var roomIds = await db.Classrooms.OrderBy(c => c.Name).Select(c => c.Id).ToListAsync(ct);
+            var universal = equipmentIds.Take(2).ToList();
+            int step = (int)Math.Max(1, Math.Round(1 / fraction));
+            for (int i = 0; i < roomIds.Count; i += step)
+                foreach (var equipmentId in universal)
+                {
+                    db.EquipmentRooms.Add(EquipmentRoom.Create(equipmentId, roomIds[i]));
+                    links++;
+                }
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Сидинг оборудования: {Types} типов, оснащено связей «аудитория↔оборудование» — {Links}.",
+            names.Length, links);
+        return names.Length;
+    }
+
+    public async Task<int> SeedConstraintWeightsAsync(CancellationToken ct)
+    {
+        if (!_options.SeedConstraintWeights) return 0;
+
+        // Веса мягких ограничений — по одной записи на тип. Если хоть одна уже есть — пропускаем.
+        if (await db.ConstraintConfigs.AnyAsync(ct)) return 0;
+
+        // Значения по умолчанию: окна штрафуются умеренно, нарушение доступности — сильнее.
+        // Все веса далее настраиваются из UI (вкладка «Ограничения» → «Веса»).
+        var defaults = new (ConstraintType Type, int Penalty)[]
+        {
+            (ConstraintType.TeacherGap, 3),
+            (ConstraintType.StudentGap, 5),
+            (ConstraintType.ClassroomAvailability, 10),
+            (ConstraintType.TeacherAvailability, 10),
+        };
+
+        foreach (var (type, penalty) in defaults)
+        {
+            var id = DeterministicGuid.For($"ConstraintConfig:{type}", 0);
+            db.ConstraintConfigs.Add(ConstraintConfig.Create(id, type, penalty));
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Сидинг весов мягких ограничений: {Count} типов.", defaults.Length);
+        return defaults.Length;
     }
 
     public async Task<int> SeedCalendarGridAsync(CancellationToken ct)

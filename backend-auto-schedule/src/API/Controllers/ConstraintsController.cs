@@ -55,6 +55,25 @@ public sealed class ConstraintsController(IMediator mediator) : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
     }
 
+    // ----- Оснащение аудитории оборудованием -----
+
+    /// <summary>Список оборудования, установленного в аудитории (идентификаторы).</summary>
+    [HttpGet("api/classrooms/{id:guid}/equipment")]
+    public async Task<ActionResult<IReadOnlyList<Guid>>> GetClassroomEquipment(Guid id, CancellationToken ct)
+    {
+        try { return Ok(await mediator.Send(new GetClassroomEquipmentQuery(id), ct)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    /// <summary>Полностью заменить оснащение аудитории оборудованием.</summary>
+    [HttpPut("api/classrooms/{id:guid}/equipment")]
+    public async Task<IActionResult> SetClassroomEquipment(
+        Guid id, [FromBody] IReadOnlyList<Guid> equipmentIds, CancellationToken ct)
+    {
+        try { await mediator.Send(new SetClassroomEquipmentCommand(id, equipmentIds), ct); return NoContent(); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
     // ----- По-нагрузочные ограничения учебного плана -----
 
     /// <summary>По-нагрузочные ограничения учебного плана.</summary>

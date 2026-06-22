@@ -14,6 +14,35 @@ public sealed class InfrastructureSeedOptions
     /// <summary>Достраивать ли календарную сетку (рабочие дни + пары) для недель семестра.</summary>
     public bool SeedCalendarGrid { get; set; } = true;
 
+    /// <summary>Наполнять ли каталог оборудования и оснащать им часть аудиторий при старте.</summary>
+    public bool SeedEquipment { get; set; } = true;
+
+    /// <summary>Наполнять ли веса мягких ограничений (по одному на тип) значениями по умолчанию.</summary>
+    public bool SeedConstraintWeights { get; set; } = true;
+
+    /// <summary>
+    /// Доля аудиторий (0..1), в которые ставится «универсальное» оборудование из начала каталога
+    /// (проектор, ПК и т.п.), чтобы ограничение оборудования в солвере было наполнено. 0 — не оснащать.
+    /// </summary>
+    public double EquipRoomsFraction { get; set; } = 0.4;
+
+    /// <summary>
+    /// Каталог оборудования для наполнения. Если не задан — встроенный набор
+    /// <see cref="DefaultEquipment"/> (проектор, ПК, интерактивная доска и т.д.).
+    /// </summary>
+    public string[]? Equipment { get; set; }
+
+    /// <summary>Встроенный каталог оборудования аудиторий.</summary>
+    public static string[] DefaultEquipment() =>
+    [
+        "Проектор",
+        "Компьютеры",
+        "Интерактивная доска",
+        "Лабораторное оборудование",
+        "Маркерная доска",
+        "Звуковая система",
+    ];
+
     /// <summary>Число рабочих дней в неделе, начиная с понедельника (по умолчанию 6 — Пн–Сб).</summary>
     public int WorkingDays { get; set; } = 6;
 

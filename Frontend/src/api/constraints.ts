@@ -16,6 +16,12 @@ export const constraints = {
   setClassroomAvailability: (classroomId: string, cells: AvailabilityCellDto[]) =>
     http.put<void>(`/availability/classroom/${classroomId}`, cells),
 
+  // Оснащение аудитории оборудованием (идентификаторы оборудования)
+  classroomEquipment: (classroomId: string) =>
+    http.get<string[]>(`/classrooms/${classroomId}/equipment`),
+  setClassroomEquipment: (classroomId: string, equipmentIds: string[]) =>
+    http.put<void>(`/classrooms/${classroomId}/equipment`, equipmentIds),
+
   // По-нагрузочные ограничения учебного плана
   curriculumConstraints: (curriculumId: string) =>
     http.get<CurriculumConstraintsDto>(`/curriculums/${curriculumId}/constraints`),

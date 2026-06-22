@@ -64,6 +64,53 @@ public sealed class InfrastructureSeederTests : IDisposable
     }
 
     [Fact]
+    public async Task SeedEquipment_PopulatesCatalogAndEquipsRooms()
+    {
+        var seeder = CreateSeeder();
+        await seeder.SeedFacilitiesAsync(CancellationToken.None); // нужны аудитории для оснащения
+
+        var types = await seeder.SeedEquipmentAsync(CancellationToken.None);
+
+        Assert.True(types > 0);
+        Assert.Equal(types, await _context.Equipments.CountAsync());
+        // При EquipRoomsFraction по умолчанию (0.4) часть аудиторий оснащена.
+        Assert.True(await _context.EquipmentRooms.AnyAsync());
+    }
+
+    [Fact]
+    public async Task SeedEquipment_IsIdempotent()
+    {
+        var seeder = CreateSeeder();
+        await seeder.SeedFacilitiesAsync(CancellationToken.None);
+
+        await seeder.SeedEquipmentAsync(CancellationToken.None);
+        var firstTypes = await _context.Equipments.CountAsync();
+        var firstLinks = await _context.EquipmentRooms.CountAsync();
+
+        var second = await seeder.SeedEquipmentAsync(CancellationToken.None);
+
+        Assert.Equal(0, second); // каталог уже наполнен — пропущен
+        Assert.Equal(firstTypes, await _context.Equipments.CountAsync());
+        Assert.Equal(firstLinks, await _context.EquipmentRooms.CountAsync());
+    }
+
+    [Fact]
+    public async Task SeedConstraintWeights_PopulatesAllTypesOnce()
+    {
+        var seeder = CreateSeeder();
+
+        var count = await seeder.SeedConstraintWeightsAsync(CancellationToken.None);
+
+        Assert.Equal(4, count); // TeacherGap, StudentGap, ClassroomAvailability, TeacherAvailability
+        Assert.Equal(4, await _context.ConstraintConfigs.CountAsync());
+        Assert.All(await _context.ConstraintConfigs.ToListAsync(), c => Assert.True(c.Penalty > 0));
+
+        var second = await seeder.SeedConstraintWeightsAsync(CancellationToken.None);
+        Assert.Equal(0, second); // идемпотентно
+        Assert.Equal(4, await _context.ConstraintConfigs.CountAsync());
+    }
+
+    [Fact]
     public async Task SeedCalendarGrid_CreatesDaysAndPairsForEachWeek()
     {
         var (_, weekId) = await SeedSemesterWithWeekAsync();

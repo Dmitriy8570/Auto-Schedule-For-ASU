@@ -31,6 +31,9 @@ public sealed class InfrastructureSeedHostedService(
             using var scope = scopeFactory.CreateScope();
             var seeder = scope.ServiceProvider.GetRequiredService<IInfrastructureSeeder>();
             await seeder.SeedFacilitiesAsync(stoppingToken);
+            // Оборудование оснащает аудитории — наполняем после аудиторного фонда.
+            await seeder.SeedEquipmentAsync(stoppingToken);
+            await seeder.SeedConstraintWeightsAsync(stoppingToken);
             await seeder.SeedCalendarGridAsync(stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

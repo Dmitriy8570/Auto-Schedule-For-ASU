@@ -12,4 +12,11 @@ public class EquipmentRoom
 
     public Equipment Equipment { get; private set; } = null!;
     public Classroom Classroom { get; private set; } = null!;
+
+    /// <summary>Установить оборудование в аудиторию (создать связь «оборудование ↔ аудитория»).</summary>
+    public static EquipmentRoom Create(Guid equipmentId, Guid classroomId) => new()
+    {
+        EquipmentId = equipmentId,
+        ClassroomId = classroomId,
+    };
 }

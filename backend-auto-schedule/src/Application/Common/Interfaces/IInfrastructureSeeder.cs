@@ -12,6 +12,18 @@ public interface IInfrastructureSeeder
     Task<int> SeedFacilitiesAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Наполнить каталог оборудования (если пуст) и оснастить им часть аудиторий, чтобы
+    /// ограничение оборудования в солвере имело данные. Идемпотентно. Возвращает число типов оборудования.
+    /// </summary>
+    Task<int> SeedEquipmentAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Наполнить веса мягких ограничений (по одной записи на тип) значениями по умолчанию, если их
+    /// ещё нет, — чтобы вкладка «Веса» была настраиваемой, а солвер имел осмысленные штрафы. Идемпотентно.
+    /// </summary>
+    Task<int> SeedConstraintWeightsAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Достроить календарную сетку: для каждой недели без рабочих дней создать дни (Пн–Сб)
     /// и пары (1..N) согласно конфигурации. Возвращает число обработанных недель.
     /// </summary>
