@@ -1,9 +1,11 @@
 using Application.Common.Interfaces;
 using Domain.calendar;
+using Domain.constraints;
 using Domain.constraints.equipments;
 using Domain.constraints.penalty;
 using Domain.schedule;
 using Domain.university.buildings;
+using Domain.workload;
 using Infrastructure.Data;
 using Infrastructure.Mmis;
 using Microsoft.EntityFrameworkCore;
@@ -75,22 +77,40 @@ public sealed class InfrastructureSeeder(
             equipmentIds.Add(id);
         }
 
-        // Оснащаем часть аудиторий «универсальным» оборудованием (первые два типа каталога —
-        // проектор и ПК), чтобы ограничение оборудования в солвере имело данные. Детерминированно
-        // по индексу аудитории, поэтому повторный прогон дал бы тот же набор (но он гейтится выше).
+        // Оснащаем аудитории «по роли» (детерминированно по вместимости/индексу), чтобы требования
+        // оборудования на планах (см. SeedCurriculumRequirementsAsync) имели где выполняться:
+        //   • поточные залы (≥90): проектор + звуковая система;
+        //   • средние (≥45): проектор;
+        //   • часть малых (каждая 3-я) — компьютерные классы: ПК + лабораторное оборудование;
+        //   • все: маркерная доска.
+        var byName = names.ToDictionary(n => n, n => DeterministicGuid.For($"Equipment:{n}", 0));
+        Guid? Eq(string n) => byName.TryGetValue(n, out var id) ? id : null;
+
+        var rooms = await db.Classrooms.OrderBy(c => c.Name)
+            .Select(c => new { c.Id, c.Capacity }).ToListAsync(ct);
+        var seenLinks = new HashSet<(Guid Equip, Guid Room)>();
         int links = 0;
-        var fraction = Math.Clamp(_options.EquipRoomsFraction, 0, 1);
-        if (fraction > 0 && equipmentIds.Count > 0)
+        void Equip(Guid roomId, string equipmentName)
         {
-            var roomIds = await db.Classrooms.OrderBy(c => c.Name).Select(c => c.Id).ToListAsync(ct);
-            var universal = equipmentIds.Take(2).ToList();
-            int step = (int)Math.Max(1, Math.Round(1 / fraction));
-            for (int i = 0; i < roomIds.Count; i += step)
-                foreach (var equipmentId in universal)
-                {
-                    db.EquipmentRooms.Add(EquipmentRoom.Create(equipmentId, roomIds[i]));
-                    links++;
-                }
+            if (Eq(equipmentName) is { } equipmentId && seenLinks.Add((equipmentId, roomId)))
+            {
+                db.EquipmentRooms.Add(EquipmentRoom.Create(equipmentId, roomId));
+                links++;
+            }
+        }
+
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            var room = rooms[i];
+            Equip(room.Id, EquipmentCatalog.Board);
+            if (room.Capacity >= 90) { Equip(room.Id, EquipmentCatalog.Projector); Equip(room.Id, EquipmentCatalog.Sound); }
+            else if (room.Capacity >= 45) Equip(room.Id, EquipmentCatalog.Projector);
+
+            if (room.Capacity < 90 && i % 3 == 0)
+            {
+                Equip(room.Id, EquipmentCatalog.Computers);
+                Equip(room.Id, EquipmentCatalog.LabEquipment);
+            }
         }
 
         await db.SaveChangesAsync(ct);
@@ -162,5 +182,108 @@ public sealed class InfrastructureSeeder(
             "Сидинг календарной сетки: {Weeks} недель × {Days} дней × {Pairs} пар = {Slots} слотов.",
             weekIds.Count, days, pairs, weekIds.Count * days * pairs);
         return weekIds.Count;
+    }
+
+    public async Task<int> SeedCurriculumRequirementsAsync(CancellationToken ct)
+    {
+        if (!_options.SeedCurriculumRequirements) return 0;
+
+        // Требования статичны относительно планов: если хоть одно уже есть — пропускаем.
+        if (await db.NeededEquipments.AnyAsync(ct)) return 0;
+
+        var equipmentByName = await db.Equipments.ToDictionaryAsync(e => e.Name, e => e.Id, ct);
+        Guid? Eq(string name) => equipmentByName.TryGetValue(name, out var id) ? id : null;
+
+        var curricula = await db.Curriculums.Select(c => new { c.Id, c.LessonType }).ToListAsync(ct);
+        int links = 0;
+        foreach (var c in curricula)
+        {
+            // Лаба — ПК + лабораторное оборудование; лекция — проектор; семинар — без требований.
+            var required = c.LessonType switch
+            {
+                LessonType.Laboratory => new[] { Eq(EquipmentCatalog.Computers), Eq(EquipmentCatalog.LabEquipment) },
+                LessonType.Lecture => new[] { Eq(EquipmentCatalog.Projector) },
+                _ => Array.Empty<Guid?>(),
+            };
+
+            foreach (var equipmentId in required)
+                if (equipmentId is { } id)
+                {
+                    db.NeededEquipments.Add(NeededEquipment.Create(c.Id, id));
+                    links++;
+                }
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Сидинг требований оборудования на планы: {Links} требований на {Curricula} планов.",
+            links, curricula.Count);
+        return links;
+    }
+
+    public async Task<int> SeedTeacherAvailabilityAsync(CancellationToken ct)
+    {
+        if (!_options.SeedTeacherAvailability) return 0;
+
+        // Доступность статична: если уже есть записи — пропускаем.
+        if (await db.TeacherAvailabilities.AnyAsync(ct)) return 0;
+
+        var fraction = Math.Clamp(_options.EveningTeachersFraction, 0, 1);
+        if (fraction <= 0) return 0;
+
+        var teacherIds = await db.Teachers.OrderBy(t => t.Id).Select(t => t.Id).ToListAsync(ct);
+        if (teacherIds.Count == 0) return 0;
+
+        int days = Math.Clamp(_options.WorkingDays, 1, 7);
+        int step = (int)Math.Max(1, Math.Round(1 / fraction));
+
+        // «Вечерним» преподавателям ранние пары (1-2) нежелательны — мягкий штраф (Discouraged).
+        // Группы в dev-данных первой смены (жёстко пары 1-4), поэтому жёсткий «только вечер» сделал бы
+        // расписание неосуществимым; мягкая модель сдвигает их занятия к поздним из доступных пар.
+        int evening = 0;
+        for (int i = 0; i < teacherIds.Count; i += step)
+        {
+            for (int d = 0; d < days; d++)
+                for (int number = 1; number <= 2; number++)
+                    db.TeacherAvailabilities.Add(TeacherAvailability.Create(
+                        teacherIds[i], (WeekDayType)d, number, AvailabilityStates.DiscouragedPenalty));
+            evening++;
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Сидинг доступности преподавателей: {Count} «вечерних».", evening);
+        return evening;
+    }
+
+    public async Task<int> SeedFavoriteBuildingsAsync(CancellationToken ct)
+    {
+        if (!_options.SeedFavoriteBuildings) return 0;
+
+        var buildingIds = await db.Buildings.OrderBy(b => b.Name).Select(b => b.Id).ToListAsync(ct);
+        var instituteIds = await db.Institutes.OrderBy(i => i.Name).Select(i => i.Id).ToListAsync(ct);
+        if (buildingIds.Count == 0 || instituteIds.Count == 0) return 0;
+
+        // Институт → «домашний» корпус (детерминированно, по порядку имён).
+        var buildingByInstitute = new Dictionary<Guid, Guid>();
+        for (int i = 0; i < instituteIds.Count; i++)
+            buildingByInstitute[instituteIds[i]] = buildingIds[i % buildingIds.Count];
+
+        // Обновляем только планы без заданного корпуса — идемпотентно и переживает ресинк ММИС
+        // (синхронизация FavoriteBuildingId не трогает).
+        var curricula = await db.Curriculums
+            .Include(c => c.Teacher).ThenInclude(t => t.Department)
+            .Where(c => c.FavoriteBuildingId == null)
+            .ToListAsync(ct);
+
+        int updated = 0;
+        foreach (var c in curricula)
+            if (buildingByInstitute.TryGetValue(c.Teacher.Department.InstituteId, out var buildingId))
+            {
+                c.SetFavoriteBuilding(buildingId);
+                updated++;
+            }
+
+        if (updated > 0) await db.SaveChangesAsync(ct);
+        logger.LogInformation("Сидинг предпочтительных корпусов: обновлено планов — {Count}.", updated);
+        return updated;
     }
 }

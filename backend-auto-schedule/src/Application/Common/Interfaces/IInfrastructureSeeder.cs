@@ -28,4 +28,24 @@ public interface IInfrastructureSeeder
     /// и пары (1..N) согласно конфигурации. Возвращает число обработанных недель.
     /// </summary>
     Task<int> SeedCalendarGridAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Проставить требуемое оборудование на учебные планы по типу занятия (лаба → ПК и лабораторное
+    /// оборудование, лекция → проектор), чтобы ограничение оборудования в солвере имело данные.
+    /// Зависит от планов (ММИС) и каталога оборудования — выполняется после синхронизации. Идемпотентно.
+    /// </summary>
+    Task<int> SeedCurriculumRequirementsAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Пометить часть преподавателей «вечерними»: мягкий штраф за ранние пары (демонстрация
+    /// ограничения доступности преподавателя). Зависит от преподавателей (ММИС). Идемпотентно.
+    /// </summary>
+    Task<int> SeedTeacherAvailabilityAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Проставить предпочтительный («домашний») корпус планам — по институту их преподавателя
+    /// (мягкое ограничение FavoriteBuilding). Зависит от планов и корпусов. Идемпотентно (обновляет
+    /// только планы без заданного корпуса). Возвращает число обновлённых планов.
+    /// </summary>
+    Task<int> SeedFavoriteBuildingsAsync(CancellationToken cancellationToken);
 }

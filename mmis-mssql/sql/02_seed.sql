@@ -7,9 +7,11 @@
      - 36 групп (4 курса x 3 группы x 3 института), 20..30 студентов
      - 28 дисциплин (математика, информатика, физика, экономика, общеобразовательные)
      - 1 семестр = 18 недель (чередование красная/синяя)
-     - нагрузка группы зависит от курса: 16/15/14/13 пар/неделю (26..32 ч)
-     - суммарно 522 пары/неделю распределены между преподавателями по точным
-       целям 12..17 пар => у КАЖДОГО преподавателя 24..34 ч/неделю (в норме 20..40)
+     - учебный план задаётся на УРОВНЕ КУРСА: 5..6 дисциплин на курс; у каждой —
+       потоковая лекция (общие дисциплина+преподаватель для всех групп курса), семинар
+       на каждую группу и лаба для части дисциплин. MMIS хранит это по группам (лекция —
+       строкой на группу); Auto-Schedule при выгрузке объединяет совпадающие лекции
+       курса в один поток (см. StreamComposition)
      - семестровая и понедельная нагрузка по каждому плану
      - агрегированная нагрузка по преподавателям и группам (см. 03_views.sql)
    Договорённость: 1 пара = 2 академических часа.
@@ -155,64 +157,119 @@ SELECT @SemId, n,
 FROM W;
 
 /* ============================================================================
-   Учебный план и распределение нагрузки.
-   Идея: каждая строка плана = 1 пара/неделю. Объём группы (число строк) задаётся
-   курсом: 16/15/14/13. Все строки нумеруются (rn = 0..R-1), а каждому
-   преподавателю выделяется НЕПРЕРЫВНЫЙ диапазон ровно нужной длины (его «цель» —
-   12..17 пар). Так нагрузка точно укладывается в 24..34 ч/неделю у каждого.
+   Учебный план: дисциплины курса с ПОТОКОВЫМИ лекциями.
+   Идея: дисциплины задаются на УРОВНЕ КУРСА, а не группы, поэтому у всех групп курса
+   совпадает (дисциплина + преподаватель) лекции — Auto-Schedule при выгрузке схлопывает
+   их в один поток и читает лекцию один раз на все группы (StreamComposition). Семинары и
+   лабораторные остаются по группам (их ведут раздельно, нередко разными преподавателями).
+   На каждую дисциплину курса: 1 лекция (поток) + по семинару на группу + лаба для части
+   дисциплин. Точные часовые «цели» преподавателей здесь сознательно не выдерживаются —
+   приоритет отдан читаемости и появлению потоков.
+   1 строка плана = 1 пара/неделю.
    ============================================================================ */
-DECLARE @SubCount INT = (SELECT COUNT(*) FROM mmis.Subjects);
-
 DECLARE @Subj TABLE (idx INT, Id INT);
 INSERT @Subj SELECT ROW_NUMBER() OVER (ORDER BY Id) - 1, Id FROM mmis.Subjects;
 
-/* Преподаватели с персональной целью нагрузки (пар/неделю) и непрерывным
-   диапазоном строк плана [cumStart, cumEnd). Цель = 12 + (idx % 6) => 12..17. */
-DECLARE @Tch TABLE (idx INT, Id INT, target INT, cumStart INT, cumEnd INT);
-INSERT @Tch (idx, Id, target)
-SELECT ROW_NUMBER() OVER (ORDER BY Id) - 1,
-       Id,
-       12 + ((ROW_NUMBER() OVER (ORDER BY Id) - 1) % 6)
-FROM mmis.Teachers;
+/* Институты с индексом 0..2 (порядок вставки). */
+DECLARE @Inst TABLE (InstituteId INT, idx INT);
+INSERT @Inst SELECT Id, ROW_NUMBER() OVER (ORDER BY Id) - 1 FROM mmis.Institutes;
 
-UPDATE t
-SET cumStart = c.cs,
-    cumEnd   = c.cs + t.target
-FROM @Tch t
-JOIN (
-    SELECT idx,
-           cs = ISNULL(SUM(target) OVER (ORDER BY idx
-                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0)
-    FROM @Tch
-) c ON c.idx = t.idx;
+/* Преподаватели по институту (через кафедру) с порядковым номером и числом в институте. */
+DECLARE @TeacherInst TABLE (TeacherId INT, InstituteId INT, rn INT, cnt INT);
+INSERT @TeacherInst
+SELECT t.Id, d.InstituteId,
+       ROW_NUMBER() OVER (PARTITION BY d.InstituteId ORDER BY t.Id) - 1,
+       COUNT(*)    OVER (PARTITION BY d.InstituteId)
+FROM mmis.Teachers t
+JOIN mmis.Departments d ON d.Id = t.DepartmentId;
 
-;WITH
-Tally AS (SELECT TOP (16) k = ROW_NUMBER() OVER (ORDER BY (SELECT 1)) - 1 FROM sys.all_objects),
-GL AS (   -- объём (пар/неделю) для каждой группы по её курсу
-    SELECT g.Id AS GroupId,
-           gi    = ROW_NUMBER() OVER (ORDER BY g.Id) - 1,
-           pairs = CASE co.Number WHEN 1 THEN 16 WHEN 2 THEN 15 WHEN 3 THEN 14 ELSE 13 END
-    FROM mmis.Groups g
-    JOIN mmis.Courses co ON co.Id = g.CourseId
+/* Пул дисциплин по институту: профильный диапазон + общеобразовательные (всем). idx по 02_seed:
+   ИМИТ 0..11, МИЭМИС 12..18, ИЦТЭФ 19..23, общеобразовательные 24..27. */
+DECLARE @InstSubj TABLE (InstIdx INT, ord INT, SubjectId INT);
+;WITH Ranges AS (
+    SELECT InstIdx, lo, hi FROM (VALUES (0,0,11),(1,12,18),(2,19,23)) r(InstIdx, lo, hi)
 ),
-GroupPlan AS (  -- разворачиваем группу в её строки плана и нумеруем глобально
-    SELECT gl.GroupId, gl.gi, t.k,
-           rn = ROW_NUMBER() OVER (ORDER BY gl.gi, t.k) - 1
-    FROM GL gl
-    JOIN Tally t ON t.k < gl.pairs
+Pool AS (
+    SELECT r.InstIdx, s.idx AS SubjIdx, s.Id
+    FROM Ranges r JOIN @Subj s ON s.idx BETWEEN r.lo AND r.hi
+    UNION ALL
+    SELECT i.InstIdx, s.idx, s.Id
+    FROM (VALUES (0),(1),(2)) i(InstIdx)
+    JOIN @Subj s ON s.idx BETWEEN 24 AND 27
 )
+INSERT @InstSubj (InstIdx, ord, SubjectId)
+SELECT InstIdx, ROW_NUMBER() OVER (PARTITION BY InstIdx ORDER BY SubjIdx) - 1, Id
+FROM Pool;
+
+/* Курсы с институтом и номером. */
+DECLARE @Course TABLE (CourseId INT, InstituteId INT, InstIdx INT, Number INT);
+INSERT @Course
+SELECT co.Id, de.InstituteId, i.idx, co.Number
+FROM mmis.Courses co
+JOIN mmis.Degrees de ON de.Id = co.DegreeId
+JOIN @Inst i ON i.InstituteId = de.InstituteId;
+
+/* Группы с позицией внутри курса (0..2). */
+DECLARE @CourseGroup TABLE (CourseId INT, GroupId INT, gpos INT);
+INSERT @CourseGroup
+SELECT g.CourseId, g.Id, ROW_NUMBER() OVER (PARTITION BY g.CourseId ORDER BY g.Id) - 1
+FROM mmis.Groups g;
+
+/* Дисциплины курса: 6 на 1-2 курсах, 5 на 3-4. Дисциплина и лектор — уровня курса (общие
+   для всех групп ⇒ потоковая лекция). HasLab — у чётных по счёту дисциплин. */
+DECLARE @CourseDisc TABLE
+    (CourseId INT, InstituteId INT, Number INT, discIdx INT, SubjectId INT, LecturerId INT, HasLab BIT);
+
+;WITH DiscN AS (SELECT TOP (6) k = ROW_NUMBER() OVER (ORDER BY (SELECT 1)) - 1 FROM sys.all_objects)
+INSERT @CourseDisc (CourseId, InstituteId, Number, discIdx, SubjectId, HasLab)
+SELECT c.CourseId, c.InstituteId, c.Number, d.k,
+       isubj.SubjectId,
+       CASE WHEN d.k % 2 = 0 THEN 1 ELSE 0 END
+FROM @Course c
+JOIN DiscN d ON d.k < CASE WHEN c.Number <= 2 THEN 6 ELSE 5 END
+CROSS APPLY (
+    -- разные курсы одного института берут смещённые наборы дисциплин из общего пула
+    SELECT s.SubjectId
+    FROM @InstSubj s
+    WHERE s.InstIdx = c.InstIdx
+      AND s.ord = ((c.Number - 1) * 3 + d.k) % (SELECT COUNT(*) FROM @InstSubj s2 WHERE s2.InstIdx = c.InstIdx)
+) isubj;
+
+/* Лектор дисциплины — преподаватель института по детерминированному смещению. */
+UPDATE cd
+SET LecturerId = ti.TeacherId
+FROM @CourseDisc cd
+CROSS APPLY (
+    SELECT t.TeacherId FROM @TeacherInst t
+    WHERE t.InstituteId = cd.InstituteId AND t.rn = ((cd.discIdx * 5 + cd.Number * 3) % t.cnt)
+) ti;
+
+/* --- Лекции (поток): по строке на КАЖДУЮ группу курса, но одинаковые дисциплина и лектор --- */
 INSERT mmis.Curriculums(TeacherId, GroupId, SubjectId, LessonType, IsParallel, IsDouble, PairsPerWeek)
-SELECT
-    tc.Id,
-    p.GroupId,
-    s.Id,
-    p.k % 3,                                   -- 0 лекция, 1 семинар, 2 лаб (чередуются)
-    CASE WHEN p.k % 3 = 0 THEN 1 ELSE 0 END,   -- лекции параллельны
-    0,
-    1                                          -- 1 пара/неделю на строку плана
-FROM GroupPlan p
-JOIN @Tch tc ON p.rn >= tc.cumStart AND p.rn < tc.cumEnd
-JOIN @Subj s ON s.idx = (p.gi * 5 + p.k * 3) % @SubCount;
+SELECT cd.LecturerId, cg.GroupId, cd.SubjectId, 0, 1, 0, 1
+FROM @CourseDisc cd
+JOIN @CourseGroup cg ON cg.CourseId = cd.CourseId;
+
+/* --- Семинары: по строке на группу, преподаватель — по группе (другое смещение) --- */
+INSERT mmis.Curriculums(TeacherId, GroupId, SubjectId, LessonType, IsParallel, IsDouble, PairsPerWeek)
+SELECT ti.TeacherId, cg.GroupId, cd.SubjectId, 1, 0, 0, 1
+FROM @CourseDisc cd
+JOIN @CourseGroup cg ON cg.CourseId = cd.CourseId
+CROSS APPLY (
+    SELECT t.TeacherId FROM @TeacherInst t
+    WHERE t.InstituteId = cd.InstituteId AND t.rn = ((cd.discIdx * 2 + cg.gpos + 3) % t.cnt)
+) ti;
+
+/* --- Лабораторные: по строке на группу для дисциплин с HasLab=1 --- */
+INSERT mmis.Curriculums(TeacherId, GroupId, SubjectId, LessonType, IsParallel, IsDouble, PairsPerWeek)
+SELECT ti.TeacherId, cg.GroupId, cd.SubjectId, 2, 0, 0, 1
+FROM @CourseDisc cd
+JOIN @CourseGroup cg ON cg.CourseId = cd.CourseId
+CROSS APPLY (
+    SELECT t.TeacherId FROM @TeacherInst t
+    WHERE t.InstituteId = cd.InstituteId AND t.rn = ((cd.discIdx * 2 + cg.gpos + 6) % t.cnt)
+) ti
+WHERE cd.HasLab = 1;
 
 /* ---------- Семестровая нагрузка (1 пара = 2 ак. часа, 18 недель) ---------- */
 INSERT mmis.SemesterWorkloads(CurriculumId, SemesterId, Hours)

@@ -1,5 +1,18 @@
 namespace Infrastructure.Seed;
 
+/// <summary>
+/// Имена типов оборудования, на которые опирается сидер при оснащении аудиторий и проставлении
+/// требований на планы. Вынесены в константы, чтобы каталог и правила оснащения не расходились.
+/// </summary>
+public static class EquipmentCatalog
+{
+    public const string Projector = "Проектор";
+    public const string Computers = "Компьютеры";
+    public const string LabEquipment = "Лабораторное оборудование";
+    public const string Board = "Маркерная доска";
+    public const string Sound = "Звуковая система";
+}
+
 /// <summary>Настройки сидера инфраструктуры (секция конфигурации "InfrastructureSeed").</summary>
 public sealed class InfrastructureSeedOptions
 {
@@ -20,6 +33,18 @@ public sealed class InfrastructureSeedOptions
     /// <summary>Наполнять ли веса мягких ограничений (по одному на тип) значениями по умолчанию.</summary>
     public bool SeedConstraintWeights { get; set; } = true;
 
+    /// <summary>Проставлять ли требуемое оборудование на учебные планы (лаба → ПК/лаб. оборудование, лекция → проектор).</summary>
+    public bool SeedCurriculumRequirements { get; set; } = true;
+
+    /// <summary>Помечать ли часть преподавателей «вечерними» (мягкий штраф за ранние пары).</summary>
+    public bool SeedTeacherAvailability { get; set; } = true;
+
+    /// <summary>Проставлять ли предпочтительный («домашний») корпус планам по институту преподавателя.</summary>
+    public bool SeedFavoriteBuildings { get; set; } = true;
+
+    /// <summary>Доля «вечерних» преподавателей (0..1): каждому раннему слоту (пары 1-2) ставится мягкий штраф.</summary>
+    public double EveningTeachersFraction { get; set; } = 0.2;
+
     /// <summary>
     /// Доля аудиторий (0..1), в которые ставится «универсальное» оборудование из начала каталога
     /// (проектор, ПК и т.п.), чтобы ограничение оборудования в солвере было наполнено. 0 — не оснащать.
@@ -35,12 +60,12 @@ public sealed class InfrastructureSeedOptions
     /// <summary>Встроенный каталог оборудования аудиторий.</summary>
     public static string[] DefaultEquipment() =>
     [
-        "Проектор",
-        "Компьютеры",
+        EquipmentCatalog.Projector,
+        EquipmentCatalog.Computers,
         "Интерактивная доска",
-        "Лабораторное оборудование",
-        "Маркерная доска",
-        "Звуковая система",
+        EquipmentCatalog.LabEquipment,
+        EquipmentCatalog.Board,
+        EquipmentCatalog.Sound,
     ];
 
     /// <summary>Число рабочих дней в неделе, начиная с понедельника (по умолчанию 6 — Пн–Сб).</summary>

@@ -84,6 +84,12 @@ public class Curriculum
     }
 
     /// <summary>
+    /// Задать предпочтительный корпус (мягкое ограничение), не затрагивая остальные ограничения плана.
+    /// В отличие от <see cref="SetConstraints"/>, не сбрасывает <see cref="Parallelism"/>/<see cref="Double"/>.
+    /// </summary>
+    public void SetFavoriteBuilding(Guid? favoriteBuildingId) => FavoriteBuildingId = favoriteBuildingId;
+
+    /// <summary>
     /// Привести состав необходимого оборудования к заданному набору. Реализовано через разницу
     /// (а не Clear + повторное добавление), чтобы не создавать конфликт отслеживания EF при
     /// сохранении связей с прежним составным ключом (CurriculumId, EquipmentId).

@@ -46,10 +46,13 @@ public sealed class MmisSyncService(
 
                 await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
-                var (upserts, curriculumsToDelete) = await UpsertReferenceAsync(snapshot, cancellationToken);
+                // Композиция потоков по снимку: какие по-групповые лекции схлопнуть в потоки.
+                var composition = StreamComposition.Build(snapshot);
+
+                var (upserts, curriculumsToDelete) = await UpsertReferenceAsync(snapshot, composition, cancellationToken);
                 refUpserts = upserts;
 
-                var diff = await DiffWorkloadsAsync(snapshot, now, cancellationToken);
+                var diff = await DiffWorkloadsAsync(snapshot, composition, now, cancellationToken);
                 added = diff.Added;
                 updated = diff.Updated;
                 deleted = diff.Deleted;
@@ -71,6 +74,12 @@ public sealed class MmisSyncService(
             // Недели семестра уже в БД — достраиваем рабочие дни и пары (ось «время» солвера).
             // Идемпотентно: новые недели получают сетку, существующие пропускаются.
             await seeder.SeedCalendarGridAsync(cancellationToken);
+
+            // Ограничения, зависящие от данных ММИС (планы/преподаватели), — после переноса справочников.
+            // Все идемпотентны (гейтятся наличием), поэтому повторный синк их не дублирует.
+            await seeder.SeedCurriculumRequirementsAsync(cancellationToken);
+            await seeder.SeedTeacherAvailabilityAsync(cancellationToken);
+            await seeder.SeedFavoriteBuildingsAsync(cancellationToken);
 
             var result = new MmisSyncResult(added, updated, deleted, refUpserts, sw.Elapsed);
             status.RecordSuccess(result);
@@ -96,7 +105,7 @@ public sealed class MmisSyncService(
 
     /// <summary>Идемпотентный upsert справочников в порядке внешних ключей. Возвращает кол-во вставок и пропавшие планы на удаление.</summary>
     private async Task<(int Upserts, List<Curriculum> CurriculumsToDelete)> UpsertReferenceAsync(
-        MmisSnapshot s, CancellationToken ct)
+        MmisSnapshot s, StreamComposition composition, CancellationToken ct)
     {
         var upserts = 0;
         void Set(object entity, string prop, object? value) => db.Entry(entity).Property(prop).CurrentValue = value;
@@ -184,19 +193,36 @@ public sealed class MmisSyncService(
             else { db.Groups.Add(Group.Create(id, m.Name, shift, m.StudentCount, courseId)); upserts++; }
         }
 
-        // Потоки: 1 группа → 1 поток (+ связка StreamGroups).
+        // Потоки. По-групповые потоки (Stream:{groupId}) — основа для семинаров/лабораторных
+        // (их ведут раздельно). Поверх них добавляются лекционные потоки: лекции одного
+        // преподавателя по одной дисциплине у групп одного курса объединяются в общий поток
+        // (см. <see cref="StreamComposition"/>), чтобы лекция читалась один раз на все группы.
         var streams = await db.AcademicStreams.ToDictionaryAsync(x => x.Id, ct);
         var links = (await db.StreamGroups.ToListAsync(ct))
             .Select(l => (l.StreamId, l.GroupId)).ToHashSet();
+
+        void UpsertStream(Guid streamId, int studentsCount)
+        {
+            if (streams.TryGetValue(streamId, out var e)) Set(e, nameof(AcademicStream.StudentsCount), studentsCount);
+            else { db.AcademicStreams.Add(AcademicStream.Create(streamId, studentsCount)); upserts++; }
+        }
+        void LinkGroup(Guid streamId, Guid groupId)
+        {
+            if (links.Add((streamId, groupId))) db.StreamGroups.Add(StreamGroups.Create(groupId, streamId));
+        }
+
         foreach (var m in s.Groups)
         {
             var streamId = Id("Stream", m.Id);
-            var groupId = Id("Group", m.Id);
-            if (streams.TryGetValue(streamId, out var e)) Set(e, nameof(AcademicStream.StudentsCount), m.StudentCount);
-            else { db.AcademicStreams.Add(AcademicStream.Create(streamId, m.StudentCount)); upserts++; }
+            UpsertStream(streamId, m.StudentCount);
+            LinkGroup(streamId, Id("Group", m.Id));
+        }
 
-            if (links.Add((streamId, groupId)))
-                db.StreamGroups.Add(StreamGroups.Create(groupId, streamId));
+        foreach (var ms in composition.MergedStreams)
+        {
+            UpsertStream(ms.StreamId, ms.StudentsCount);
+            foreach (var groupMmisId in ms.GroupMmisIds)
+                LinkGroup(ms.StreamId, Id("Group", groupMmisId));
         }
 
         // Дисциплины.
@@ -245,29 +271,41 @@ public sealed class MmisSyncService(
         // Учебные планы (Curriculum → AcademicStream группы).
         var curriculums = await db.Curriculums.ToDictionaryAsync(x => x.Id, ct);
         var seenCurriculums = new HashSet<Guid>();
-        foreach (var m in s.Curriculums)
+
+        void UpsertCurriculum(Guid id, Guid teacherId, Guid streamId, Guid subjectId, LessonType lessonType, bool parallel, bool dbl)
         {
-            var id = Id("Curriculum", m.Id);
             seenCurriculums.Add(id);
-            var teacherId = Id("Teacher", m.TeacherId);
-            var streamId = Id("Stream", m.GroupId);
-            var subjectId = Id("Subject", m.SubjectId);
-            var lessonType = (LessonType)m.LessonType;
             if (curriculums.TryGetValue(id, out var e))
             {
                 Set(e, nameof(Curriculum.TeacherId), teacherId);
                 Set(e, nameof(Curriculum.StreamId), streamId);
                 Set(e, nameof(Curriculum.SubjectId), subjectId);
                 Set(e, nameof(Curriculum.LessonType), lessonType);
-                Set(e, nameof(Curriculum.Parallelism), m.IsParallel);
-                Set(e, nameof(Curriculum.Double), m.IsDouble);
+                Set(e, nameof(Curriculum.Parallelism), parallel);
+                Set(e, nameof(Curriculum.Double), dbl);
             }
             else
             {
-                db.Curriculums.Add(Curriculum.Create(id, teacherId, streamId, subjectId, lessonType, m.IsParallel, m.IsDouble));
+                db.Curriculums.Add(Curriculum.Create(id, teacherId, streamId, subjectId, lessonType, parallel, dbl));
                 upserts++;
             }
         }
+
+        foreach (var m in s.Curriculums)
+        {
+            // По-групповые лекции, поглощённые потоком, не создаём — их заменяет план потока ниже.
+            if (composition.AbsorbedCurriculumIds.Contains(m.Id)) continue;
+
+            UpsertCurriculum(
+                Id("Curriculum", m.Id), Id("Teacher", m.TeacherId), Id("Stream", m.GroupId),
+                Id("Subject", m.SubjectId), (LessonType)m.LessonType, m.IsParallel, m.IsDouble);
+        }
+
+        // Планы лекционных потоков — по одному на поток (план первичного участника, перенесённый на поток).
+        foreach (var mc in composition.MergedCurriculums)
+            UpsertCurriculum(
+                mc.Id, Id("Teacher", mc.TeacherMmisId), mc.StreamId, Id("Subject", mc.SubjectMmisId),
+                LessonType.Lecture, mc.IsParallel, mc.IsDouble);
 
         // Пропавшие в MMIS планы — на удаление (их нагрузка снимется отдельно в diff'е).
         var curriculumsToDelete = curriculums.Where(kv => !seenCurriculums.Contains(kv.Key))
@@ -277,24 +315,38 @@ public sealed class MmisSyncService(
     }
 
     /// <summary>Диф нагрузки с журналированием. Сами удаления (RemoveRange) выполняет вызывающий код во 2-й фазе.</summary>
-    private async Task<WorkloadDiff> DiffWorkloadsAsync(MmisSnapshot s, DateTime now, CancellationToken ct)
+    private async Task<WorkloadDiff> DiffWorkloadsAsync(
+        MmisSnapshot s, StreamComposition composition, DateTime now, CancellationToken ct)
     {
         var diff = new WorkloadDiff();
+
+        // План потока, на который нужно перенаправить нагрузку лекции, либо null — нагрузку поглотить
+        // (не-первичный участник потока), либо обычный по-групповой план (значение по умолчанию).
+        Guid? TargetCurriculum(int curriculumMmisId)
+        {
+            if (composition.PrimaryCurriculumToMerged.TryGetValue(curriculumMmisId, out var merged)) return merged;
+            if (composition.AbsorbedCurriculumIds.Contains(curriculumMmisId)) return null; // поглощена потоком
+            return Id("Curriculum", curriculumMmisId);
+        }
 
         // Семестровая нагрузка.
         var existingSem = await db.SemesterWorkloads.ToDictionaryAsync(x => x.Id, ct);
         var seenSem = new HashSet<Guid>();
         foreach (var m in s.SemesterWorkloads)
         {
+            if (TargetCurriculum(m.CurriculumId) is not { } curriculumId) continue;
+
             var id = Id("SemWl", m.Id);
             seenSem.Add(id);
             if (existingSem.TryGetValue(id, out var e))
             {
+                // Перенаправляем план на случай объединения в поток (для обычных нагрузок — то же значение).
+                db.Entry(e).Property(nameof(SemesterWorkload.CurriculumId)).CurrentValue = curriculumId;
                 if (e.ChangeHours(m.Hours, now)) diff.Updated++;
             }
             else
             {
-                var wl = SemesterWorkload.Create(id, m.Hours, Id("Curriculum", m.CurriculumId), Id("Semester", m.SemesterId));
+                var wl = SemesterWorkload.Create(id, m.Hours, curriculumId, Id("Semester", m.SemesterId));
                 wl.RecordAdded(now);
                 db.SemesterWorkloads.Add(wl);
                 diff.Added++;
@@ -313,16 +365,19 @@ public sealed class MmisSyncService(
         var seenWeek = new HashSet<Guid>();
         foreach (var m in s.WeekWorkloads)
         {
+            if (TargetCurriculum(m.CurriculumId) is not { } curriculumId) continue;
+
             var id = Id("WeekWl", m.Id);
             seenWeek.Add(id);
             if (existingWeek.TryGetValue(id, out var e))
             {
+                db.Entry(e).Property(nameof(WeekWorkload.CurriculumId)).CurrentValue = curriculumId;
                 if (e.ChangeHours(m.Hours, now)) diff.Updated++;
             }
             else
             {
                 var wl = WeekWorkload.Create(
-                    id, m.Hours, Id("Curriculum", m.CurriculumId), Id("Week", m.WeekId), Id("SemWl", m.SemesterWorkloadId));
+                    id, m.Hours, curriculumId, Id("Week", m.WeekId), Id("SemWl", m.SemesterWorkloadId));
                 wl.RecordAdded(now);
                 db.WeekWorkloads.Add(wl);
                 diff.Added++;

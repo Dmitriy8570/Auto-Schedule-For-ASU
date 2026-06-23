@@ -2,6 +2,7 @@ using System.Runtime;
 using Application.Common.Interfaces;
 using Application.Solver.Builder;
 using Application.Solver.Builder.BuildSections;
+using Application.Solver.Compaction;
 using Application.Solver.Mapping;
 using Application.Solver.Model;
 using Application.Solver.Solving;
@@ -157,6 +158,16 @@ public sealed class GenerateInstituteScheduleCommandHandler
             return new GenerateScheduleResult(
                 failed > 0 ? "Infeasible" : "Empty", 0, objective, wallSeconds)
             { Unplaced = shortfalls };
+
+        // Пост-уплотнение: последовательная декомпозиция оставляет «окна» (преподаватель/группа
+        // получают слот «застолблённым» ранее обработанной подзадачей). Штраф за окно мягкий и не
+        // пересиливает жёсткую блокировку, поэтому окна убираем здесь — детерминированной
+        // перестановкой уже размещённых пар в более ранние свободные слоты того же дня при сохранении
+        // всех жёстких ограничений (ресурсы других институтов берём из исходных занятых слотов).
+        ScheduleCompactor.Compact(
+            placed, data,
+            data.OccupiedClassroomSlots ?? Array.Empty<OccupiedSlot>(),
+            data.OccupiedTeacherSlots ?? Array.Empty<OccupiedTeacherSlot>());
 
         // Заменяем расписание института новым черновиком одной SERIALIZABLE-транзакцией (поиск
         // выполнен выше, вне транзакции): удаление прежнего и вставка нового атомарны и согласованы

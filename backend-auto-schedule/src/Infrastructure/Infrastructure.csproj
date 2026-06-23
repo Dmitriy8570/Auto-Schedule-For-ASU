@@ -26,4 +26,9 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Внутренние детали (напр. композиция потоков MMIS) видны юнит-тестам. -->
+    <InternalsVisibleTo Include="Schedule.DevSolver.Tests" />
+  </ItemGroup>
+
 </Project>
