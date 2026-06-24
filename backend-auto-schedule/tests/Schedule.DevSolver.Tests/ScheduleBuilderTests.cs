@@ -106,7 +106,7 @@ public sealed class ScheduleBuilderTests
         IReadOnlyList<SemesterWorkload> workloads,
         IReadOnlyList<Classroom> classrooms,
         IReadOnlyList<TimeSlot> timeSlots) =>
-        new(workloads, classrooms, timeSlots, Array.Empty<ConstraintConfig>());
+        new(workloads.ToItems(), classrooms, timeSlots, Array.Empty<ConstraintConfig>());
 
     private static (CpSolverStatus status, CpSolver solver, ScheduleModel model) Solve(
         ScheduleData data, params IModelSectionBuilder[] builders)
@@ -312,7 +312,7 @@ public sealed class ScheduleBuilderTests
         var busy = Slot(1);  // индекс слота 0 — занят
         var free = Slot(2);  // индекс слота 1 — свободен
         var data = new ScheduleData(
-            new[] { Workload(hours: 2) },                  // 1 пара
+            new[] { Workload(hours: 2) }.ToItems(),        // 1 пара
             new[] { room },
             new[] { busy, free },
             Array.Empty<ConstraintConfig>(),
@@ -333,7 +333,7 @@ public sealed class ScheduleBuilderTests
         var busy = Slot(1);  // индекс слота 0 — преподаватель занят
         var free = Slot(2);
         var data = new ScheduleData(
-            new[] { WorkloadWithTeacher(hours: 2, teacherId: teacher) },
+            new[] { WorkloadWithTeacher(hours: 2, teacherId: teacher) }.ToItems(),
             new[] { Room(50) },
             new[] { busy, free },
             Array.Empty<ConstraintConfig>(),

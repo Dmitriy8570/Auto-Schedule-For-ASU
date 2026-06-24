@@ -15,7 +15,7 @@ public class ShiftSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            var groups = model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups;
+            var groups = model.Data.Workloads[w].Curriculum.Stream.StreamGroups;
             if (groups.Count == 0) continue;
 
             for (int t = 0; t < model.TimeSlotCount; t++)

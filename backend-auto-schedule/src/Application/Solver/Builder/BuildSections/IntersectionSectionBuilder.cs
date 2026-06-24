@@ -37,7 +37,7 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
         // одна и та же сущность может прийти разными экземплярами, и группировка по ссылке
         // перестала бы объединять нагрузки одного преподавателя.
         var byTeacher = Enumerable.Range(0, model.WorkloadCount)
-            .GroupBy(w => model.Data.SemesterWorkloads[w].Curriculum.TeacherId);
+            .GroupBy(w => model.Data.Workloads[w].Curriculum.TeacherId);
 
         foreach (var group in byTeacher)
             SubjectExclusivity(model, group.ToList());
@@ -47,7 +47,7 @@ public class IntersectionSectionBuilder : IModelSectionBuilder
     private static void GroupExclusivity(ScheduleModel model)
     {
         var byGroup = Enumerable.Range(0, model.WorkloadCount)
-            .SelectMany(w => model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups
+            .SelectMany(w => model.Data.Workloads[w].Curriculum.Stream.StreamGroups
                 .Select(sg => (Workload: w, sg.GroupId)))
             .GroupBy(x => x.GroupId, x => x.Workload);
 

@@ -22,11 +22,11 @@ public class ParallelismSectionBuilder : IModelSectionBuilder
     {
         // Наборы нагрузок: ключ — (дисциплина, родительская группа).
         var parallelSets = Enumerable.Range(0, model.WorkloadCount)
-            .Where(w => model.Data.SemesterWorkloads[w].Curriculum.Parallelism)
-            .SelectMany(w => model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups
+            .Where(w => model.Data.Workloads[w].Curriculum.Parallelism)
+            .SelectMany(w => model.Data.Workloads[w].Curriculum.Stream.StreamGroups
                 .Where(sg => sg.Group.ParentGroupId is not null)
                 .Select(sg => (Workload: w,
-                               Key: (model.Data.SemesterWorkloads[w].Curriculum.SubjectId,
+                               Key: (model.Data.Workloads[w].Curriculum.SubjectId,
                                      ParentId: sg.Group.ParentGroupId!.Value))))
             .GroupBy(x => x.Key, x => x.Workload)
             .Select(g => g.Distinct().ToList())

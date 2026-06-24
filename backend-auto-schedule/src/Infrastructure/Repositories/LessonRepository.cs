@@ -135,6 +135,14 @@ public sealed class LessonRepository(ApplicationDbContext context) : ILessonRepo
             .Where(l => l.SemesterId == semesterId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Lesson>> GetByWeekAsync(
+        Guid weekId, Guid? instituteId, CancellationToken cancellationToken) =>
+        await context.Lessons
+            .Where(l => l.TimeSlot.WeekDay.Week.Id == weekId)
+            .Where(l => instituteId == null
+                || l.Stream.StreamGroups.Any(sg => sg.Group.Course.Degree.InstituteId == instituteId.Value))
+            .ToListAsync(cancellationToken);
+
     public void RemoveRange(IEnumerable<Lesson> lessons) => context.Lessons.RemoveRange(lessons);
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)

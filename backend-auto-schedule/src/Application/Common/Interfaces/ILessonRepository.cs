@@ -33,6 +33,13 @@ public interface ILessonRepository
     /// <summary>Все занятия семестра.</summary>
     Task<IReadOnlyList<Lesson>> GetBySemesterAsync(Guid semesterId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Занятия одной недели (отслеживаемые — для замены при понедельной генерации). При заданном
+    /// <paramref name="instituteId"/> — только занятия этого института, иначе вся неделя.
+    /// </summary>
+    Task<IReadOnlyList<Lesson>> GetByWeekAsync(
+        Guid weekId, Guid? instituteId, CancellationToken cancellationToken);
+
     /// <summary>Удалить набор занятий (старое расписание).</summary>
     void RemoveRange(IEnumerable<Lesson> lessons);
 

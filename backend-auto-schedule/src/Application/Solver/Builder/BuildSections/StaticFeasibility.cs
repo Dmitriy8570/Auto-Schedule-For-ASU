@@ -1,6 +1,6 @@
+using Application.Solver.Model;
 using Domain.schedule;
 using Domain.university.buildings;
-using Domain.workload;
 
 namespace Application.Solver.Builder.BuildSections;
 
@@ -16,7 +16,7 @@ namespace Application.Solver.Builder.BuildSections;
 internal static class StaticFeasibility
 {
     /// <summary>Аудитория заведомо непригодна для нагрузки (вместимость или оборудование).</summary>
-    public static bool RoomForbidden(SemesterWorkload workload, Classroom classroom)
+    public static bool RoomForbidden(WorkloadItem workload, Classroom classroom)
     {
         int students = workload.Curriculum?.Stream?.StudentsCount ?? 0;
         if (students > 0 && !classroom.CanAccommodate(students))
@@ -34,7 +34,7 @@ internal static class StaticFeasibility
     }
 
     /// <summary>Слот заведомо запрещён нагрузке по смене (хотя бы одна группа потока не может в нём заниматься).</summary>
-    public static bool SlotForbidden(SemesterWorkload workload, TimeSlot timeSlot)
+    public static bool SlotForbidden(WorkloadItem workload, TimeSlot timeSlot)
     {
         var groups = workload.Curriculum?.Stream?.StreamGroups;
         if (groups is null || groups.Count == 0)

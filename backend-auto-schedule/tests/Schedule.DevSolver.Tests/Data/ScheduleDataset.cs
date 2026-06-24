@@ -10,6 +10,8 @@ using Domain.workload;
 
 namespace Schedule.DevSolver.Tests.Data;
 
+using Schedule.DevSolver.Tests; // TestWorkloads.ToItems
+
 /// <summary>
 /// Полный набор сущностей задачи в виде, удобном и для солвера (через <see cref="ToScheduleData"/>),
 /// и для выгрузки отчётов. Заполняется загрузчиком <see cref="UniversityDataLoader"/> из файлов.
@@ -51,7 +53,7 @@ public sealed class ScheduleDataset
     public List<TimeSlot> TimeSlots { get; } = new();
     public List<ConstraintConfig> Penalties { get; } = new();
 
-    public ScheduleData ToScheduleData() => new(Workloads, Classrooms, TimeSlots, Penalties);
+    public ScheduleData ToScheduleData() => new(Workloads.ToItems(), Classrooms, TimeSlots, Penalties);
 
     public WeekType WeekTypeOf(TimeSlot slot) => slot.WeekDay.Week.WeekType;
 

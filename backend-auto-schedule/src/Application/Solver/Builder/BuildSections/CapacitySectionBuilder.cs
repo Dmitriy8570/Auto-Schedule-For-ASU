@@ -14,7 +14,7 @@ public class CapacitySectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            int students = model.Data.SemesterWorkloads[w].Curriculum.Stream.StudentsCount;
+            int students = model.Data.Workloads[w].Curriculum.Stream.StudentsCount;
             if (students <= 0) continue;
 
             for (int r = 0; r < model.ClassroomCount; r++)

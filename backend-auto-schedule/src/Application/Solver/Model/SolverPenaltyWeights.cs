@@ -32,6 +32,16 @@ public sealed record SolverPenaltyWeights
     /// <summary>Штраф за отклонение от слотов прошлого семестра (якорь «C»).</summary>
     public int AnchorTimeSlot { get; init; } = 1;
 
+    /// <summary>
+    /// Штраф за каждый учебный день, в который у группы есть хотя бы одно занятие (компактность).
+    /// Минимизация числа дней собирает недельную нагрузку в меньшее число плотных дней (в связке с
+    /// дневным лимитом — ~3–4 пары в день) вместо размазывания 1–2 пар по всем дням недели.
+    /// </summary>
+    public int GroupDayUsage { get; init; } = 20;
+
+    /// <summary>Штраф за каждый учебный день преподавателя (компактность нагрузки преподавателя).</summary>
+    public int TeacherDayUsage { get; init; } = 10;
+
     /// <summary>Значения по умолчанию (эквивалентны прежним зашитым константам).</summary>
     public static SolverPenaltyWeights Default { get; } = new();
 }

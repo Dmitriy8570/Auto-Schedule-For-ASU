@@ -20,7 +20,7 @@ public class VariablesSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            var workload = model.Data.SemesterWorkloads[w];
+            var workload = model.Data.Workloads[w];
 
             for (int r = 0; r < model.ClassroomCount; r++)
             {

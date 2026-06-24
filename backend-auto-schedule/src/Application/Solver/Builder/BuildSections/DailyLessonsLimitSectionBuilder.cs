@@ -25,11 +25,11 @@ public class DailyLessonsLimitSectionBuilder : IModelSectionBuilder
             .ToList();
 
         var byTeacher = Enumerable.Range(0, model.WorkloadCount)
-            .GroupBy(w => model.Data.SemesterWorkloads[w].Curriculum.Teacher.Id)
+            .GroupBy(w => model.Data.Workloads[w].Curriculum.Teacher.Id)
             .Select(g => g.ToList());
 
         var byGroup = Enumerable.Range(0, model.WorkloadCount)
-            .SelectMany(w => model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups
+            .SelectMany(w => model.Data.Workloads[w].Curriculum.Stream.StreamGroups
                 .Select(sg => (Workload: w, sg.Group.Id)))
             .GroupBy(x => x.Id, x => x.Workload)
             .Select(g => g.ToList());

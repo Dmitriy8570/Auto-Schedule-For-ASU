@@ -16,7 +16,7 @@ public sealed class ScheduleResultMapper : IScheduleResultMapper
         var lessons = new List<Lesson>(assignments.Count);
         foreach (var a in assignments)
         {
-            var curriculum = data.SemesterWorkloads[a.Workload].Curriculum;
+            var curriculum = data.Workloads[a.Workload].Curriculum;
             var streamId = curriculum.StreamId;
             var classroomId = data.Classrooms[a.Room].Id;
             var timeSlotId = data.TimeSlots[a.Slot].Id;

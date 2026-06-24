@@ -19,7 +19,7 @@ import { useLookupsStore } from '../stores/lookups'
 import type {
   InstituteDto, DepartmentDto, TeacherDto, DegreeDto, CourseDto, GroupDto, BuildingDto, RoomDto,
   SemesterDto, WeekDto, LessonDTO, DomainLessonType, TimeSlotDto, CurriculumOptionDto,
-  GenerationJobStatus, GenerateScheduleResult, WorkloadShortfall,
+  GenerationJobStatus, WorkloadShortfall, GenerationProgress,
 } from '../api/types'
 
 type Entity = 'teachers' | 'groups' | 'rooms'
@@ -309,6 +309,7 @@ function cancelMove() {
 }
 
 async function onCellClick(dayIdx: number, pair: number) {
+  if (readOnly.value) return // во время генерации — только просмотр
   const existing = cellAt(dayIdx, pair)
   if (moveMode.value && movingLesson.value) {
     if (existing) return // занятая ячейка — переместить нельзя
@@ -350,6 +351,7 @@ const dragOverKey = ref<string | null>(null)
 const cellKey = (dayIdx: number, pair: number) => `${dayIdx}-${pair}`
 
 function onDragStart(l: LessonDTO, e: DragEvent) {
+  if (readOnly.value) { e.preventDefault(); return } // во время генерации перетаскивание выключено
   draggingLesson.value = l
   selectedLesson.value = null
   if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', l.id) }
@@ -434,14 +436,30 @@ watch(selSemester, async (id) => {
   selectedWeekId.value = current?.id ?? weeks.value[0]?.id ?? ''
 })
 
-// ───────── Автогенерация (модальное окно + блокирующий оверлей) ─────────
+// ───────── Автогенерация (понедельная, ненавязчивая карточка прогресса) ─────────
 
 const genModalOpen = ref(false)
 const genScope = ref<'institute' | 'university'>('institute')
 const genInstituteId = ref('')
-const generating = ref(false)     // показывает блокирующий оверлей «идёт генерация»
-const genProgress = ref('')       // текст прогресса в оверлее
-const genError = ref('')          // ошибка/подсказка внутри модального окна
+const generating = ref(false)                 // идёт фоновая генерация (без блокировки экрана)
+const genJobId = ref<string | null>(null)     // id текущей задачи — для отмены
+const genProgressInfo = ref<GenerationProgress | null>(null)
+const genError = ref('')                       // ошибка/подсказка внутри модального окна
+
+// На время генерации расписание доступно только для просмотра; готовые недели появляются вживую.
+const readOnly = computed(() => generating.value)
+
+// Подпись текущего шага прогресса: «Неделя 5/16 · 06.10–12.10 · синяя».
+const genProgressLabel = computed(() => {
+  const p = genProgressInfo.value
+  if (!p) return 'Подготовка…'
+  const type = p.weekType === 'Red' ? 'красная' : 'синяя'
+  return `Неделя ${p.currentWeek}/${p.totalWeeks} · ${p.weekLabel} · ${type}`
+})
+const genProgressPct = computed(() => {
+  const p = genProgressInfo.value
+  return p && p.totalWeeks > 0 ? Math.round((p.currentWeek / p.totalWeeks) * 100) : 0
+})
 
 // Итог генерации: нагрузки, которые не удалось разместить полностью («кто и почему»).
 type UnplacedRow = WorkloadShortfall & { institute?: string }
@@ -455,27 +473,24 @@ const lessonTypeLabel = (t: WorkloadShortfall['lessonType']) =>
   lessonTypeMeta[t as DomainLessonType]?.label ?? t
 
 function openGenModal() {
+  if (generating.value) return
   genError.value = ''
   genScope.value = 'institute'
   genInstituteId.value = selInstitute.value || institutes.value[0]?.id || ''
   genModalOpen.value = true
 }
 function closeGenModal() {
-  if (generating.value) return // во время генерации окно закрыть нельзя
   genModalOpen.value = false
 }
 
-// Поллинг статуса фоновой генерации до терминального состояния. Ждём с запасом над бюджетом
-// солвера (30 мин/институт): иначе фронтенд бросает ещё работающую задачу, и окно с результатом
-// («кто и почему») не открывается, т.к. результата ещё нет. Транзиентные ошибки статуса не валят
-// весь процесс — пробуем дальше. В оверлее показываем прошедшее время, чтобы было видно, что живо.
+// Поллинг статуса фоновой генерации до терминального состояния. На каждом тике обновляем прогресс
+// по неделям и перезагружаем сетку — уже записанные недели появляются вживую. Транзиентные ошибки
+// статуса не валят процесс. Ждём с запасом над бюджетом солвера (1800 с/неделя × число недель).
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
-const GENERATION_POLL_TIMEOUT_MS = 2_400_000 // ~40 мин: бюджет солвера (30 мин) + очередь/запас
+const GENERATION_POLL_TIMEOUT_MS = 9_000_000 // ~2.5 ч: запас на семестр недель
 
 async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null> {
-  const base = genProgress.value
-  const startedAt = Date.now()
-  const deadline = startedAt + GENERATION_POLL_TIMEOUT_MS
+  const deadline = Date.now() + GENERATION_POLL_TIMEOUT_MS
   while (Date.now() < deadline) {
     await sleep(2000)
     let s: GenerationJobStatus
@@ -484,29 +499,22 @@ async function pollGeneration(jobId: string): Promise<GenerationJobStatus | null
     } catch {
       continue // временная ошибка получения статуса — повторяем, не прерывая генерацию
     }
-    if (s.state === 'Succeeded' || s.state === 'Failed') return s
-    const elapsed = Math.round((Date.now() - startedAt) / 1000)
-    genProgress.value = `${base} (${elapsed >= 60 ? `${Math.floor(elapsed / 60)} мин ${elapsed % 60} с` : `${elapsed} с`})`
+    genProgressInfo.value = s.progress
+    if (hasSelection.value) loadLessons() // живой показ уже сформированных недель
+    if (s.state === 'Succeeded' || s.state === 'Failed' || s.state === 'Cancelled') return s
   }
   return null
 }
 
-// Поставить генерацию одного института в очередь и дождаться результата (сводка + сам результат).
-async function runInstituteGeneration(
-  instituteId: string,
-): Promise<{ text: string; result: GenerateScheduleResult | null }> {
-  const job = await lessons.generateForInstituteAsync(selSemester.value, instituteId)
-  const final = await pollGeneration(job.jobId)
-  if (!final) return { text: 'ещё идёт на сервере — откройте расписание позже, оно обновится', result: null }
-  if (final.state === 'Succeeded' && final.result) {
-    const r = final.result
-    return {
-      text: `${r.status}, занятий: ${r.lessonsCreated}, штраф: ${r.objectiveValue}, ` +
-        `время: ${r.wallTimeSeconds.toFixed(1)} с`,
-      result: r,
-    }
+// Запросить отмену текущей генерации (уже сформированные недели остаются).
+async function cancelGeneration() {
+  if (!genJobId.value) return
+  try {
+    await lessons.cancelGeneration(genJobId.value)
+    toast.info('Отмена запрошена — генерация остановится после текущей недели.')
+  } catch (e) {
+    toast.error(e instanceof ApiError ? e.message : 'Не удалось отменить генерацию.')
   }
-  return { text: `не удалась: ${final.error ?? final.state}`, result: null }
 }
 
 async function startGeneration() {
@@ -515,40 +523,37 @@ async function startGeneration() {
     genError.value = 'Выберите институт для генерации.'; return
   }
   genError.value = ''
-  generating.value = true
   genUnplaced.value = []
+  genProgressInfo.value = null
+  genModalOpen.value = false
+  generating.value = true
+  if (genScope.value === 'institute') selInstitute.value = genInstituteId.value
   try {
-    if (genScope.value === 'institute') {
-      const inst = institutes.value.find(i => i.id === genInstituteId.value)
-      genProgress.value = `Генерация института «${inst?.name ?? ''}»…`
-      const { text, result } = await runInstituteGeneration(genInstituteId.value)
-      if (result) genUnplaced.value.push(...result.unplaced)
-      toast.success(`Генерация института: ${text}.`)
-      // Показать результат в сетке: переключаемся на «Группы» этого института не можем (нужен leaf),
-      // поэтому просто ставим институт в фильтр преподавателей и перезагружаем при наличии выбора.
-      selInstitute.value = genInstituteId.value
+    const job = genScope.value === 'institute'
+      ? await lessons.generateForInstituteAsync(selSemester.value, genInstituteId.value)
+      : await lessons.generateUniversityAsync(selSemester.value)
+    genJobId.value = job.jobId
+
+    const final = await pollGeneration(job.jobId)
+    if (!final) {
+      toast.info('Генерация ещё идёт на сервере — расписание обновится позже.')
+    } else if (final.state === 'Succeeded' && final.result) {
+      const r = final.result
+      genUnplaced.value = [...r.unplaced]
+      toast.success(`Готово: недель с занятиями ${r.weeksGenerated}/${r.weeksTotal}, занятий ${r.lessonsCreated}.`)
+      if (genUnplaced.value.length > 0) genResultOpen.value = true
+    } else if (final.state === 'Cancelled') {
+      toast.info('Генерация отменена. Уже сформированные недели сохранены.')
     } else {
-      // По всему вузу: последовательно по институтам (каждый учитывает уже занятые ресурсы).
-      if (institutes.value.length === 0) { genError.value = 'Список институтов пуст.'; generating.value = false; return }
-      const total = institutes.value.length
-      let done = 0
-      for (const inst of institutes.value) {
-        genProgress.value = `Генерация по вузу: «${inst.name}» (${done + 1}/${total})…`
-        const { result } = await runInstituteGeneration(inst.id)
-        if (result) genUnplaced.value.push(...result.unplaced.map(u => ({ ...u, institute: inst.name })))
-        done++
-      }
-      toast.success(`Генерация по вузу завершена: обработано институтов — ${total}.`)
+      toast.error(`Генерация не удалась: ${final.error ?? final.state}.`)
     }
-    genModalOpen.value = false
-    // Если кто-то остался недоразмещён — открываем окно с разбором «кто и почему».
-    if (genUnplaced.value.length > 0) genResultOpen.value = true
     await loadLessons()
   } catch (e) {
-    genError.value = e instanceof ApiError ? e.message : 'Ошибка генерации.'
+    toast.error(e instanceof ApiError ? e.message : 'Ошибка генерации.')
   } finally {
     generating.value = false
-    genProgress.value = ''
+    genJobId.value = null
+    genProgressInfo.value = null
   }
 }
 
@@ -665,13 +670,13 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
       </div>
 
       <div class="right-controls">
-        <BaseButton variant="outline" :disabled="lessonsLoading" @click="discard">
+        <BaseButton variant="outline" :disabled="lessonsLoading || generating" @click="discard">
           <RotateCcw :size="16" /> Сбросить до выгруженного
         </BaseButton>
-        <BaseButton variant="gradient" @click="openGenModal">
+        <BaseButton variant="gradient" :disabled="generating" @click="openGenModal">
           <Sparkles :size="16" /> Автогенерация
         </BaseButton>
-        <BaseButton variant="outline" :disabled="lessonsLoading" @click="publish">
+        <BaseButton variant="outline" :disabled="lessonsLoading || generating" @click="publish">
           <Download :size="16" /> Выгрузить
         </BaseButton>
       </div>
@@ -722,7 +727,8 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
       </div>
 
       <div class="toolbar">
-        <template v-if="moveMode">
+        <span v-if="readOnly" class="readonly-hint"><Loader2 :size="14" class="spin" /> Идёт генерация — только просмотр</span>
+        <template v-else-if="moveMode">
           <span class="move-hint"><ArrowLeftRight :size="14" /> Выберите пустую ячейку</span>
           <button class="tool-btn" @click="cancelMove"><X :size="14" /> Отмена</button>
         </template>
@@ -731,7 +737,7 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
           <button class="tool-btn tool-danger" @click="deleteSelected"><Trash2 :size="14" /> Удалить пару</button>
           <button class="tool-btn tool-info" @click="startMove"><ArrowLeftRight :size="14" /> Переместить</button>
         </template>
-        <BaseButton variant="primary" :disabled="!hasSelection || !selectedWeekId" @click="openAddPanel()">
+        <BaseButton variant="primary" :disabled="!hasSelection || !selectedWeekId || readOnly" @click="openAddPanel()">
           <Plus :size="16" /> Добавить пару
         </BaseButton>
       </div>
@@ -935,7 +941,7 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
             <label class="gm-radio" :class="{ active: genScope === 'university' }">
               <input type="radio" value="university" v-model="genScope" :disabled="generating" />
               <GraduationCap :size="18" class="gm-radio-icon" />
-              <span>Для всего университета (по институтам)</span>
+              <span>Для всего университета (по неделям, совместно)</span>
             </label>
 
             <div v-if="genError" class="gm-error">{{ genError }}</div>
@@ -950,12 +956,15 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
         </div>
       </div>
 
-      <!-- Блокирующий оверлей: на время генерации ввод заблокирован, сайт «на паузе» -->
-      <div v-if="generating" class="gen-overlay">
-        <Loader2 :size="48" class="spin" />
-        <p class="go-title">Идёт автогенерация расписания…</p>
-        <p class="go-progress">{{ genProgress }}</p>
-        <p class="go-note">Пожалуйста, подождите — для большого института это может занять до получаса.</p>
+      <!-- Ненавязчивая карточка прогресса: экран не блокируется, готовые недели видны вживую -->
+      <div v-if="generating" class="gen-progress-card">
+        <Loader2 :size="20" class="spin gpc-spin" />
+        <div class="gpc-body">
+          <p class="gpc-title">Генерация расписания{{ genScope === 'institute' ? ' института' : ' университета' }}</p>
+          <p class="gpc-step">{{ genProgressLabel }}</p>
+          <div class="gpc-bar"><div class="gpc-bar-fill" :style="{ width: genProgressPct + '%' }"></div></div>
+        </div>
+        <button class="gpc-cancel" @click="cancelGeneration"><X :size="16" /> Отмена</button>
       </div>
 
       <!-- Окно результата: кто остался без занятий (полностью/частично) и почему -->
@@ -1177,13 +1186,21 @@ watch(() => realtime.scheduleTick, () => { loadLessons() })
 .gm-run:hover:not(:disabled) { filter: brightness(1.05); }
 .gm-run:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Блокирующий оверлей генерации */
-.gen-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.72); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: white; text-align: center; padding: 24px; }
-.gen-overlay .spin { animation: gen-spin 1s linear infinite; }
+/* Ненавязчивая карточка прогресса генерации (внизу справа, экран не блокируется) */
 @keyframes gen-spin { to { transform: rotate(360deg); } }
-.go-title { margin: 12px 0 0 0; font-size: 20px; font-weight: 700; }
-.go-progress { margin: 0; font-size: 15px; opacity: 0.9; min-height: 20px; }
-.go-note { margin: 6px 0 0 0; font-size: 13px; opacity: 0.7; }
+.spin { animation: gen-spin 1s linear infinite; }
+.gen-progress-card { position: fixed; right: 24px; bottom: 24px; z-index: 200; display: flex; align-items: center; gap: 14px; background: white; border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18); padding: 14px 16px; width: 380px; max-width: calc(100vw - 48px); }
+.gpc-spin { color: #1a4d9c; flex-shrink: 0; }
+.gpc-body { flex: 1; min-width: 0; }
+.gpc-title { margin: 0; font-size: 13px; font-weight: 700; color: #0f172a; }
+.gpc-step { margin: 2px 0 8px 0; font-size: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gpc-bar { height: 6px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.gpc-bar-fill { height: 100%; background: linear-gradient(135deg, #1a4d9c, #235fb4); border-radius: 999px; transition: width 0.4s ease; }
+.gpc-cancel { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid #fecaca; background: white; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gpc-cancel:hover { background: #fef2f2; }
+
+/* Подсказка режима только чтения во время генерации */
+.readonly-hint { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: #fffbeb; color: #b45309; font-size: 13px; font-weight: 500; }
 
 /* Окно результата генерации: «кто остался без занятий и почему» */
 .gr-modal { width: 760px; }

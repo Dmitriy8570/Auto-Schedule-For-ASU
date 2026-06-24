@@ -1,6 +1,6 @@
 import { http } from './http'
 import type {
-  LessonDTO, GenerateScheduleResult, PublishInstituteScheduleResult, DiscardInstituteScheduleResult,
+  LessonDTO, PublishInstituteScheduleResult, DiscardInstituteScheduleResult,
   GenerationJobStatus, GenerationRunDto,
 } from './types'
 
@@ -49,17 +49,21 @@ export const lessons = {
   // Неблокирующие предупреждения для занятия (переходы между корпусами в соседних парах).
   warnings: (id: string) => http.get<string[]>(`/lessons/${id}/warnings`),
 
-  // Генерация черновика расписания института на семестр (синхронная, держит HTTP-поток).
-  generateForInstitute: (semesterId: string, instituteId: string) =>
-    http.post<GenerateScheduleResult>(`/lessons/generate/semester/${semesterId}/institute/${instituteId}`),
+  // Поставить понедельную генерацию всего университета в очередь (фоновая) — статус задачи (202).
+  generateUniversityAsync: (semesterId: string) =>
+    http.post<GenerationJobStatus>(`/lessons/generate/semester/${semesterId}/async`),
 
-  // Поставить генерацию института в очередь (фоновая) — возвращает статус задачи (202).
+  // Поставить понедельную генерацию одного института в очередь (фоновая) — статус задачи (202).
   generateForInstituteAsync: (semesterId: string, instituteId: string) =>
     http.post<GenerationJobStatus>(`/lessons/generate/semester/${semesterId}/institute/${instituteId}/async`),
 
-  // Статус фоновой задачи генерации.
+  // Статус фоновой задачи генерации (с прогрессом по неделям).
   generationStatus: (jobId: string) =>
     http.get<GenerationJobStatus>(`/lessons/generate/status/${jobId}`),
+
+  // Отменить фоновую генерацию (уже сформированные недели остаются).
+  cancelGeneration: (jobId: string) =>
+    http.post<void>(`/lessons/generate/${jobId}/cancel`),
 
   // История автогенерации (по убыванию времени завершения) с фильтрами.
   generationHistory: (params: { semesterId?: string; instituteId?: string; limit?: number } = {}) =>

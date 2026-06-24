@@ -13,10 +13,10 @@ using Microsoft.Extensions.Logging;
 namespace Infrastructure.Schedule.Generation;
 
 /// <summary>
-/// Фоновая служба генерации расписания: читает задачи из <see cref="ScheduleGenerationQueue"/>
-/// и выполняет каждую в собственном DI-scope через MediatR. Солвер работает здесь, а не в
-/// HTTP-потоке. Задачи обрабатываются последовательно; сбой одной не останавливает цикл.
-/// Каждый завершённый запуск (успех или ошибка) фиксируется в истории генерации (БД).
+/// Фоновая служба понедельной генерации расписания: читает задачи из <see cref="ScheduleGenerationQueue"/>
+/// и выполняет каждую в собственном DI-scope через MediatR. Солвер работает здесь, а не в HTTP-потоке.
+/// Прогресс по неделям пробрасывается в очередь, отмена связывается с токеном задачи. Каждый
+/// завершённый запуск (успех, ошибка, отмена) фиксируется в истории генерации (БД).
 /// </summary>
 public sealed class ScheduleGenerationHostedService(
     ScheduleGenerationQueue queue,
@@ -44,16 +44,26 @@ public sealed class ScheduleGenerationHostedService(
 
         queue.MarkRunning(jobId);
 
+        // Токен задачи (пользовательская отмена) связываем с токеном остановки службы.
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            stoppingToken, queue.GetCancellationToken(jobId));
+
         using var scope = scopeFactory.CreateScope();
         var sp = scope.ServiceProvider;
 
         try
         {
             var mediator = sp.GetRequiredService<IMediator>();
+            var progress = new DelegateProgress<GenerationProgress>(p => queue.SetProgress(jobId, p));
 
             var result = await mediator.Send(
-                new GenerateInstituteScheduleCommand { SemesterId = job.SemesterId, InstituteId = job.InstituteId },
-                stoppingToken);
+                new GenerateScheduleCommand
+                {
+                    SemesterId = job.SemesterId,
+                    InstituteId = job.InstituteId,
+                    Progress = progress,
+                },
+                linked.Token);
 
             queue.MarkSucceeded(jobId, result);
             logger.LogInformation("Генерация {JobId} завершена: {Status}, занятий создано {Count}.",
@@ -61,39 +71,47 @@ public sealed class ScheduleGenerationHostedService(
 
             if (result.Unplaced.Count > 0)
                 logger.LogWarning(
-                    "Генерация {JobId}: {Count} нагрузок размещены не полностью. {Details}",
-                    jobId, result.Unplaced.Count,
-                    string.Join("; ", result.Unplaced.Select(u =>
-                        $"{u.Teacher} / {u.Subject} ({u.LessonType}): {u.PlacedPairs}/{u.PlannedPairs} пар — {u.Reason}")));
+                    "Генерация {JobId}: {Count} нагрузок размещены не полностью.",
+                    jobId, result.Unplaced.Count);
 
-            await PersistRunAsync(sp, job, result, stoppingToken);
+            await PersistRunAsync(sp, job, succeeded: true, result.Status, result, error: null, stoppingToken);
+        }
+        catch (OperationCanceledException) when (queue.IsCancellationRequested(jobId) && !stoppingToken.IsCancellationRequested)
+        {
+            // Пользовательская отмена: уже сформированные недели сохранены (понедельная запись).
+            queue.MarkCancelled(jobId, partial: null);
+            logger.LogInformation("Генерация {JobId} отменена пользователем.", jobId);
+            await PersistRunAsync(sp, job, succeeded: false, "Cancelled", result: null, error: null, CancellationToken.None);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            // Сервис останавливается: токен отменён, запись в БД не пройдёт — историю не пишем.
+            // Сервис останавливается: токен отменён, запись истории не пройдёт — не пишем.
             queue.MarkFailed(jobId, "Сервис остановлен во время генерации.");
         }
         catch (Exception ex)
         {
             queue.MarkFailed(jobId, ex.Message);
             logger.LogError(ex, "Генерация {JobId} завершилась ошибкой.", jobId);
-            await PersistFailureAsync(sp, job, ex.Message);
+            await PersistRunAsync(sp, job, succeeded: false, "Failed", result: null, ex.Message, CancellationToken.None);
         }
     }
 
-    /// <summary>Зафиксировать успешный запуск в истории (ошибка записи не валит цикл).</summary>
+    /// <summary>Зафиксировать завершённый запуск в истории (ошибка записи не валит цикл).</summary>
     private async Task PersistRunAsync(
-        IServiceProvider sp, GenerationJobStatus job, GenerateScheduleResult result, CancellationToken ct)
+        IServiceProvider sp, GenerationJobStatus job,
+        bool succeeded, string status, GenerateScheduleResult? result, string? error, CancellationToken ct)
     {
         try
         {
             var (semesterName, instituteName) = await ResolveNamesAsync(sp, job, ct);
             var run = GenerationRun.Create(
                 Guid.NewGuid(),
-                job.SemesterId, semesterName, job.InstituteId, instituteName,
-                succeeded: true, status: result.Status,
-                result.LessonsCreated, result.ObjectiveValue, result.WallTimeSeconds,
-                result.Unplaced.Count, JsonSerializer.Serialize(result.Unplaced), error: null,
+                job.SemesterId, semesterName, job.InstituteId ?? Guid.Empty, instituteName,
+                succeeded, status,
+                result?.LessonsCreated ?? 0, result?.ObjectiveValue ?? 0, result?.WallTimeSeconds ?? 0,
+                result?.Unplaced.Count ?? 0,
+                JsonSerializer.Serialize(result?.Unplaced ?? Array.Empty<WorkloadShortfall>()),
+                error,
                 job.CreatedAt, DateTime.UtcNow);
             await sp.GetRequiredService<IGenerationRunRepository>().AddAsync(run, ct);
         }
@@ -103,27 +121,7 @@ public sealed class ScheduleGenerationHostedService(
         }
     }
 
-    /// <summary>Зафиксировать неудавшийся запуск в истории (вне токена остановки — запись завершается).</summary>
-    private async Task PersistFailureAsync(IServiceProvider sp, GenerationJobStatus job, string error)
-    {
-        try
-        {
-            var (semesterName, instituteName) = await ResolveNamesAsync(sp, job, CancellationToken.None);
-            var run = GenerationRun.Create(
-                Guid.NewGuid(),
-                job.SemesterId, semesterName, job.InstituteId, instituteName,
-                succeeded: false, status: "Failed",
-                0, 0, 0, 0, "[]", error,
-                job.CreatedAt, DateTime.UtcNow);
-            await sp.GetRequiredService<IGenerationRunRepository>().AddAsync(run, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Не удалось сохранить историю неудачной генерации {JobId}.", job.JobId);
-        }
-    }
-
-    /// <summary>Денормализованные названия семестра (диапазон дат) и института на момент запуска.</summary>
+    /// <summary>Денормализованные названия семестра (диапазон дат) и института (или «Весь университет»).</summary>
     private static async Task<(string Semester, string Institute)> ResolveNamesAsync(
         IServiceProvider sp, GenerationJobStatus job, CancellationToken ct)
     {
@@ -134,15 +132,25 @@ public sealed class ScheduleGenerationHostedService(
             .Select(s => new { s.StartDate, s.EndDate })
             .FirstOrDefaultAsync(ct);
 
-        var instituteName = await ctx.Institutes.AsNoTracking()
-            .Where(i => i.Id == job.InstituteId)
-            .Select(i => i.Name)
-            .FirstOrDefaultAsync(ct);
-
         var semesterName = sem is null
             ? job.SemesterId.ToString()
             : $"{sem.StartDate:dd.MM.yyyy} — {sem.EndDate:dd.MM.yyyy}";
 
-        return (semesterName, instituteName ?? job.InstituteId.ToString());
+        string instituteName;
+        if (job.InstituteId is { } iid)
+            instituteName = await ctx.Institutes.AsNoTracking()
+                .Where(i => i.Id == iid)
+                .Select(i => i.Name)
+                .FirstOrDefaultAsync(ct) ?? iid.ToString();
+        else
+            instituteName = "Весь университет";
+
+        return (semesterName, instituteName);
+    }
+
+    /// <summary>Синхронный приёмник прогресса: обновляет статус задачи без захвата контекста синхронизации.</summary>
+    private sealed class DelegateProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }

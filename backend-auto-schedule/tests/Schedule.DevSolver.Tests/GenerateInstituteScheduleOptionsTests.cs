@@ -1,6 +1,7 @@
 using Application.Common.Interfaces;
 using Application.Common.Lessons.Commands;
 using Application.Solver.Mapping;
+using Domain.calendar;
 using Application.Solver.Model;
 using Application.Solver.Solving;
 using Domain.constraints.penalty;
@@ -15,10 +16,10 @@ using Xunit;
 namespace Schedule.DevSolver.Tests;
 
 /// <summary>
-/// Параметры солвера в генерации по институту берутся из конфигурации (SolverOptions),
-/// но переопределяются на конкретный запрос. Солвер подменён фейком, фиксирующим переданные
-/// параметры; данные — один компонент → фейк-солвер возвращает Infeasible, маппинг не вызывается
-/// и БД не трогается.
+/// Параметры солвера в понедельной генерации берутся из конфигурации (SolverOptions), но
+/// переопределяются на конкретный запрос. Солвер подменён фейком, фиксирующим переданные параметры;
+/// данные — одна неделя с одним компонентом → фейк-солвер возвращает Infeasible, маппинг не
+/// вызывается, в БД пишется пустая неделя.
 /// </summary>
 public sealed class GenerateInstituteScheduleOptionsTests
 {
@@ -32,11 +33,11 @@ public sealed class GenerateInstituteScheduleOptionsTests
         var handler = NewHandler(solver);
 
         await handler.Handle(
-            new GenerateInstituteScheduleCommand { SemesterId = Guid.NewGuid(), InstituteId = Guid.NewGuid() },
+            new GenerateScheduleCommand { SemesterId = Guid.NewGuid(), InstituteId = Guid.NewGuid() },
             CancellationToken.None);
 
         Assert.NotNull(solver.Captured);
-        Assert.Equal(180, solver.Captured!.MaxTimeInSeconds);
+        Assert.Equal(180, solver.Captured!.MaxTimeInSeconds); // одна подзадача в неделе → весь бюджет недели
         Assert.Equal(8, solver.Captured.SearchWorkers);
     }
 
@@ -47,7 +48,7 @@ public sealed class GenerateInstituteScheduleOptionsTests
         var handler = NewHandler(solver);
 
         await handler.Handle(
-            new GenerateInstituteScheduleCommand
+            new GenerateScheduleCommand
             {
                 SemesterId = Guid.NewGuid(),
                 InstituteId = Guid.NewGuid(),
@@ -66,7 +67,7 @@ public sealed class GenerateInstituteScheduleOptionsTests
         var handler = NewHandler(solver);
 
         await handler.Handle(
-            new GenerateInstituteScheduleCommand
+            new GenerateScheduleCommand
             {
                 SemesterId = Guid.NewGuid(),
                 InstituteId = Guid.NewGuid(),
@@ -78,7 +79,7 @@ public sealed class GenerateInstituteScheduleOptionsTests
         Assert.Equal(180, solver.Captured.MaxTimeInSeconds);
     }
 
-    private static GenerateInstituteScheduleCommandHandler NewHandler(IScheduleSolver solver) =>
+    private static GenerateScheduleCommandHandler NewHandler(IScheduleSolver solver) =>
         new(new MinimalDataProvider(), solver, new ThrowingMapper(), new NoopLessonRepository(),
             new FakeTransactionRunner(), ConfigDefaults);
 
@@ -119,18 +120,19 @@ public sealed class GenerateInstituteScheduleOptionsTests
                 .Set(nameof(Curriculum.TeacherId), teacher.Id)
                 .Set(nameof(Curriculum.Stream), stream)
                 .Set(nameof(Curriculum.StreamId), stream.Id);
-            var workload = DomainFactory.New<SemesterWorkload>()
-                .Set(nameof(SemesterWorkload.Id), Guid.NewGuid())
-                .Set(nameof(SemesterWorkload.Hours), 0)
-                .Set(nameof(SemesterWorkload.Curriculum), curriculum);
 
             return new ScheduleData(
-                new[] { workload }, Array.Empty<Classroom>(),
+                new[] { new WorkloadItem(0, curriculum) }, Array.Empty<Classroom>(),
                 Array.Empty<TimeSlot>(), Array.Empty<ConstraintConfig>());
         }
 
-        public Task<ScheduleData> GetAsync(Guid semesterId, CancellationToken ct) => Task.FromResult(OneComponent());
-        public Task<ScheduleData> GetForInstituteAsync(Guid semesterId, Guid instituteId, CancellationToken ct)
+        public Task<IReadOnlyList<ScheduleWeek>> GetWeeksAsync(Guid semesterId, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ScheduleWeek>>(new[]
+            {
+                new ScheduleWeek(Guid.NewGuid(), WeekType.Red, new DateOnly(2025, 9, 1), new DateOnly(2025, 9, 7))
+            });
+
+        public Task<ScheduleData> GetForWeekAsync(Guid semesterId, Guid weekId, Guid? instituteId, CancellationToken ct)
             => Task.FromResult(OneComponent());
     }
 
@@ -143,6 +145,8 @@ public sealed class GenerateInstituteScheduleOptionsTests
     private sealed class NoopLessonRepository : ILessonRepository
     {
         public Task<IReadOnlyList<Lesson>> GetByInstituteAndSemesterAsync(Guid instituteId, Guid semesterId, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Lesson>>(Array.Empty<Lesson>());
+        public Task<IReadOnlyList<Lesson>> GetByWeekAsync(Guid weekId, Guid? instituteId, CancellationToken ct)
             => Task.FromResult<IReadOnlyList<Lesson>>(Array.Empty<Lesson>());
         public void RemoveRange(IEnumerable<Lesson> lessons) { }
         public Task AddAsync(Lesson lesson, CancellationToken ct) => Task.CompletedTask;

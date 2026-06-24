@@ -16,10 +16,10 @@ public class TotalHoursSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            int hours = model.Data.SemesterWorkloads[w].Hours;
+            int hours = model.Data.Workloads[w].Hours;
             if (hours % 2 != 0)
                 throw new InvalidOperationException(
-                    $"Нагрузка #{w} (CurriculumId={model.Data.SemesterWorkloads[w].CurriculumId}) задаёт " +
+                    $"Нагрузка #{w} (CurriculumId={model.Data.Workloads[w].CurriculumId}) задаёт " +
                     $"нечётное число часов ({hours}); часы должны быть кратны 2 (одна пара = 2 ак. часа).");
 
             var vars = new List<LinearExpr>();

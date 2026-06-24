@@ -168,20 +168,33 @@ export interface GenerateScheduleResult {
   wallTimeSeconds: number
   // Нагрузки, размещённые не полностью (или вовсе не размещённые). Пусто, если расписание целиком.
   unplaced: WorkloadShortfall[]
+  // Понедельная сводка: всего недель и для скольких поставлено хотя бы одно занятие.
+  weeksTotal: number
+  weeksGenerated: number
 }
 
-export type GenerationJobState = 'Queued' | 'Running' | 'Succeeded' | 'Failed'
+export type GenerationJobState = 'Queued' | 'Running' | 'Succeeded' | 'Failed' | 'Cancelled'
+
+// Прогресс понедельной генерации: какая неделя сейчас обрабатывается.
+export interface GenerationProgress {
+  currentWeek: number
+  totalWeeks: number
+  weekLabel: string
+  weekType: WeekType
+}
 
 export interface GenerationJobStatus {
   jobId: string
   state: GenerationJobState
   semesterId: string
-  instituteId: string
+  // null — генерация по всему университету.
+  instituteId: string | null
   createdAt: string
   startedAt: string | null
   completedAt: string | null
   result: GenerateScheduleResult | null
   error: string | null
+  progress: GenerationProgress | null
 }
 
 export interface PublishInstituteScheduleResult { published: number }

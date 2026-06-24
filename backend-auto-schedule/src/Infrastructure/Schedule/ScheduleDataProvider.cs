@@ -10,11 +10,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Infrastructure.Schedule;
 
 /// <summary>
-/// EF Core-реализация поставщика данных солвера.
-/// Помимо генерации на весь семестр (<see cref="GetAsync"/>) поддерживает декомпозицию
-/// по институту (<see cref="GetForInstituteAsync"/>): ограничивает нагрузки институтом,
-/// собирает занятые ресурсы других институтов этого семестра (жёсткие блокировки, «B»)
-/// и якорь к расписанию прошлого семестра (мягкие предпочтения, «C»).
+/// EF Core-реализация поставщика данных солвера для <em>понедельной</em> генерации.
+/// На каждую неделю загружаются: понедельные нагрузки (<see cref="WeekWorkload"/>) этой недели
+/// (опционально ограниченные институтом), слоты только этой недели, аудитории и веса штрафов.
+/// Для институтского режима дополнительно собираются ресурсы, занятые в этой неделе расписанием
+/// других институтов (жёсткие блокировки), а в любом режиме — мягкий якорь к прошлому семестру.
 ///
 /// Допущения, требующие проверки на реальных данных:
 /// <list type="bullet">
@@ -23,7 +23,7 @@ namespace Infrastructure.Schedule;
 /// <item>прошлый семестр — это семестр с наибольшей датой начала, меньшей текущей;</item>
 /// <item>занятие из прошлого семестра сопоставляется текущей нагрузке по ключу
 /// (преподаватель, дисциплина, тип занятия); слоты переносятся по паре
-/// (день недели, номер пары), т.к. идентификаторы <see cref="TimeSlot"/> уникальны для семестра.</item>
+/// (день недели, номер пары) на слоты текущей недели.</item>
 /// </list>
 /// </summary>
 public sealed class ScheduleDataProvider : IScheduleDataProvider
@@ -32,59 +32,65 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
     public ScheduleDataProvider(ApplicationDbContext context) => _context = context;
 
-    public async Task<ScheduleData> GetAsync(Guid semesterId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ScheduleWeek>> GetWeeksAsync(
+        Guid semesterId, CancellationToken cancellationToken) =>
+        await _context.Weeks
+            .AsNoTracking()
+            .Where(w => w.SemesterId == semesterId)
+            .OrderBy(w => w.StartDate)
+            .Select(w => new ScheduleWeek(w.Id, w.WeekType, w.StartDate, w.EndDate))
+            .ToListAsync(cancellationToken);
+
+    public async Task<ScheduleData> GetForWeekAsync(
+        Guid semesterId, Guid weekId, Guid? instituteId, CancellationToken cancellationToken)
     {
-        var workloads = await LoadWorkloadsAsync(semesterId, cancellationToken);
+        var workloads = await LoadWeekWorkloadsAsync(weekId, instituteId, cancellationToken);
         var classrooms = await LoadClassroomsAsync(cancellationToken);
-        var timeSlots = await LoadTimeSlotsAsync(semesterId, cancellationToken);
+        var timeSlots = await LoadWeekTimeSlotsAsync(weekId, cancellationToken);
         var penalties = await _context.ConstraintConfigs.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new ScheduleData(workloads, classrooms, timeSlots, penalties, SemesterId: semesterId);
-    }
+        IReadOnlyList<OccupiedSlot>? occupiedRooms = null;
+        IReadOnlyList<OccupiedTeacherSlot>? occupiedTeachers = null;
+        if (instituteId is { } inst)
+            (occupiedRooms, occupiedTeachers) =
+                await LoadOccupiedForWeekAsync(weekId, inst, cancellationToken);
 
-    public async Task<ScheduleData> GetForInstituteAsync(
-        Guid semesterId, Guid instituteId, CancellationToken cancellationToken)
-    {
-        var workloads = await LoadWorkloadsAsync(semesterId, cancellationToken, instituteId);
-
-        var classrooms = await LoadClassroomsAsync(cancellationToken);
-        var timeSlots = await LoadTimeSlotsAsync(semesterId, cancellationToken);
-        var penalties = await _context.ConstraintConfigs.AsNoTracking().ToListAsync(cancellationToken);
-
-        var (occupiedClassrooms, occupiedTeachers) =
-            await LoadOccupiedResourcesAsync(semesterId, instituteId, cancellationToken);
-
-        var anchors = await BuildAnchorsAsync(semesterId, instituteId, workloads, timeSlots, cancellationToken);
+        var anchors = await BuildPreviousSemesterAnchorsAsync(
+            semesterId, instituteId, workloads, timeSlots, cancellationToken);
 
         return new ScheduleData(
             workloads, classrooms, timeSlots, penalties,
-            occupiedClassrooms, occupiedTeachers, anchors, semesterId);
+            occupiedRooms, occupiedTeachers, anchors, semesterId);
     }
 
     // ----- Загрузка осей модели --------------------------------------------------------------
 
-    private async Task<List<SemesterWorkload>> LoadWorkloadsAsync(
-        Guid semesterId, CancellationToken ct, Guid? instituteId = null) =>
-        // Identity resolution обязателен: строители (Intersection, Window, DailyLessonsLimit)
-        // группируют нагрузки по ссылке на Teacher/Group. Без него AsNoTracking создаёт несколько
-        // экземпляров одной и той же сущности (преподавателя/группы) при разных путях навигации,
-        // и группировка по ссылке разваливается — преподаватель/группа перестают быть «эксклюзивны»
-        // в слоте (двойные занятия). Заодно меньше дубликатов в памяти.
-        await _context.SemesterWorkloads
+    /// <summary>
+    /// Понедельные нагрузки недели → ось модели <see cref="WorkloadItem"/>. Часы берутся из
+    /// <see cref="WeekWorkload.Hours"/> именно этой недели; нагрузки с нулевыми часами (предмет в эту
+    /// неделю не идёт) пропускаются. Identity resolution — чтобы навигации на Teacher/Group/Stream
+    /// при разных путях указывали на единые экземпляры (меньше дубликатов в памяти).
+    /// </summary>
+    private async Task<List<WorkloadItem>> LoadWeekWorkloadsAsync(
+        Guid weekId, Guid? instituteId, CancellationToken ct)
+    {
+        var weekWorkloads = await _context.WeekWorkloads
             .AsNoTrackingWithIdentityResolution()
-            .Where(sw => sw.SemesterId == semesterId)
-            // Фильтр института транслируется в SQL (раньше выполнялся в памяти после загрузки всех планов).
-            .Where(sw => instituteId == null
-                || sw.Curriculum.Stream.StreamGroups
+            .Where(ww => ww.WeekId == weekId && ww.Hours > 0)
+            .Where(ww => instituteId == null
+                || ww.Curriculum.Stream.StreamGroups
                     .Any(sg => sg.Group.Course.Degree.InstituteId == instituteId.Value))
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.Teacher).ThenInclude(t => t.TeacherAvailabilities)
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.Subject)
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.FavoriteBuilding)
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.NeededEquipments)
-            .Include(sw => sw.Curriculum).ThenInclude(c => c.Stream)
+            .Include(ww => ww.Curriculum).ThenInclude(c => c.Teacher).ThenInclude(t => t.TeacherAvailabilities)
+            .Include(ww => ww.Curriculum).ThenInclude(c => c.Subject)
+            .Include(ww => ww.Curriculum).ThenInclude(c => c.FavoriteBuilding)
+            .Include(ww => ww.Curriculum).ThenInclude(c => c.NeededEquipments)
+            .Include(ww => ww.Curriculum).ThenInclude(c => c.Stream)
                 .ThenInclude(s => s.StreamGroups).ThenInclude(sg => sg.Group)
                     .ThenInclude(g => g.Course).ThenInclude(co => co.Degree)
             .ToListAsync(ct);
+
+        return weekWorkloads.Select(ww => new WorkloadItem(ww.Hours, ww.Curriculum)).ToList();
+    }
 
     private async Task<List<Classroom>> LoadClassroomsAsync(CancellationToken ct) =>
         await _context.Classrooms
@@ -94,37 +100,37 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
             .Include(c => c.EquipmentRooms)
             .ToListAsync(ct);
 
-    private async Task<List<TimeSlot>> LoadTimeSlotsAsync(Guid semesterId, CancellationToken ct) =>
+    private async Task<List<TimeSlot>> LoadWeekTimeSlotsAsync(Guid weekId, CancellationToken ct) =>
         await _context.TimeSlots
             .AsNoTracking()
             .Include(t => t.WeekDay)
-            .Where(t => t.WeekDay.Week.SemesterId == semesterId)
+            .Where(t => t.WeekDay.Week.Id == weekId)
             .ToListAsync(ct);
 
-    // ----- B: занятые ресурсы других институтов этого семестра -------------------------------
+    // ----- Занятые ресурсы других институтов в этой неделе -----------------------------------
 
     private async Task<(List<OccupiedSlot> Classrooms, List<OccupiedTeacherSlot> Teachers)>
-        LoadOccupiedResourcesAsync(Guid semesterId, Guid instituteId, CancellationToken ct)
+        LoadOccupiedForWeekAsync(Guid weekId, Guid instituteId, CancellationToken ct)
     {
-        var semesterLessons = await _context.Lessons
+        var weekLessons = await _context.Lessons
             .AsNoTracking()
-            .Where(l => l.TimeSlot.WeekDay.Week.SemesterId == semesterId)
+            .Where(l => l.TimeSlot.WeekDay.Week.Id == weekId)
             .Include(l => l.Stream).ThenInclude(s => s.Curriculums)
             .Include(l => l.Stream)
                 .ThenInclude(s => s.StreamGroups).ThenInclude(sg => sg.Group)
                     .ThenInclude(g => g.Course).ThenInclude(co => co.Degree)
             .ToListAsync(ct);
 
-        var otherInstitute = semesterLessons
+        var other = weekLessons
             .Where(l => !LessonBelongsToInstitute(l, instituteId))
             .ToList();
 
-        var classrooms = otherInstitute
+        var classrooms = other
             .Select(l => new OccupiedSlot(l.ClassroomId, l.TimeSlotId))
             .Distinct()
             .ToList();
 
-        var teachers = otherInstitute
+        var teachers = other
             .SelectMany(l => l.Stream.Curriculums
                 .Select(c => new OccupiedTeacherSlot(c.TeacherId, l.TimeSlotId)))
             .Distinct()
@@ -133,11 +139,17 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
         return (classrooms, teachers);
     }
 
-    // ----- C: якорь к расписанию прошлого семестра -------------------------------------------
+    // ----- Якорь к расписанию прошлого семестра ----------------------------------------------
 
-    private async Task<List<WorkloadAnchor>> BuildAnchorsAsync(
-        Guid semesterId, Guid instituteId,
-        IReadOnlyList<SemesterWorkload> workloads, IReadOnlyList<TimeSlot> currentTimeSlots,
+    /// <summary>
+    /// Мягкий якорь к прошлому семестру: для нагрузок недели, у которых в прошлом семестре было
+    /// аналогичное занятие, переносит предпочтительный корпус и слоты (по паттерну день/номер пары)
+    /// на слоты <em>этой</em> недели. Это «сид» стабильности для первой недели каждого типа; дальше
+    /// внутри семестра якорь к предыдущей неделе того же типа добавляет оркестратор.
+    /// </summary>
+    private async Task<List<WorkloadAnchor>> BuildPreviousSemesterAnchorsAsync(
+        Guid semesterId, Guid? instituteId,
+        IReadOnlyList<WorkloadItem> workloads, IReadOnlyList<TimeSlot> weekTimeSlots,
         CancellationToken ct)
     {
         var current = await _context.Semesters.AsNoTracking()
@@ -163,7 +175,7 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
         // Ключ предмета (преподаватель, дисциплина, тип) → прошлые корпуса и (день, номер пары).
         var history = new Dictionary<CurriculumKey, HistoryEntry>();
-        foreach (var lesson in prevLessons.Where(l => LessonBelongsToInstitute(l, instituteId)))
+        foreach (var lesson in prevLessons.Where(l => instituteId == null || LessonBelongsToInstitute(l, instituteId.Value)))
         {
             foreach (var c in lesson.Stream.Curriculums)
             {
@@ -178,16 +190,16 @@ public sealed class ScheduleDataProvider : IScheduleDataProvider
 
         if (history.Count == 0) return new List<WorkloadAnchor>();
 
-        // (день недели, номер пары) → идентификаторы слотов текущего семестра.
-        var slotsByPattern = currentTimeSlots
+        // (день недели, номер пары) → идентификаторы слотов ЭТОЙ недели.
+        var slotsByPattern = weekTimeSlots
             .GroupBy(t => (t.WeekDay.DayOfWeek, t.Number))
             .ToDictionary(g => g.Key, g => g.Select(t => t.Id).ToList());
 
         var anchors = new List<WorkloadAnchor>();
         for (int w = 0; w < workloads.Count; w++)
         {
-            if (!history.TryGetValue(CurriculumKey.Of(workloads[w].Curriculum), out var entry))
-                continue;
+            if (workloads[w].Curriculum is not { } curriculum) continue;
+            if (!history.TryGetValue(CurriculumKey.Of(curriculum), out var entry)) continue;
 
             var preferredSlots = entry.SlotKeys
                 .SelectMany(p => slotsByPattern.TryGetValue(p, out var ids) ? ids : Enumerable.Empty<Guid>())

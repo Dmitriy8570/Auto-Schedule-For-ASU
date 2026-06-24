@@ -60,7 +60,7 @@ public sealed class SoftConstraintBuilderTests
 
         var penalized = SlotOn(WeekDayType.Monday, 1);          // индекс 0
         var free = SlotOn(WeekDayType.Monday, 2);               // индекс 1
-        var data = new ScheduleData(new[] { workload }, new[] { Room(50) }, new[] { penalized, free },
+        var data = new ScheduleData(new[] { workload }.ToItems(), new[] { Room(50) }, new[] { penalized, free },
             Array.Empty<ConstraintConfig>());
 
         var (status, solver, model) = Solve(data,
@@ -81,7 +81,7 @@ public sealed class SoftConstraintBuilderTests
         var anchored = SlotOn(WeekDayType.Monday, 2);           // индекс 1 — слот прошлого семестра
 
         var anchors = new[] { new WorkloadAnchor(0, null, new[] { anchored.Id }) };
-        var data = new ScheduleData(new[] { workload }, new[] { Room(50) }, new[] { other, anchored },
+        var data = new ScheduleData(new[] { workload }.ToItems(), new[] { Room(50) }, new[] { other, anchored },
             Array.Empty<ConstraintConfig>(), Anchors: anchors);
 
         var (status, solver, model) = Solve(data,

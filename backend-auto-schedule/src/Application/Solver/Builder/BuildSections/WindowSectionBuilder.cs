@@ -18,14 +18,14 @@ public class WindowSectionBuilder : IModelSectionBuilder
         int teacherWeight = PenaltyFor(model, ConstraintType.TeacherGap);
 
         var byGroup = Enumerable.Range(0, model.WorkloadCount)
-            .SelectMany(w => model.Data.SemesterWorkloads[w].Curriculum.Stream.StreamGroups
+            .SelectMany(w => model.Data.Workloads[w].Curriculum.Stream.StreamGroups
                 .Select(sg => (Workload: w, sg.Group.Id)))
             .GroupBy(x => x.Id, x => x.Workload);
         foreach (var group in byGroup)
             AddGapPenalties(model, group.ToList(), studentWeight, $"grp{group.Key:N}");
 
         var byTeacher = Enumerable.Range(0, model.WorkloadCount)
-            .GroupBy(w => model.Data.SemesterWorkloads[w].Curriculum.Teacher.Id);
+            .GroupBy(w => model.Data.Workloads[w].Curriculum.Teacher.Id);
         foreach (var teacher in byTeacher)
             AddGapPenalties(model, teacher.ToList(), teacherWeight, $"tch{teacher.Key:N}");
     }

@@ -28,7 +28,7 @@ public class DoubleLessonSectionBuilder : IModelSectionBuilder
 
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            if (!model.Data.SemesterWorkloads[w].Curriculum.Double) continue;
+            if (!model.Data.Workloads[w].Curriculum.Double) continue;
 
             for (int r = 0; r < model.ClassroomCount; r++)
                 foreach (var slots in days)

@@ -19,7 +19,7 @@ public class FavoriteBuildingSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            var favorite = model.Data.SemesterWorkloads[w].Curriculum.FavoriteBuildingId;
+            var favorite = model.Data.Workloads[w].Curriculum.FavoriteBuildingId;
             if (favorite is null) continue;
 
             for (int r = 0; r < model.ClassroomCount; r++)

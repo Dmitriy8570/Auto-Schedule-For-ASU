@@ -14,7 +14,7 @@ public class EquipmentSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            var needed = model.Data.SemesterWorkloads[w].Curriculum.NeededEquipments
+            var needed = model.Data.Workloads[w].Curriculum.NeededEquipments
                 .Select(ne => ne.EquipmentId)
                 .ToHashSet();
 

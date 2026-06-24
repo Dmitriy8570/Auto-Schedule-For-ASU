@@ -23,7 +23,7 @@ public sealed class BestEffortPlacementSectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            int plannedPairs = model.Data.SemesterWorkloads[w].Hours / 2;
+            int plannedPairs = model.Data.Workloads[w].Hours / 2;
 
             var vars = new List<LinearExpr>();
             for (int r = 0; r < model.ClassroomCount; r++)

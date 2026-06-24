@@ -18,6 +18,7 @@ public class GenerationRun
     public Guid SemesterId { get; private set; }
     public string SemesterName { get; private set; } = null!;
 
+    /// <summary>Институт генерации; <see cref="Guid.Empty"/> — запуск по всему университету.</summary>
     public Guid InstituteId { get; private set; }
     public string InstituteName { get; private set; } = null!;
 
@@ -64,7 +65,7 @@ public class GenerationRun
         Id = Guard.NotEmpty(id, nameof(id)),
         SemesterId = Guard.NotEmpty(semesterId, nameof(semesterId)),
         SemesterName = semesterName ?? string.Empty,
-        InstituteId = Guard.NotEmpty(instituteId, nameof(instituteId)),
+        InstituteId = instituteId, // Guid.Empty допустим — запуск по всему университету.
         InstituteName = instituteName ?? string.Empty,
         Succeeded = succeeded,
         Status = Guard.NotBlank(status, nameof(status)),

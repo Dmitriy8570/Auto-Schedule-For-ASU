@@ -113,26 +113,20 @@ public class LessonsController : ControllerBase
     }
 
     /// <summary>
-    /// Сгенерировать черновик расписания для одного института на семестр
-    /// (с учётом занятости других институтов и якоря к прошлому семестру).
-    /// Текущее расписание института при этом заменяется.
+    /// Поставить понедельную генерацию расписания <b>всего университета</b> в очередь (фоновая, не
+    /// блокирует HTTP-поток). Возвращает 202 Accepted и статус задачи; за прогрессом по неделям
+    /// следить через GET generate/status/{jobId}.
     /// </summary>
-    [HttpPost("generate/semester/{semesterId:guid}/institute/{instituteId:guid}")]
-    public async Task<ActionResult<GenerateScheduleResult>> GenerateForInstitute(
-        Guid semesterId, Guid instituteId, CancellationToken ct,
-        [FromQuery] double? maxTimeInSeconds = null, [FromQuery] int? searchWorkers = null)
-        => Ok(await _mediator.Send(
-            new GenerateInstituteScheduleCommand
-            {
-                SemesterId = semesterId,
-                InstituteId = instituteId,
-                MaxTimeInSeconds = maxTimeInSeconds,
-                SearchWorkers = searchWorkers
-            }, ct));
+    [HttpPost("generate/semester/{semesterId:guid}/async")]
+    public ActionResult<GenerationJobStatus> EnqueueGenerateUniversity(Guid semesterId)
+    {
+        var status = _generationQueue.Enqueue(semesterId, instituteId: null);
+        return AcceptedAtAction(nameof(GetGenerationStatus), new { jobId = status.JobId }, status);
+    }
 
     /// <summary>
-    /// Поставить генерацию расписания института в очередь (фоновая, не блокирует HTTP-поток).
-    /// Возвращает 202 Accepted и статус задачи; за прогрессом следить через GET generate/status/{jobId}.
+    /// Поставить понедельную генерацию расписания <b>одного института</b> в очередь (фоновая).
+    /// Учитывает уже занятые в каждой неделе ресурсы других институтов.
     /// </summary>
     [HttpPost("generate/semester/{semesterId:guid}/institute/{instituteId:guid}/async")]
     public ActionResult<GenerationJobStatus> EnqueueGenerateForInstitute(Guid semesterId, Guid instituteId)
@@ -141,7 +135,15 @@ public class LessonsController : ControllerBase
         return AcceptedAtAction(nameof(GetGenerationStatus), new { jobId = status.JobId }, status);
     }
 
-    /// <summary>Статус фоновой задачи генерации расписания.</summary>
+    /// <summary>
+    /// Отменить фоновую генерацию. Уже сформированные недели остаются в расписании.
+    /// 404 — задача неизвестна или уже завершена.
+    /// </summary>
+    [HttpPost("generate/{jobId:guid}/cancel")]
+    public IActionResult CancelGeneration(Guid jobId)
+        => _generationQueue.Cancel(jobId) ? Accepted() : NotFound();
+
+    /// <summary>Статус фоновой задачи генерации расписания (с прогрессом по неделям).</summary>
     [HttpGet("generate/status/{jobId:guid}")]
     public ActionResult<GenerationJobStatus> GetGenerationStatus(Guid jobId)
         => _generationQueue.TryGetStatus(jobId, out var status) ? Ok(status) : NotFound();

@@ -243,7 +243,7 @@ public static class ScheduleCompactor
     private static Dictionary<Guid, CurriculumInfo> BuildCurriculumIndex(ScheduleData data)
     {
         var result = new Dictionary<Guid, CurriculumInfo>();
-        foreach (var workload in data.SemesterWorkloads)
+        foreach (var workload in data.Workloads)
         {
             var curriculum = workload.Curriculum;
             if (curriculum is null || result.ContainsKey(curriculum.Id)) continue;

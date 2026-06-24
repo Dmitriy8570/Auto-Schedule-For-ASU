@@ -24,7 +24,7 @@ public class ScheduleModel
     /// <summary>Слагаемые целевой функции (штрафы), которые солвер минимизирует.</summary>
     public List<LinearExpr> Objective { get; }
 
-    public int WorkloadCount => Data.SemesterWorkloads.Count;
+    public int WorkloadCount => Data.Workloads.Count;
     public int ClassroomCount => Data.Classrooms.Count;
     public int TimeSlotCount => Data.TimeSlots.Count;
 
@@ -32,7 +32,7 @@ public class ScheduleModel
     {
         Data = data;
         Model = new CpModel();
-        Lessons = new BoolVar?[data.SemesterWorkloads.Count, data.Classrooms.Count, data.TimeSlots.Count];
+        Lessons = new BoolVar?[data.Workloads.Count, data.Classrooms.Count, data.TimeSlots.Count];
         Objective = new List<LinearExpr>();
     }
 }

@@ -50,7 +50,7 @@ public class OccupiedResourcesSectionBuilder : IModelSectionBuilder
         // Нагрузки, сгруппированные по преподавателю, чтобы за один проход
         // блокировать все его занятия в занятых слотах.
         var workloadsByTeacher = Enumerable.Range(0, model.WorkloadCount)
-            .ToLookup(w => model.Data.SemesterWorkloads[w].Curriculum.TeacherId);
+            .ToLookup(w => model.Data.Workloads[w].Curriculum.TeacherId);
 
         foreach (var o in occupied)
         {

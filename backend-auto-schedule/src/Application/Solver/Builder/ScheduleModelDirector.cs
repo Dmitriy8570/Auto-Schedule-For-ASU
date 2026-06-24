@@ -38,6 +38,7 @@ public class ScheduleModelDirector
             // Мягкие ограничения (штрафы в целевой функции).
             new DailyLessonsLimitSectionBuilder(w),
             new WindowSectionBuilder(),
+            new DayCompactnessSectionBuilder(w),
             new AvailabilitySectionBuilder(),
             new FavoriteBuildingSectionBuilder(w),
             new ParallelismSectionBuilder(w),
@@ -48,11 +49,13 @@ public class ScheduleModelDirector
     }
 
     /// <summary>
-    /// Набор для генерации по отдельному институту (декомпозиция «B + C»):
-    /// к полному набору добавляются жёсткая блокировка ресурсов, занятых другими
-    /// институтами этого семестра, и мягкий якорь к расписанию прошлого семестра.
+    /// Набор для генерации одного компонента в пределах <em>одной недели</em>: к полному набору
+    /// добавляются жёсткая блокировка ресурсов, уже занятых в этой неделе ранее посчитанными
+    /// компонентами/институтами (<see cref="OccupiedResourcesSectionBuilder"/>), и мягкий якорь
+    /// (<see cref="PreviousScheduleAnchorSectionBuilder"/>) к уже решённой неделе того же типа
+    /// (или к прошлому семестру) ради стабильности расписания из недели в неделю.
     /// </summary>
-    public static ScheduleModelDirector CreatePerInstitute(SolverPenaltyWeights? weights = null)
+    public static ScheduleModelDirector CreatePerWeek(SolverPenaltyWeights? weights = null)
     {
         var w = weights ?? SolverPenaltyWeights.Default;
         return new(new IModelSectionBuilder[]
@@ -73,6 +76,7 @@ public class ScheduleModelDirector
             // Мягкие ограничения (штрафы в целевой функции).
             new DailyLessonsLimitSectionBuilder(w),
             new WindowSectionBuilder(),
+            new DayCompactnessSectionBuilder(w),
             new AvailabilitySectionBuilder(),
             new FavoriteBuildingSectionBuilder(w),
             new ParallelismSectionBuilder(w),
@@ -84,7 +88,7 @@ public class ScheduleModelDirector
     }
 
     /// <summary>
-    /// Аварийный (best-effort) набор для одного института: применяется, когда обычная модель
+    /// Аварийный (best-effort) набор для компонента недели: применяется, когда обычная модель
     /// компонента неразрешима (Infeasible) или не решилась за отведённое время (Unknown). Размещение
     /// релаксировано (<see cref="BestEffortPlacementSectionBuilder"/>) — максимизируем число
     /// размещённых пар при сохранении всех жёстких ограничений (пересечения, занятые ресурсы,
@@ -93,7 +97,7 @@ public class ScheduleModelDirector
     /// цель — не оставить преподавателей вовсе без занятий, а не выдать идеальное расписание
     /// (его дорабатывает планировщик вручную по диагностике дефицита).
     /// </summary>
-    public static ScheduleModelDirector CreatePerInstituteBestEffort()
+    public static ScheduleModelDirector CreatePerWeekBestEffort()
     {
         return new(new IModelSectionBuilder[]
         {

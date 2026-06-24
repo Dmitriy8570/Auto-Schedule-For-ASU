@@ -12,17 +12,24 @@ public enum GenerationJobState
     /// <summary>Завершена успешно (см. <see cref="GenerationJobStatus.Result"/>).</summary>
     Succeeded,
     /// <summary>Завершена ошибкой (см. <see cref="GenerationJobStatus.Error"/>).</summary>
-    Failed
+    Failed,
+    /// <summary>Отменена пользователем (уже сформированные недели сохранены).</summary>
+    Cancelled
 }
 
-/// <summary>Снимок состояния фоновой задачи генерации расписания института.</summary>
+/// <summary>
+/// Снимок состояния фоновой задачи понедельной генерации расписания.
+/// <see cref="InstituteId"/> == <c>null</c> — генерация по всему университету.
+/// <see cref="Progress"/> заполняется по мере прохождения недель.
+/// </summary>
 public sealed record GenerationJobStatus(
     Guid JobId,
     GenerationJobState State,
     Guid SemesterId,
-    Guid InstituteId,
+    Guid? InstituteId,
     DateTime CreatedAt,
     DateTime? StartedAt,
     DateTime? CompletedAt,
     GenerateScheduleResult? Result,
-    string? Error);
+    string? Error,
+    GenerationProgress? Progress = null);

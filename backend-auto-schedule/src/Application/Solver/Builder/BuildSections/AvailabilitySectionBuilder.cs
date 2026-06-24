@@ -21,7 +21,7 @@ public class AvailabilitySectionBuilder : IModelSectionBuilder
     {
         for (int w = 0; w < model.WorkloadCount; w++)
         {
-            var teacher = model.Data.SemesterWorkloads[w].Curriculum.Teacher;
+            var teacher = model.Data.Workloads[w].Curriculum.Teacher;
             if (teacher.TeacherAvailabilities is null) continue;
 
             foreach (var a in teacher.TeacherAvailabilities)

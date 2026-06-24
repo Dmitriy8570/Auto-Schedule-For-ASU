@@ -164,6 +164,6 @@ public sealed class ScheduleCompactorTests
             .Set(nameof(SemesterWorkload.Curriculum), c)
             .Set(nameof(SemesterWorkload.CurriculumId), c.Id)).ToList();
 
-        return new ScheduleData(workloads, rooms, slots, Array.Empty<ConstraintConfig>());
+        return new ScheduleData(workloads.ToItems(), rooms, slots, Array.Empty<ConstraintConfig>());
     }
 }

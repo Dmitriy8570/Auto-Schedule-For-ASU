@@ -6,24 +6,24 @@ using Domain.workload;
 namespace Application.Solver.Model;
 
 /// <summary>
-/// Входные данные задачи составления расписания (экспериментальная версия).
-/// Остальные сущности (преподаватели, группы, оборудование, корпуса, доступность)
-/// доступны через навигационные свойства <see cref="SemesterWorkload"/> и <see cref="Classroom"/>,
-/// поэтому в данных хранятся только три «оси» модели и веса мягких ограничений.
+/// Входные данные задачи составления расписания на <em>одну учебную неделю</em>.
+/// Ось «нагрузка» — <see cref="WorkloadItem"/> (часы недели + учебный план); остальные сущности
+/// (преподаватели, группы, оборудование, корпуса, доступность) доступны через навигацию
+/// <see cref="WorkloadItem.Curriculum"/> и <see cref="Classroom"/>. <see cref="TimeSlots"/> —
+/// слоты только этой недели.
 ///
-/// Для генерации по отдельному институту (декомпозиция «B + C») заполняются
-/// дополнительные поля:
+/// Для покомпонентной/поинститутской декомпозиции внутри недели заполняются дополнительные поля:
 /// <list type="bullet">
 /// <item><see cref="OccupiedClassroomSlots"/> и <see cref="OccupiedTeacherSlots"/> —
-/// общие ресурсы, уже занятые ранее посчитанными институтами этого же семестра
-/// (жёсткие блокировки, вариант «B»);</item>
-/// <item><see cref="Anchors"/> — мягкие предпочтения, перенесённые из расписания
-/// прошлого семестра, для стабильности (вариант «C»).</item>
+/// ресурсы, уже занятые в этой неделе ранее посчитанными компонентами/институтами
+/// (жёсткие блокировки);</item>
+/// <item><see cref="Anchors"/> — мягкие предпочтения слота/корпуса, перенесённые из уже решённой
+/// недели того же типа (или из прошлого семестра) для стабильности расписания.</item>
 /// </list>
-/// Все три поля необязательны: при генерации на весь семестр сразу они равны <c>null</c>.
+/// Эти поля необязательны: при совместном решении всей недели сразу они равны <c>null</c>.
 /// </summary>
 public readonly record struct ScheduleData(
-    IReadOnlyList<SemesterWorkload> SemesterWorkloads,
+    IReadOnlyList<WorkloadItem> Workloads,
     IReadOnlyList<Classroom> Classrooms,
     IReadOnlyList<TimeSlot> TimeSlots,
     IReadOnlyList<ConstraintConfig> Penalties,
@@ -33,19 +33,31 @@ public readonly record struct ScheduleData(
     Guid SemesterId = default
 );
 
-/// <summary>Аудитория, занятая в конкретном слоте расписанием другого института этого семестра.</summary>
+/// <summary>
+/// Ось «нагрузка» модели на неделю: сколько пар нужно поставить за эту неделю по конкретному
+/// учебному плану. Проекция доменной <see cref="WeekWorkload"/> (или семестровой нагрузки в тестах):
+/// <see cref="Hours"/> — часы именно этой недели, <see cref="Curriculum"/> — общий учебный план
+/// (преподаватель, дисциплина, поток, оборудование, корпус).
+/// </summary>
+public readonly record struct WorkloadItem(int Hours, Curriculum Curriculum)
+{
+    /// <summary>Идентификатор учебного плана (для диагностики); пуст, если план не загружен.</summary>
+    public Guid CurriculumId => Curriculum?.Id ?? Guid.Empty;
+}
+
+/// <summary>Аудитория, занятая в конкретном слоте этой недели (другим компонентом/институтом).</summary>
 public readonly record struct OccupiedSlot(Guid ClassroomId, Guid TimeSlotId);
 
-/// <summary>Преподаватель, занятый в конкретном слоте расписанием другого института этого семестра.</summary>
+/// <summary>Преподаватель, занятый в конкретном слоте этой недели (другим компонентом/институтом).</summary>
 public readonly record struct OccupiedTeacherSlot(Guid TeacherId, Guid TimeSlotId);
 
 /// <summary>
-/// Мягкое предпочтение для одной нагрузки, перенесённое из расписания прошлого семестра.
-/// Индекс ссылается на позицию нагрузки в <see cref="ScheduleData.SemesterWorkloads"/>.
+/// Мягкое предпочтение для одной нагрузки, перенесённое из уже решённой недели того же типа
+/// (или из прошлого семестра). Индекс ссылается на позицию нагрузки в <see cref="ScheduleData.Workloads"/>.
 /// </summary>
 /// <param name="WorkloadIndex">Индекс нагрузки в осях модели.</param>
-/// <param name="PreferredBuildingId">Корпус, в котором аналогичное занятие шло в прошлом семестре; <c>null</c> — нет данных.</param>
-/// <param name="PreferredTimeSlotIds">Слоты, в которых аналогичное занятие шло в прошлом семестре.</param>
+/// <param name="PreferredBuildingId">Корпус, в котором аналогичное занятие шло ранее; <c>null</c> — нет данных.</param>
+/// <param name="PreferredTimeSlotIds">Слоты этой недели, в которых аналогичное занятие шло ранее.</param>
 public readonly record struct WorkloadAnchor(
     int WorkloadIndex,
     Guid? PreferredBuildingId,
