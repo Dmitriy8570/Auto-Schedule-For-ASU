@@ -38,7 +38,6 @@ public class ScheduleModelDirector
             // Мягкие ограничения (штрафы в целевой функции).
             new DailyLessonsLimitSectionBuilder(w),
             new WindowSectionBuilder(),
-            new DayCompactnessSectionBuilder(w),
             new AvailabilitySectionBuilder(),
             new FavoriteBuildingSectionBuilder(w),
             new ParallelismSectionBuilder(w),
@@ -49,63 +48,51 @@ public class ScheduleModelDirector
     }
 
     /// <summary>
-    /// Набор для генерации одного компонента в пределах <em>одной недели</em>: к полному набору
-    /// добавляются жёсткая блокировка ресурсов, уже занятых в этой неделе ранее посчитанными
-    /// компонентами/институтами (<see cref="OccupiedResourcesSectionBuilder"/>), и мягкий якорь
-    /// (<see cref="PreviousScheduleAnchorSectionBuilder"/>) к уже решённой неделе того же типа
-    /// (или к прошлому семестру) ради стабильности расписания из недели в неделю.
+    /// Двухфазное решение института за <em>одну неделю</em>, ЭТАП 1 — максимум размещения. Размещение
+    /// мягкое (<see cref="BestEffortPlacementSectionBuilder"/>, ≤ Hours/2 + награда за пару), мягкие
+    /// ограничения качества опущены: цель этапа — быстро найти, сколько пар вообще можно поставить при
+    /// всех жёстких ограничениях (перегруженная неделя физически не вмещает весь план). Это покрытие
+    /// затем фиксируется этапом 2. Модель всегда разрешима.
     /// </summary>
-    public static ScheduleModelDirector CreatePerWeek(SolverPenaltyWeights? weights = null)
+    public static ScheduleModelDirector CreatePerWeekMaxPlacement(SolverPenaltyWeights? weights = null)
     {
         var w = weights ?? SolverPenaltyWeights.Default;
         return new(new IModelSectionBuilder[]
         {
-            // Переменные.
             new VariablesSectionBuilder(),
-
-            // Жёсткие ограничения.
-            new TotalHoursSectionBuilder(),
+            new BestEffortPlacementSectionBuilder(w), // ≤ Hours/2 + награда ⇒ максимум пар.
             new IntersectionSectionBuilder(),
-            new OccupiedResourcesSectionBuilder(), // B: ресурсы других институтов уже заняты.
+            new OccupiedResourcesSectionBuilder(),
             new EquipmentSectionBuilder(),
             new CapacitySectionBuilder(),
             new ShiftSectionBuilder(),
             new BuildingTravelSectionBuilder(),
             new DoubleLessonSectionBuilder(),
-
-            // Мягкие ограничения (штрафы в целевой функции).
-            new DailyLessonsLimitSectionBuilder(w),
-            new WindowSectionBuilder(),
-            new DayCompactnessSectionBuilder(w),
-            new AvailabilitySectionBuilder(),
-            new FavoriteBuildingSectionBuilder(w),
-            new ParallelismSectionBuilder(w),
-            new PreviousScheduleAnchorSectionBuilder(w), // C: стабильность к прошлому семестру.
-
-            // Целевая функция.
             new ObjectiveSectionBuilder(),
         });
     }
 
     /// <summary>
-    /// Аварийный (best-effort) набор для компонента недели: применяется, когда обычная модель
-    /// компонента неразрешима (Infeasible) или не решилась за отведённое время (Unknown). Размещение
-    /// релаксировано (<see cref="BestEffortPlacementSectionBuilder"/>) — максимизируем число
-    /// размещённых пар при сохранении всех жёстких ограничений (пересечения, занятые ресурсы,
-    /// оборудование, вместимость, смена, переезды между корпусами, двойные пары). Мягкие
-    /// предпочтения (доступность, окна, корпус, дневные лимиты, якорь прошлого семестра) опускаются:
-    /// цель — не оставить преподавателей вовсе без занятий, а не выдать идеальное расписание
-    /// (его дорабатывает планировщик вручную по диагностике дефицита).
+    /// Двухфазное решение института за <em>одну неделю</em>, ЭТАП 2 — компактность при фиксированном
+    /// покрытии. Число поставленных пар по каждой нагрузке закреплено снизу результатом этапа 1
+    /// (<see cref="PlacementFloorSectionBuilder"/>), а в целевой функции — ТОЛЬКО штрафы качества (без
+    /// доминирующей награды за размещение). Поэтому солвер реально минимизирует число учебных дней и
+    /// окна, не выбрасывая занятия (нижняя граница хранит покрытие). Жёсткими остаются пересечения,
+    /// занятые ресурсы, оборудование, вместимость, смена, переезды между корпусами и двойные пары;
+    /// якорь — стабильность из недели в неделю.
     /// </summary>
-    public static ScheduleModelDirector CreatePerWeekBestEffort()
+    public static ScheduleModelDirector CreatePerWeekQuality(
+        IReadOnlyList<int> placementFloors, SolverPenaltyWeights? weights = null)
     {
+        var w = weights ?? SolverPenaltyWeights.Default;
         return new(new IModelSectionBuilder[]
         {
-            // Переменные.
             new VariablesSectionBuilder(),
 
-            // Размещение — мягкое (максимум возможного); прочие ограничения остаются жёсткими.
-            new BestEffortPlacementSectionBuilder(),
+            // Покрытие этапа 1 как нижняя граница (без награды в целевой функции).
+            new PlacementFloorSectionBuilder(placementFloors),
+
+            // Жёсткие ограничения.
             new IntersectionSectionBuilder(),
             new OccupiedResourcesSectionBuilder(),
             new EquipmentSectionBuilder(),
@@ -114,7 +101,15 @@ public class ScheduleModelDirector
             new BuildingTravelSectionBuilder(),
             new DoubleLessonSectionBuilder(),
 
-            // Целевая функция (минимизирует отрицательные слагаемые размещения ⇒ максимум пар).
+            // Мягкие ограничения качества — ЕДИНСТВЕННЫЕ слагаемые целевой функции на этом этапе.
+            new DailyLessonsLimitSectionBuilder(w),
+            new WindowSectionBuilder(),
+            new DayCompactnessSectionBuilder(w),
+            new AvailabilitySectionBuilder(),
+            new FavoriteBuildingSectionBuilder(w),
+            new ParallelismSectionBuilder(w),
+            new PreviousScheduleAnchorSectionBuilder(w),
+
             new ObjectiveSectionBuilder(),
         });
     }

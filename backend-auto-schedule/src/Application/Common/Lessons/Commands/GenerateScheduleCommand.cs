@@ -187,16 +187,10 @@ public sealed class GenerateScheduleCommandHandler
         if (subproblems.Count == 0)
             return new WeekOutcome(Array.Empty<Lesson>(), Array.Empty<WorkloadShortfall>(), 0, 0);
 
-        // Бюджет недели делим между подзадачами; совместные модели крупнее покомпонентных — даём
-        // каждой не меньше минуты (время не критично, важна память, а не скорость).
-        var perComponentOptions = options with
-        {
-            MaxTimeInSeconds = Math.Max(60, options.MaxTimeInSeconds / Math.Max(1, subproblems.Count)),
-        };
-        var salvageOptions = perComponentOptions with
-        {
-            MaxTimeInSeconds = Math.Min(perComponentOptions.MaxTimeInSeconds, 60),
-        };
+        // Лимит времени конфигурации трактуем как бюджет на ОДНУ подзадачу (институт за неделю):
+        // единая модель — оптимизация и выбирает весь лимит, поэтому суммарная длительность семестра
+        // регулируется значением в конфигурации (Solver:MaxTimeInSeconds), а не делением здесь.
+        var perComponentOptions = options;
 
         var occupiedRooms = new HashSet<OccupiedSlot>(data.OccupiedClassroomSlots ?? Array.Empty<OccupiedSlot>());
         var occupiedTeachers = new HashSet<OccupiedTeacherSlot>(data.OccupiedTeacherSlots ?? Array.Empty<OccupiedTeacherSlot>());
@@ -205,7 +199,7 @@ public sealed class GenerateScheduleCommandHandler
         var shortfalls = new List<WorkloadShortfall>();
         double objective = 0, wallSeconds = 0;
 
-        foreach (var indices in components)
+        foreach (var indices in subproblems)
         {
             ct.ThrowIfCancellationRequested();
 
@@ -217,32 +211,41 @@ public sealed class GenerateScheduleCommandHandler
                 OccupiedTeacherSlots = occupiedTeachers.ToList(),
             };
 
-            var solution = _solver.Solve(ScheduleModelDirector.CreatePerWeek().Build(subData), perComponentOptions);
-            wallSeconds += solution.WallTimeSeconds;
+            // Двухфазно. Этап 1 — максимум размещения (мягкое, без качества): сколько пар вообще
+            // влезает. Модель проста, солвер обычно завершает досрочно. Всегда разрешима.
+            var phase1 = _solver.Solve(
+                ScheduleModelDirector.CreatePerWeekMaxPlacement().Build(subData), perComponentOptions);
+            wallSeconds += phase1.WallTimeSeconds;
 
-            if (solution.IsSuccess)
+            var chosen = phase1;
+            if (phase1.IsSuccess)
             {
-                objective += solution.ObjectiveValue;
-                placed.AddRange(_mapper.ToLessons(subData, solution.Assignments)); // Lesson.Create() => Draft.
-                Occupy(subData, solution.Assignments, occupiedRooms, occupiedTeachers);
+                // Покрытие этапа 1 по нагрузкам → нижняя граница для этапа 2.
+                var floors = new int[subData.Workloads.Count];
+                foreach (var a in phase1.Assignments) floors[a.Workload]++;
+
+                // Этап 2 — компактность/окна при ЗАФИКСИРОВАННОМ покрытии (без награды за размещение,
+                // поэтому компактность реально минимизируется, а занятия не выбрасываются).
+                var phase2 = _solver.Solve(
+                    ScheduleModelDirector.CreatePerWeekQuality(floors).Build(subData), perComponentOptions);
+                wallSeconds += phase2.WallTimeSeconds;
+
+                if (phase2.IsSuccess && phase2.Assignments.Count >= phase1.Assignments.Count)
+                    chosen = phase2;
+            }
+
+            if (chosen.IsSuccess)
+            {
+                objective += chosen.ObjectiveValue;
+                placed.AddRange(_mapper.ToLessons(subData, chosen.Assignments)); // Lesson.Create() => Draft.
+                Occupy(subData, chosen.Assignments, occupiedRooms, occupiedTeachers);
+                shortfalls.AddRange(CollectShortfalls(subData, chosen.Assignments));
             }
             else
             {
-                // Жёсткая модель компонента неразрешима/не уложилась во время — размещаем максимум
-                // возможного при сохранении всех жёстких ограничений, остальное идёт в диагностику.
-                var salvage = _solver.Solve(ScheduleModelDirector.CreatePerWeekBestEffort().Build(subData), salvageOptions);
-                wallSeconds += salvage.WallTimeSeconds;
-
-                if (salvage.IsSuccess && salvage.Assignments.Count > 0)
-                {
-                    placed.AddRange(_mapper.ToLessons(subData, salvage.Assignments));
-                    Occupy(subData, salvage.Assignments, occupiedRooms, occupiedTeachers);
-                    shortfalls.AddRange(CollectShortfalls(subData, salvage.Assignments));
-                }
-                else
-                {
-                    shortfalls.AddRange(CollectShortfalls(subData, Array.Empty<Assignment>()));
-                }
+                // Сюда практически не попадаем (модель всегда разрешима) — только при таймауте без
+                // единого найденного решения; считаем всю подзадачу недоразмещённой.
+                shortfalls.AddRange(CollectShortfalls(subData, Array.Empty<Assignment>()));
             }
 
             // Возврат памяти ОС между подзадачами (уплотнение LOH) — крупные буферы модели/пресолва.
@@ -387,16 +390,46 @@ public sealed class GenerateScheduleCommandHandler
         return "нет аудитории с требуемым оборудованием";
     }
 
+    /// <summary>Порог: институт крупнее этого числа нагрузок дробим на компоненты (страховка по памяти).</summary>
+    private const int JointSolveMaxWorkloads = 600;
+
     /// <summary>
-    /// Разбить нагрузки недели на независимые подзадачи — компоненты связности по общим учебным
-    /// группам (union-find). Нагрузки, делящие хотя бы одну группу (лекционный поток и его семинары),
-    /// попадают в один компонент; разные группы решаются раздельно.
+    /// Институт нагрузки — по первой группе её потока (Group → Course → Degree → Institute).
+    /// Null-устойчиво: при отсутствии навигаций (минимальные модели тестов) вернёт <see cref="Guid.Empty"/>.
     /// </summary>
-    private static List<List<int>> PartitionBySharedGroups(IReadOnlyList<WorkloadItem> workloads)
+    private static Guid InstituteOf(WorkloadItem w) =>
+        w.Curriculum.Stream.StreamGroups
+            .Select(sg => sg.Group?.Course?.Degree?.InstituteId ?? Guid.Empty)
+            .FirstOrDefault();
+
+    /// <summary>
+    /// Разбить нагрузки недели по институтам: нагрузки одного института решаются ОДНОЙ совместной
+    /// моделью. Преподаватели не пересекают институты, поэтому совместное решение института убирает
+    /// «жадные» окна между группами (раньше группы решались по очереди с блокировкой преподавателя).
+    /// </summary>
+    private static List<List<int>> PartitionByInstitute(IReadOnlyList<WorkloadItem> workloads)
     {
-        int n = workloads.Count;
+        var byInstitute = new Dictionary<Guid, List<int>>();
+        for (int i = 0; i < workloads.Count; i++)
+        {
+            var inst = InstituteOf(workloads[i]);
+            if (!byInstitute.TryGetValue(inst, out var list)) byInstitute[inst] = list = new List<int>();
+            list.Add(i);
+        }
+        return byInstitute.Values.ToList();
+    }
+
+    /// <summary>
+    /// Страховка по памяти: разбить подмножество нагрузок <paramref name="indices"/> на компоненты
+    /// связности по общим учебным группам (union-find). Применяется, только если институт слишком велик
+    /// для совместной модели. Возвращает списки исходных индексов в <paramref name="workloads"/>.
+    /// </summary>
+    private static List<List<int>> PartitionBySharedGroups(
+        IReadOnlyList<WorkloadItem> workloads, IReadOnlyList<int> indices)
+    {
+        int n = indices.Count;
         var parent = new int[n];
-        for (int i = 0; i < n; i++) parent[i] = i;
+        for (int p = 0; p < n; p++) parent[p] = p;
 
         int Find(int x)
         {
@@ -406,19 +439,19 @@ public sealed class GenerateScheduleCommandHandler
         void Union(int a, int b) => parent[Find(a)] = Find(b);
 
         var firstByGroup = new Dictionary<Guid, int>();
-        for (int i = 0; i < n; i++)
-            foreach (var sg in workloads[i].Curriculum.Stream.StreamGroups)
+        for (int p = 0; p < n; p++)
+            foreach (var sg in workloads[indices[p]].Curriculum.Stream.StreamGroups)
             {
-                if (firstByGroup.TryGetValue(sg.GroupId, out int j)) Union(i, j);
-                else firstByGroup[sg.GroupId] = i;
+                if (firstByGroup.TryGetValue(sg.GroupId, out int q)) Union(p, q);
+                else firstByGroup[sg.GroupId] = p;
             }
 
         var components = new Dictionary<int, List<int>>();
-        for (int i = 0; i < n; i++)
+        for (int p = 0; p < n; p++)
         {
-            int root = Find(i);
+            int root = Find(p);
             if (!components.TryGetValue(root, out var list)) components[root] = list = new List<int>();
-            list.Add(i);
+            list.Add(indices[p]); // исходный индекс нагрузки
         }
         return components.Values.ToList();
     }
