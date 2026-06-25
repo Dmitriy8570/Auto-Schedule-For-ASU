@@ -381,7 +381,7 @@ public sealed class UniversityDataLoader
         {
             string program = grp.Key.Program;
             int course = grp.Key.Course;
-            string home = ProgramHomeBuilding.GetValueOrDefault(program);
+            string? home = ProgramHomeBuilding.GetValueOrDefault(program);
             var core = ProgramSubjects[program];
 
             var stream = MakeStream(grp.ToList());
@@ -400,7 +400,7 @@ public sealed class UniversityDataLoader
         {
             string program = ProgramOf(group.Name);
             int course = CourseOf(group.Name);
-            string home = ProgramHomeBuilding.GetValueOrDefault(program);
+            string? home = ProgramHomeBuilding.GetValueOrDefault(program);
             var core = ProgramSubjects[program];
             int seed = group.Name.Sum(c => c);
 

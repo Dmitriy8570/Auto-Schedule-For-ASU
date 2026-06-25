@@ -69,6 +69,10 @@ services:
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-dev-only-change-me-please-use-a-32+byte-secret-key}
       Jwt__Issuer: ${JWT_ISSUER:-auto-schedule}
       Jwt__Audience: ${JWT_AUDIENCE:-auto-schedule}
+      # Лимит времени солвера на одну фазу недели. ВНИМАНИЕ: слишком малое значение на институтской
+      # модели (~124 нагрузки) даёт пустые недели (солвер не успевает найти решение → Unknown).
+      Solver__MaxTimeInSeconds: "${SOLVER_MAX_TIME:-180}"
+      Solver__SearchWorkers: "${SOLVER_WORKERS:-8}"
     ports:
       - "${BACKEND_PORT:-5000}:8080"
     networks:

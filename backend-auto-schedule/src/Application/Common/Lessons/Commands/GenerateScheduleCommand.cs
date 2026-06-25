@@ -165,93 +165,70 @@ public sealed class GenerateScheduleCommandHandler
     // ----- Решение одной недели (по институтам совместно → best-effort → уплотнение) -----------
 
     /// <summary>
-    /// Решить расписание одной недели. Декомпозиция — <em>по институту</em>: нагрузки института за
-    /// неделю решаются ОДНОЙ совместной моделью (а не по группам по очереди). Это принципиально для
-    /// качества: преподаватели и аудитории координируются разом, поэтому штраф за окно реально
-    /// работает — раньше группы решались последовательно и преподаватель «застолблялся» одной группой,
-    /// вынуждая у другой окно, которое мягкий штраф пробить не мог. Благодаря понедельной оси модель
-    /// института за неделю невелика (≈ планы института × слоты недели), так что в память помещается.
-    /// Если отдельный институт всё же слишком велик — он дробится на компоненты связности по общим
-    /// группам (страховка по памяти). Институты между собой делят аудитории, но не преподавателей,
-    /// поэтому последовательная блокировка аудиторий между ними окон не создаёт.
+    /// Решить расписание одной недели ОДНОЙ совместной моделью на весь охват генерации (институт —
+    /// когда задан <see cref="GenerateScheduleCommand.InstituteId"/>, иначе весь университет; данные
+    /// уже отфильтрованы провайдером). Совместное решение принципиально для качества: преподаватели и
+    /// аудитории координируются разом, поэтому штраф за окно реально работает — раньше группы решались
+    /// последовательно и преподаватель «застолблялся» одной группой, вынуждая у другой окно, которое
+    /// мягкий штраф пробить не мог. Благодаря понедельной оси модель невелика (≈ планы × слоты недели),
+    /// так что помещается в память. Лимит времени из конфигурации (Solver:MaxTimeInSeconds) — это
+    /// бюджет на одну неделю; суммарная длительность семестра регулируется им же.
     /// </summary>
     private WeekOutcome SolveWeek(ScheduleData data, SolverOptions options, CancellationToken ct)
     {
-        // Подзадачи: по институту; крупный институт дробим по группам как страховку по памяти.
-        var subproblems = new List<List<int>>();
-        foreach (var institute in PartitionByInstitute(data.Workloads))
-        {
-            if (institute.Count <= JointSolveMaxWorkloads) subproblems.Add(institute);
-            else subproblems.AddRange(PartitionBySharedGroups(data.Workloads, institute));
-        }
-        if (subproblems.Count == 0)
+        if (data.Workloads.Count == 0)
             return new WeekOutcome(Array.Empty<Lesson>(), Array.Empty<WorkloadShortfall>(), 0, 0);
 
-        // Лимит времени конфигурации трактуем как бюджет на ОДНУ подзадачу (институт за неделю):
-        // единая модель — оптимизация и выбирает весь лимит, поэтому суммарная длительность семестра
-        // регулируется значением в конфигурации (Solver:MaxTimeInSeconds), а не делением здесь.
-        var perComponentOptions = options;
-
-        var occupiedRooms = new HashSet<OccupiedSlot>(data.OccupiedClassroomSlots ?? Array.Empty<OccupiedSlot>());
-        var occupiedTeachers = new HashSet<OccupiedTeacherSlot>(data.OccupiedTeacherSlots ?? Array.Empty<OccupiedTeacherSlot>());
+        ct.ThrowIfCancellationRequested();
 
         var placed = new List<Lesson>();
         var shortfalls = new List<WorkloadShortfall>();
         double objective = 0, wallSeconds = 0;
 
-        foreach (var indices in subproblems)
+        // Двухфазно. Этап 1 — максимум размещения (мягкое, без качества): сколько пар вообще
+        // влезает. Модель проста, солвер обычно завершает досрочно. Всегда разрешима.
+        var phase1 = _solver.Solve(
+            ScheduleModelDirector.CreatePerWeekMaxPlacement().Build(data), options);
+        wallSeconds += phase1.WallTimeSeconds;
+
+        var chosen = phase1;
+        if (phase1.IsSuccess)
         {
-            ct.ThrowIfCancellationRequested();
+            // Покрытие этапа 1 по нагрузкам → нижняя граница для этапа 2.
+            var floors = new int[data.Workloads.Count];
+            foreach (var a in phase1.Assignments) floors[a.Workload]++;
 
-            var subset = indices.Select(i => data.Workloads[i]).ToList();
-            var subData = data with
-            {
-                Workloads = subset,
-                OccupiedClassroomSlots = occupiedRooms.ToList(),
-                OccupiedTeacherSlots = occupiedTeachers.ToList(),
-            };
+            // Этап 2 — компактность/окна при ЗАФИКСИРОВАННОМ покрытии (без награды за размещение,
+            // поэтому компактность реально минимизируется, а занятия не выбрасываются). Тёплый старт:
+            // решение этапа 1 допустимо и для этапа 2 (то же покрытие, те же жёсткие ограничения),
+            // поэтому подаём его подсказкой — солвер сразу получает стартовый инкумбент, и весь бюджет
+            // времени идёт на УЛУЧШЕНИЕ качества, а не на повторный поиск любого допустимого решения.
+            // На институтской модели (~сотни нагрузок) без этого этап 2 не успевает уйти от размещения.
+            var phase2Model = ScheduleModelDirector.CreatePerWeekQuality(floors).Build(data);
+            HintAssignments(phase2Model, phase1.Assignments);
+            var phase2 = _solver.Solve(phase2Model, options);
+            wallSeconds += phase2.WallTimeSeconds;
 
-            // Двухфазно. Этап 1 — максимум размещения (мягкое, без качества): сколько пар вообще
-            // влезает. Модель проста, солвер обычно завершает досрочно. Всегда разрешима.
-            var phase1 = _solver.Solve(
-                ScheduleModelDirector.CreatePerWeekMaxPlacement().Build(subData), perComponentOptions);
-            wallSeconds += phase1.WallTimeSeconds;
-
-            var chosen = phase1;
-            if (phase1.IsSuccess)
-            {
-                // Покрытие этапа 1 по нагрузкам → нижняя граница для этапа 2.
-                var floors = new int[subData.Workloads.Count];
-                foreach (var a in phase1.Assignments) floors[a.Workload]++;
-
-                // Этап 2 — компактность/окна при ЗАФИКСИРОВАННОМ покрытии (без награды за размещение,
-                // поэтому компактность реально минимизируется, а занятия не выбрасываются).
-                var phase2 = _solver.Solve(
-                    ScheduleModelDirector.CreatePerWeekQuality(floors).Build(subData), perComponentOptions);
-                wallSeconds += phase2.WallTimeSeconds;
-
-                if (phase2.IsSuccess && phase2.Assignments.Count >= phase1.Assignments.Count)
-                    chosen = phase2;
-            }
-
-            if (chosen.IsSuccess)
-            {
-                objective += chosen.ObjectiveValue;
-                placed.AddRange(_mapper.ToLessons(subData, chosen.Assignments)); // Lesson.Create() => Draft.
-                Occupy(subData, chosen.Assignments, occupiedRooms, occupiedTeachers);
-                shortfalls.AddRange(CollectShortfalls(subData, chosen.Assignments));
-            }
-            else
-            {
-                // Сюда практически не попадаем (модель всегда разрешима) — только при таймауте без
-                // единого найденного решения; считаем всю подзадачу недоразмещённой.
-                shortfalls.AddRange(CollectShortfalls(subData, Array.Empty<Assignment>()));
-            }
-
-            // Возврат памяти ОС между подзадачами (уплотнение LOH) — крупные буферы модели/пресолва.
-            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+            if (phase2.IsSuccess && phase2.Assignments.Count >= phase1.Assignments.Count)
+                chosen = phase2;
         }
+
+        if (chosen.IsSuccess)
+        {
+            objective += chosen.ObjectiveValue;
+            placed.AddRange(_mapper.ToLessons(data, chosen.Assignments)); // Lesson.Create() => Draft.
+            shortfalls.AddRange(CollectShortfalls(data, chosen.Assignments));
+        }
+        else
+        {
+            // Сюда практически не попадаем (модель всегда разрешима) — только при таймауте без
+            // единого найденного решения; считаем всю неделю недоразмещённой.
+            shortfalls.AddRange(CollectShortfalls(data, Array.Empty<Assignment>()));
+        }
+
+        // Возврат памяти ОС после решения недели (уплотнение LOH) — крупные буферы модели/пресолва.
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
 
         // Пост-уплотнение окон в пределах недели (ресурсы других институтов — из исходных занятых).
         if (placed.Count > 0)
@@ -336,24 +313,28 @@ public sealed class GenerateScheduleCommandHandler
         return anchors;
     }
 
-    // ----- Вспомогательное -------------------------------------------------------------------
-
-    /// <summary>Накопить занятые (аудитория, слот) и (преподаватель, слот) для следующих компонентов.</summary>
-    private static void Occupy(
-        ScheduleData subData, IReadOnlyList<Assignment> assignments,
-        HashSet<OccupiedSlot> occupiedRooms, HashSet<OccupiedTeacherSlot> occupiedTeachers)
+    /// <summary>
+    /// Тёплый старт CP-SAT: подсказать модели полное решение этапа 1 — для каждой созданной переменной
+    /// (нагрузка, аудитория, слот) указать «занята/нет». Это допустимое решение этапа 2 (покрытие то же,
+    /// жёсткие ограничения те же), поэтому солвер берёт его стартовым инкумбентом и тратит весь бюджет
+    /// на минимизацию окон и числа учебных дней, а не на повторный поиск любого допустимого решения.
+    /// </summary>
+    private static void HintAssignments(ScheduleModel model, IReadOnlyList<Assignment> assignments)
     {
-        foreach (var a in assignments)
-        {
-            var slotId = subData.TimeSlots[a.Slot].Id;
-            occupiedRooms.Add(new OccupiedSlot(subData.Classrooms[a.Room].Id, slotId));
-            occupiedTeachers.Add(new OccupiedTeacherSlot(
-                subData.Workloads[a.Workload].Curriculum.TeacherId, slotId));
-        }
+        var occupied = new HashSet<(int W, int R, int T)>(
+            assignments.Select(a => (a.Workload, a.Room, a.Slot)));
+
+        for (int w = 0; w < model.WorkloadCount; w++)
+            for (int r = 0; r < model.ClassroomCount; r++)
+                for (int t = 0; t < model.TimeSlotCount; t++)
+                    if (model.Lessons[w, r, t] is { } cell)
+                        model.Model.AddHint(cell, occupied.Contains((w, r, t)) ? 1 : 0);
     }
 
+    // ----- Вспомогательное -------------------------------------------------------------------
+
     /// <summary>
-    /// Нагрузки компонента, размещённые меньше плана недели (включая нулевое размещение): для
+    /// Нагрузки недели, размещённые меньше плана недели (включая нулевое размещение): для
     /// диагностики «почему преподаватель остался без занятий».
     /// </summary>
     private static IEnumerable<WorkloadShortfall> CollectShortfalls(
@@ -388,72 +369,6 @@ public sealed class GenerateScheduleCommandHandler
             return $"ни одна аудитория не вмещает {students} студентов";
 
         return "нет аудитории с требуемым оборудованием";
-    }
-
-    /// <summary>Порог: институт крупнее этого числа нагрузок дробим на компоненты (страховка по памяти).</summary>
-    private const int JointSolveMaxWorkloads = 600;
-
-    /// <summary>
-    /// Институт нагрузки — по первой группе её потока (Group → Course → Degree → Institute).
-    /// Null-устойчиво: при отсутствии навигаций (минимальные модели тестов) вернёт <see cref="Guid.Empty"/>.
-    /// </summary>
-    private static Guid InstituteOf(WorkloadItem w) =>
-        w.Curriculum.Stream.StreamGroups
-            .Select(sg => sg.Group?.Course?.Degree?.InstituteId ?? Guid.Empty)
-            .FirstOrDefault();
-
-    /// <summary>
-    /// Разбить нагрузки недели по институтам: нагрузки одного института решаются ОДНОЙ совместной
-    /// моделью. Преподаватели не пересекают институты, поэтому совместное решение института убирает
-    /// «жадные» окна между группами (раньше группы решались по очереди с блокировкой преподавателя).
-    /// </summary>
-    private static List<List<int>> PartitionByInstitute(IReadOnlyList<WorkloadItem> workloads)
-    {
-        var byInstitute = new Dictionary<Guid, List<int>>();
-        for (int i = 0; i < workloads.Count; i++)
-        {
-            var inst = InstituteOf(workloads[i]);
-            if (!byInstitute.TryGetValue(inst, out var list)) byInstitute[inst] = list = new List<int>();
-            list.Add(i);
-        }
-        return byInstitute.Values.ToList();
-    }
-
-    /// <summary>
-    /// Страховка по памяти: разбить подмножество нагрузок <paramref name="indices"/> на компоненты
-    /// связности по общим учебным группам (union-find). Применяется, только если институт слишком велик
-    /// для совместной модели. Возвращает списки исходных индексов в <paramref name="workloads"/>.
-    /// </summary>
-    private static List<List<int>> PartitionBySharedGroups(
-        IReadOnlyList<WorkloadItem> workloads, IReadOnlyList<int> indices)
-    {
-        int n = indices.Count;
-        var parent = new int[n];
-        for (int p = 0; p < n; p++) parent[p] = p;
-
-        int Find(int x)
-        {
-            while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
-            return x;
-        }
-        void Union(int a, int b) => parent[Find(a)] = Find(b);
-
-        var firstByGroup = new Dictionary<Guid, int>();
-        for (int p = 0; p < n; p++)
-            foreach (var sg in workloads[indices[p]].Curriculum.Stream.StreamGroups)
-            {
-                if (firstByGroup.TryGetValue(sg.GroupId, out int q)) Union(p, q);
-                else firstByGroup[sg.GroupId] = p;
-            }
-
-        var components = new Dictionary<int, List<int>>();
-        for (int p = 0; p < n; p++)
-        {
-            int root = Find(p);
-            if (!components.TryGetValue(root, out var list)) components[root] = list = new List<int>();
-            list.Add(indices[p]); // исходный индекс нагрузки
-        }
-        return components.Values.ToList();
     }
 
     private static string WeekLabel(ScheduleWeek week) =>

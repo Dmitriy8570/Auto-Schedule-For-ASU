@@ -65,7 +65,7 @@ public class ScheduleModelDirector
             new OccupiedResourcesSectionBuilder(),
             new EquipmentSectionBuilder(),
             new CapacitySectionBuilder(),
-            new ShiftSectionBuilder(),
+            new SoftShiftSectionBuilder(w), // смена мягкая — даёт место упаковать день без окон.
             new BuildingTravelSectionBuilder(),
             new DoubleLessonSectionBuilder(),
             new ObjectiveSectionBuilder(),
@@ -97,11 +97,11 @@ public class ScheduleModelDirector
             new OccupiedResourcesSectionBuilder(),
             new EquipmentSectionBuilder(),
             new CapacitySectionBuilder(),
-            new ShiftSectionBuilder(),
             new BuildingTravelSectionBuilder(),
             new DoubleLessonSectionBuilder(),
 
-            // Мягкие ограничения качества — ЕДИНСТВЕННЫЕ слагаемые целевой функции на этом этапе.
+            // Мягкие ограничения качества — слагаемые целевой функции на этом этапе.
+            new SoftShiftSectionBuilder(w), // смена мягкая — даёт место упаковать день без окон.
             new DailyLessonsLimitSectionBuilder(w),
             new WindowSectionBuilder(),
             new DayCompactnessSectionBuilder(w),

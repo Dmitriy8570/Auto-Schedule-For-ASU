@@ -126,12 +126,16 @@ public sealed class InfrastructureSeeder(
         // Веса мягких ограничений — по одной записи на тип. Если хоть одна уже есть — пропускаем.
         if (await db.ConstraintConfigs.AnyAsync(ct)) return 0;
 
-        // Значения по умолчанию: окна штрафуются умеренно, нарушение доступности — сильнее.
-        // Все веса далее настраиваются из UI (вкладка «Ограничения» → «Веса»).
+        // Значения по умолчанию. Вес окна подобран эмпирически (см. прогон солвера на когорте): при
+        // 5 оставалось ~8 окон, при 50 окна исчезают полностью при почти той же компактности. Вес
+        // окна должен быть ощутимо выше прочих мягких штрафов (доступность 10, любимый корпус 5,
+        // дневной перебор 50), чтобы солвер делал учебный день сплошным, но НИЖЕ веса учебного дня
+        // (GroupDayUsage = 200 в SolverPenaltyWeights), иначе он начнёт размазывать пары по дням ради
+        // устранения окна. Все веса далее настраиваются из UI (вкладка «Ограничения» → «Веса»).
         var defaults = new (ConstraintType Type, int Penalty)[]
         {
-            (ConstraintType.TeacherGap, 3),
-            (ConstraintType.StudentGap, 5),
+            (ConstraintType.TeacherGap, 40),
+            (ConstraintType.StudentGap, 50),
             (ConstraintType.ClassroomAvailability, 10),
             (ConstraintType.TeacherAvailability, 10),
         };

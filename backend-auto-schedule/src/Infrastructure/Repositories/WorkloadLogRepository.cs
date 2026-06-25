@@ -42,14 +42,16 @@ public sealed class WorkloadLogRepository(ApplicationDbContext context) : IWorkl
     {
         var query = context.SemesterLogs.AsNoTracking().AsQueryable();
 
+        // l.SemesterWorkload — навигация nullable (связь обнуляется при удалении нагрузки), но в
+        // выражении-запросе разыменование транслируется в SQL-JOIN, поэтому null-forgiving (!) уместен.
         if (f.TeacherId is { } teacher)
-            query = query.Where(l => l.SemesterWorkload.Curriculum.TeacherId == teacher);
+            query = query.Where(l => l.SemesterWorkload!.Curriculum.TeacherId == teacher);
         if (f.SubjectId is { } subject)
-            query = query.Where(l => l.SemesterWorkload.Curriculum.SubjectId == subject);
+            query = query.Where(l => l.SemesterWorkload!.Curriculum.SubjectId == subject);
         if (f.GroupId is { } group)
-            query = query.Where(l => l.SemesterWorkload.Curriculum.Stream.StreamGroups.Any(sg => sg.GroupId == group));
+            query = query.Where(l => l.SemesterWorkload!.Curriculum.Stream.StreamGroups.Any(sg => sg.GroupId == group));
         if (f.SemesterId is { } semester)
-            query = query.Where(l => l.SemesterWorkload.SemesterId == semester);
+            query = query.Where(l => l.SemesterWorkload!.SemesterId == semester);
         if (f.From is { } from)
             query = query.Where(l => l.TimeStamp >= from);
         if (f.To is { } to)
@@ -62,7 +64,7 @@ public sealed class WorkloadLogRepository(ApplicationDbContext context) : IWorkl
             NewValue = l.NewValue,
             TimeStamp = l.TimeStamp,
             Scope = "Semester",
-            CurriculumId = l.SemesterWorkload.CurriculumId,
+            CurriculumId = l.SemesterWorkload!.CurriculumId,
             TeacherId = l.SemesterWorkload.Curriculum.TeacherId,
             SubjectId = l.SemesterWorkload.Curriculum.SubjectId,
             StreamId = l.SemesterWorkload.Curriculum.StreamId
@@ -73,14 +75,16 @@ public sealed class WorkloadLogRepository(ApplicationDbContext context) : IWorkl
     {
         var query = context.WeekLogs.AsNoTracking().AsQueryable();
 
+        // l.WeekWorkload — навигация nullable (связь обнуляется при удалении нагрузки), но в
+        // выражении-запросе разыменование транслируется в SQL-JOIN, поэтому null-forgiving (!) уместен.
         if (f.TeacherId is { } teacher)
-            query = query.Where(l => l.WeekWorkload.Curriculum.TeacherId == teacher);
+            query = query.Where(l => l.WeekWorkload!.Curriculum.TeacherId == teacher);
         if (f.SubjectId is { } subject)
-            query = query.Where(l => l.WeekWorkload.Curriculum.SubjectId == subject);
+            query = query.Where(l => l.WeekWorkload!.Curriculum.SubjectId == subject);
         if (f.GroupId is { } group)
-            query = query.Where(l => l.WeekWorkload.Curriculum.Stream.StreamGroups.Any(sg => sg.GroupId == group));
+            query = query.Where(l => l.WeekWorkload!.Curriculum.Stream.StreamGroups.Any(sg => sg.GroupId == group));
         if (f.SemesterId is { } semester)
-            query = query.Where(l => l.WeekWorkload.Week.SemesterId == semester);
+            query = query.Where(l => l.WeekWorkload!.Week.SemesterId == semester);
         if (f.From is { } from)
             query = query.Where(l => l.TimeStamp >= from);
         if (f.To is { } to)
@@ -93,7 +97,7 @@ public sealed class WorkloadLogRepository(ApplicationDbContext context) : IWorkl
             NewValue = l.NewValue,
             TimeStamp = l.TimeStamp,
             Scope = "Week",
-            CurriculumId = l.WeekWorkload.CurriculumId,
+            CurriculumId = l.WeekWorkload!.CurriculumId,
             TeacherId = l.WeekWorkload.Curriculum.TeacherId,
             SubjectId = l.WeekWorkload.Curriculum.SubjectId,
             StreamId = l.WeekWorkload.Curriculum.StreamId

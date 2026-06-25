@@ -1,0 +1,3 @@
+# Артефакты прогона dev-солвера: генерируются тестом SemesterScheduleGenerationTests
+# (входные JSON + markdown-отчёты по преподавателям/группам/аудиториям). Регенерируются.
+TestOutput/
