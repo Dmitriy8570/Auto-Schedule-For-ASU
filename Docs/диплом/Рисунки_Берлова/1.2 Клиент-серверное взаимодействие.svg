@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#34495e"/></marker>
+    <marker id="g" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d4f"/></marker>
+  </defs>
+  <rect width="900" height="430" fill="#ffffff"/>
+
+  <!-- client -->
+  <rect x="50" y="90" width="280" height="180" rx="10" fill="#eaf2fb" stroke="#34495e" stroke-width="1.8"/>
+  <text x="190" y="120" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2d3d">Браузер пользователя</text>
+  <rect x="78" y="140" width="224" height="100" rx="8" fill="#ffffff" stroke="#34495e" stroke-width="1.3"/>
+  <text x="190" y="172" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#33475b">Одностраничное</text>
+  <text x="190" y="192" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#33475b">приложение (SPA)</text>
+  <text x="190" y="218" text-anchor="middle" font-size="12.5" fill="#5a6b7b">Vue 3 · TypeScript · Vite</text>
+
+  <!-- server -->
+  <rect x="570" y="90" width="280" height="180" rx="10" fill="#eaf2fb" stroke="#34495e" stroke-width="1.8"/>
+  <text x="710" y="120" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2d3d">Сервер</text>
+  <rect x="598" y="140" width="224" height="100" rx="8" fill="#ffffff" stroke="#34495e" stroke-width="1.3"/>
+  <text x="710" y="178" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#33475b">ASP.NET Core</text>
+  <text x="710" y="202" text-anchor="middle" font-size="12.5" fill="#5a6b7b">REST API · хаб SignalR</text>
+
+  <!-- DB -->
+  <g>
+    <ellipse cx="710" cy="330" rx="70" ry="14" fill="#dff0e6" stroke="#2e7d4f" stroke-width="1.4"/>
+    <path d="M640,330 L640,386 A70,14 0 0 0 780,386 L780,330" fill="#dff0e6" stroke="#2e7d4f" stroke-width="1.4"/>
+    <ellipse cx="710" cy="330" rx="70" ry="14" fill="#eaf7ef" stroke="#2e7d4f" stroke-width="1.4"/>
+    <text x="710" y="368" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f5736">PostgreSQL</text>
+  </g>
+  <line x1="710" y1="270" x2="710" y2="314" stroke="#34495e" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- REST channel -->
+  <line x1="330" y1="150" x2="568" y2="150" stroke="#34495e" stroke-width="1.8" marker-end="url(#a)"/>
+  <line x1="570" y1="178" x2="332" y2="178" stroke="#34495e" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="360" y="120" width="180" height="22" rx="11" fill="#34495e"/>
+  <text x="450" y="136" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">REST (HTTP, JSON)</text>
+  <text x="450" y="200" text-anchor="middle" font-size="11.5" fill="#5a6b7b">запрос / ответ</text>
+
+  <!-- SignalR channel -->
+  <line x1="570" y1="238" x2="332" y2="238" stroke="#2e7d4f" stroke-width="1.8" marker-end="url(#g)"/>
+  <rect x="360" y="246" width="180" height="22" rx="11" fill="#2e7d4f"/>
+  <text x="450" y="262" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">WebSocket (SignalR)</text>
+  <text x="450" y="288" text-anchor="middle" font-size="11.5" fill="#2e7d4f">события реального времени (сервер → клиент)</text>
+</svg>

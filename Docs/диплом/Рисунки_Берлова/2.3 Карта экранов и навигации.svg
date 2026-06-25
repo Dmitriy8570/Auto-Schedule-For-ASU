@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#34495e"/></marker>
+    <marker id="r" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#c0392b"/></marker>
+  </defs>
+  <rect width="900" height="520" fill="#ffffff"/>
+
+  <!-- login -->
+  <rect x="50" y="190" width="210" height="110" rx="9" fill="#eaf2fb" stroke="#34495e" stroke-width="1.8"/>
+  <text x="155" y="226" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f2d3d">Экран входа</text>
+  <text x="155" y="248" text-anchor="middle" font-size="12.5" fill="#33475b">/login (публичный)</text>
+  <text x="155" y="276" text-anchor="middle" font-size="12" fill="#5a6b7b">форма: имя и пароль</text>
+
+  <!-- arrow to dashboard -->
+  <line x1="260" y1="225" x2="356" y2="225" stroke="#34495e" stroke-width="1.8" marker-end="url(#a)"/>
+  <text x="308" y="216" text-anchor="middle" font-size="11.5" fill="#34495e">есть сессия</text>
+  <text x="308" y="244" text-anchor="middle" font-size="11" fill="#5a6b7b">→ /schedule</text>
+
+  <!-- guard back -->
+  <path d="M356,290 C300,330 230,330 230,302" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="300" y="352" text-anchor="middle" font-size="11.5" fill="#922b21">нет сессии → /login (навигационный контроль)</text>
+
+  <!-- dashboard -->
+  <rect x="360" y="40" width="500" height="440" rx="10" fill="#f5f8fb" stroke="#34495e" stroke-width="1.8"/>
+  <text x="610" y="66" text-anchor="middle" font-size="14" font-weight="bold" fill="#2c3e50">Защищённая область — MainDashboard ( / )</text>
+  <text x="610" y="88" text-anchor="middle" font-size="11.8" fill="#5a6b7b">боковое меню · шапка с колокольчиком уведомлений · область содержимого</text>
+
+  <!-- tabs -->
+  <g font-size="12.8" fill="#1f2d3d">
+    <rect x="390" y="104" width="440" height="44" rx="6" fill="#dff0e6" stroke="#2e7d4f" stroke-width="1.6"/><text x="610" y="131" text-anchor="middle" font-weight="bold">Расписание  /schedule  (по умолчанию)</text>
+    <rect x="390" y="160" width="440" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="610" y="185" text-anchor="middle">Нагрузка  /load</text>
+    <rect x="390" y="212" width="440" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="610" y="237" text-anchor="middle">Нераспределённая нагрузка  /unplaced</text>
+    <rect x="390" y="264" width="440" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="610" y="289" text-anchor="middle">История автогенерации  /generation-history</text>
+    <rect x="390" y="316" width="440" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="610" y="341" text-anchor="middle">История изменений  /changes</text>
+    <rect x="390" y="368" width="440" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="610" y="393" text-anchor="middle">Ограничения  /settings</text>
+  </g>
+  <text x="610" y="440" text-anchor="middle" font-size="11.5" fill="#7a8694">маршрутизация с историей браузера — глубокие ссылки, переходы «назад/вперёд», обновление страницы</text>
+</svg>

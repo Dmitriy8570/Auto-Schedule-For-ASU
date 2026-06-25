@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="900" viewBox="0 0 1240 900" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="one" markerWidth="12" markerHeight="14" refX="6" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M6,2 L6,12" stroke="#5a6b7b" stroke-width="1.5"/>
+    </marker>
+    <marker id="many" markerWidth="16" markerHeight="16" refX="12" refY="8" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M12,8 L2,2 M12,8 L2,8 M12,8 L2,14" stroke="#5a6b7b" stroke-width="1.4" fill="none"/>
+    </marker>
+  </defs>
+  <rect width="1240" height="900" fill="#ffffff"/>
+
+  <!-- band backgrounds -->
+  <rect x="18" y="20" width="1204" height="462" rx="10" fill="#f4f8fc" stroke="#cdd9e5"/>
+  <text x="34" y="44" font-size="15" font-weight="bold" fill="#2c5d8a">Справочные таблицы и их иерархии</text>
+  <rect x="18" y="484" width="1204" height="398" rx="10" fill="#fbf6f0" stroke="#e6d5c0"/>
+  <text x="34" y="508" font-size="15" font-weight="bold" fill="#8a5114">Учебная нагрузка, расписание и связующие таблицы</text>
+
+  <!-- ===== hierarchy chain lines (top band) ===== -->
+  <g stroke="#5a6b7b" stroke-width="1.4" fill="none" transform="translate(0,22)">
+    <path d="M130,176 V136" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M130,312 V272" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M268,80 H230" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M368,176 V136" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M368,312 V272" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M606,176 V136" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M1082,150 V120" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M1082,260 V230" marker-start="url(#many)" marker-end="url(#one)"/>
+    <path d="M1082,370 V340" marker-start="url(#many)" marker-end="url(#one)"/>
+  </g>
+
+  <!-- ===== TOP BAND tables ===== -->
+  <g font-size="12.5" transform="translate(0,22)">
+    <!-- C1 org -->
+    <g><rect x="30" y="40" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="30" y="40" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="130" y="57" text-anchor="middle" fill="#fff" font-weight="bold">Institutes</text><text x="42" y="84" fill="#1f2d3d">id PK</text><text x="42" y="106" fill="#5a6b7b">name</text></g>
+    <g><rect x="30" y="176" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="30" y="176" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="130" y="193" text-anchor="middle" fill="#fff" font-weight="bold">Departments</text><text x="42" y="220" fill="#1f2d3d">id PK</text><text x="42" y="242" fill="#c0392b">institute_id FK</text></g>
+    <g><rect x="30" y="312" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="30" y="312" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="130" y="329" text-anchor="middle" fill="#fff" font-weight="bold">Teachers</text><text x="42" y="356" fill="#1f2d3d">id PK</text><text x="42" y="378" fill="#c0392b">department_id FK</text></g>
+    <!-- C2 academic -->
+    <g><rect x="268" y="40" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="268" y="40" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="368" y="57" text-anchor="middle" fill="#fff" font-weight="bold">Degrees</text><text x="280" y="84" fill="#1f2d3d">id PK</text><text x="280" y="106" fill="#c0392b">institute_id FK</text></g>
+    <g><rect x="268" y="176" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="268" y="176" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="368" y="193" text-anchor="middle" fill="#fff" font-weight="bold">Courses</text><text x="280" y="220" fill="#1f2d3d">id PK</text><text x="280" y="242" fill="#c0392b">degree_id FK</text></g>
+    <g><rect x="268" y="312" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="268" y="312" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="368" y="329" text-anchor="middle" fill="#fff" font-weight="bold">Groups</text><text x="280" y="356" fill="#c0392b">course_id · parent_id FK</text><text x="280" y="378" fill="#5a6b7b">shift · students</text></g>
+    <!-- C3 facilities -->
+    <g><rect x="506" y="40" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="506" y="40" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="606" y="57" text-anchor="middle" fill="#fff" font-weight="bold">Buildings</text><text x="518" y="84" fill="#1f2d3d">id PK</text><text x="518" y="106" fill="#5a6b7b">name</text></g>
+    <g><rect x="506" y="176" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="506" y="176" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="606" y="193" text-anchor="middle" fill="#fff" font-weight="bold">Classrooms</text><text x="518" y="220" fill="#1f2d3d">id PK</text><text x="518" y="242" fill="#c0392b">building_id FK</text><text x="518" y="262" fill="#5a6b7b">capacity</text></g>
+    <g><rect x="506" y="312" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="506" y="312" width="200" height="24" rx="4" fill="#2c5d8a"/><text x="606" y="329" text-anchor="middle" fill="#fff" font-weight="bold">Equipment</text><text x="518" y="356" fill="#1f2d3d">id PK</text><text x="518" y="378" fill="#5a6b7b">name</text></g>
+    <!-- C4 lookups -->
+    <g><rect x="744" y="40" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="744" y="40" width="200" height="24" rx="4" fill="#8a5114"/><text x="844" y="57" text-anchor="middle" fill="#fff" font-weight="bold">Subjects</text><text x="756" y="84" fill="#1f2d3d">id PK</text><text x="756" y="106" fill="#5a6b7b">name</text></g>
+    <g><rect x="744" y="176" width="200" height="96" rx="4" fill="#fff" stroke="#34495e"/><rect x="744" y="176" width="200" height="24" rx="4" fill="#8a5114"/><text x="844" y="193" text-anchor="middle" fill="#fff" font-weight="bold">AcademicStreams</text><text x="756" y="220" fill="#1f2d3d">id PK</text><text x="756" y="242" fill="#5a6b7b">students_count</text></g>
+    <!-- C5 calendar -->
+    <g><rect x="982" y="40" width="200" height="80" rx="4" fill="#fff" stroke="#34495e"/><rect x="982" y="40" width="200" height="24" rx="4" fill="#1f6f43"/><text x="1082" y="57" text-anchor="middle" fill="#fff" font-weight="bold">Semesters</text><text x="994" y="86" fill="#1f2d3d">id PK</text></g>
+    <g><rect x="982" y="150" width="200" height="80" rx="4" fill="#fff" stroke="#34495e"/><rect x="982" y="150" width="200" height="24" rx="4" fill="#1f6f43"/><text x="1082" y="167" text-anchor="middle" fill="#fff" font-weight="bold">Weeks</text><text x="994" y="194" fill="#c0392b">semester_id FK</text><text x="994" y="214" fill="#5a6b7b">type (red / blue)</text></g>
+    <g><rect x="982" y="260" width="200" height="80" rx="4" fill="#fff" stroke="#34495e"/><rect x="982" y="260" width="200" height="24" rx="4" fill="#1f6f43"/><text x="1082" y="277" text-anchor="middle" fill="#fff" font-weight="bold">WeekDays</text><text x="994" y="304" fill="#c0392b">week_id FK</text></g>
+    <g><rect x="982" y="370" width="200" height="80" rx="4" fill="#fff" stroke="#34495e"/><rect x="982" y="370" width="200" height="24" rx="4" fill="#1f6f43"/><text x="1082" y="387" text-anchor="middle" fill="#fff" font-weight="bold">TimeSlots</text><text x="994" y="414" fill="#c0392b">week_day_id FK</text><text x="994" y="434" fill="#5a6b7b">number</text></g>
+  </g>
+
+  <!-- ===== BOTTOM BAND tables ===== -->
+  <g font-size="12.5">
+    <!-- row1 -->
+    <g><rect x="30" y="525" width="270" height="116" rx="4" fill="#fdf6ec" stroke="#8a5114" stroke-width="1.6"/><rect x="30" y="525" width="270" height="24" rx="4" fill="#8a5114"/><text x="165" y="542" text-anchor="middle" fill="#fff" font-weight="bold">Curricula</text><text x="42" y="569" fill="#1f2d3d">id PK</text><text x="42" y="590" fill="#c0392b">teacher_id · subject_id FK</text><text x="42" y="610" fill="#c0392b">stream_id · building_id FK</text><text x="42" y="630" fill="#5a6b7b">type · флаги</text></g>
+    <g><rect x="340" y="525" width="250" height="116" rx="4" fill="#fff" stroke="#34495e"/><rect x="340" y="525" width="250" height="24" rx="4" fill="#16725a"/><text x="465" y="542" text-anchor="middle" fill="#fff" font-weight="bold">StreamGroups</text><text x="352" y="572" fill="#c0392b">stream_id FK</text><text x="352" y="594" fill="#c0392b">group_id FK</text><text x="352" y="616" fill="#7a8694">PK (составной)</text></g>
+    <g><rect x="630" y="525" width="270" height="116" rx="4" fill="#fff" stroke="#34495e"/><rect x="630" y="525" width="270" height="24" rx="4" fill="#16725a"/><text x="765" y="542" text-anchor="middle" fill="#fff" font-weight="bold">EquipmentRoom</text><text x="642" y="572" fill="#c0392b">classroom_id FK</text><text x="642" y="594" fill="#c0392b">equipment_id FK</text><text x="642" y="616" fill="#7a8694">PK (составной)</text></g>
+    <g><rect x="940" y="525" width="270" height="116" rx="4" fill="#fff" stroke="#34495e"/><rect x="940" y="525" width="270" height="24" rx="4" fill="#16725a"/><text x="1075" y="542" text-anchor="middle" fill="#fff" font-weight="bold">NeededEquipment</text><text x="952" y="572" fill="#c0392b">curriculum_id FK</text><text x="952" y="594" fill="#c0392b">equipment_id FK</text><text x="952" y="616" fill="#7a8694">PK (составной)</text></g>
+    <!-- row2 -->
+    <g><rect x="30" y="665" width="270" height="116" rx="4" fill="#fdf6ec" stroke="#8a5114" stroke-width="1.6"/><rect x="30" y="665" width="270" height="24" rx="4" fill="#8a5114"/><text x="165" y="682" text-anchor="middle" fill="#fff" font-weight="bold">WeekWorkloads</text><text x="42" y="709" fill="#1f2d3d">id PK</text><text x="42" y="730" fill="#c0392b">curriculum_id · week_id FK</text><text x="42" y="752" fill="#5a6b7b">hours</text></g>
+    <g><rect x="340" y="665" width="250" height="116" rx="4" fill="#fff" stroke="#34495e"/><rect x="340" y="665" width="250" height="24" rx="4" fill="#8a5114"/><text x="465" y="682" text-anchor="middle" fill="#fff" font-weight="bold">SemesterWorkloads</text><text x="352" y="709" fill="#1f2d3d">id PK</text><text x="352" y="731" fill="#c0392b">curriculum_id FK</text><text x="352" y="753" fill="#c0392b">semester_id FK</text></g>
+    <g><rect x="630" y="665" width="270" height="116" rx="4" fill="#f3ecf9" stroke="#6f3f95" stroke-width="1.6"/><rect x="630" y="665" width="270" height="24" rx="4" fill="#6f3f95"/><text x="765" y="682" text-anchor="middle" fill="#fff" font-weight="bold">Lessons</text><text x="642" y="709" fill="#c0392b">stream_id · classroom_id FK</text><text x="642" y="731" fill="#c0392b">time_slot_id · curriculum_id FK</text><text x="642" y="753" fill="#5a6b7b">version (Draft / Current)</text></g>
+    <g><rect x="940" y="665" width="270" height="116" rx="4" fill="#fdecec" stroke="#a02b2b" stroke-width="1.4"/><rect x="940" y="665" width="270" height="24" rx="4" fill="#a02b2b"/><text x="1075" y="682" text-anchor="middle" fill="#fff" font-weight="bold">WeekLogs · SemesterLogs</text><text x="952" y="709" fill="#1f2d3d">id PK · action · old/new</text><text x="952" y="731" fill="#c0392b">workload_id FK</text><text x="952" y="751" fill="#7a8694">(NULL, ON DELETE SET NULL)</text></g>
+  </g>
+
+  <text x="620" y="868" text-anchor="middle" font-size="12" fill="#7a8694">Иерархические связи справочников показаны линиями (1 — ∞); остальные внешние ключи помечены FK в столбцах; составные ключи связующих таблиц — PK</text>
+</svg>

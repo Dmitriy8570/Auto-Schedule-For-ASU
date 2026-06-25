@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#34495e"/></marker>
+  </defs>
+  <rect width="980" height="620" fill="#ffffff"/>
+
+  <!-- browser -->
+  <rect x="40" y="36" width="200" height="64" rx="8" fill="#eef2f7" stroke="#34495e" stroke-width="1.6"/>
+  <text x="140" y="64" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f2d3d">Браузер</text>
+  <text x="140" y="84" text-anchor="middle" font-size="12" fill="#5a6b7b">пользователь бюро</text>
+
+  <!-- network -->
+  <rect x="40" y="130" width="900" height="460" rx="12" fill="#f6f9fc" stroke="#2c5d8a" stroke-width="1.8" stroke-dasharray="2 0"/>
+  <text x="58" y="154" font-size="13.5" font-weight="bold" fill="#2c5d8a">docker compose — общая сеть app-network</text>
+
+  <!-- frontend -->
+  <rect x="70" y="180" width="230" height="130" rx="9" fill="#eaf2fb" stroke="#34495e" stroke-width="1.6"/>
+  <text x="185" y="206" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f3a57">frontend</text>
+  <text x="185" y="228" text-anchor="middle" font-size="12.5" fill="#33475b">Vue (SPA) + Nginx</text>
+  <text x="185" y="256" text-anchor="middle" font-size="11.8" fill="#5a6b7b">единая точка входа:</text>
+  <text x="185" y="273" text-anchor="middle" font-size="11.8" fill="#5a6b7b">раздача SPA, прокси /api и /hubs</text>
+  <text x="185" y="296" text-anchor="middle" font-size="11.5" fill="#7a8694">порт 80</text>
+
+  <!-- backend -->
+  <rect x="380" y="180" width="230" height="130" rx="9" fill="#eaf2fb" stroke="#34495e" stroke-width="1.6"/>
+  <text x="495" y="206" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f3a57">backend</text>
+  <text x="495" y="228" text-anchor="middle" font-size="12.5" fill="#33475b">ASP.NET Core (.NET)</text>
+  <text x="495" y="256" text-anchor="middle" font-size="11.8" fill="#5a6b7b">REST API, генерация</text>
+  <text x="495" y="273" text-anchor="middle" font-size="11.8" fill="#5a6b7b">расписания, real-time</text>
+
+  <!-- db -->
+  <rect x="690" y="180" width="220" height="130" rx="9" fill="#eaf7ef" stroke="#1f6f43" stroke-width="1.6"/>
+  <text x="800" y="206" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f5736">db</text>
+  <text x="800" y="228" text-anchor="middle" font-size="12.5" fill="#33475b">PostgreSQL</text>
+  <ellipse cx="800" cy="258" rx="44" ry="9" fill="#dff0e6" stroke="#2e7d4f"/>
+  <path d="M756,258 L756,288 A44,9 0 0 0 844,288 L844,258" fill="#eaf7ef" stroke="#2e7d4f"/>
+  <ellipse cx="800" cy="258" rx="44" ry="9" fill="#eaf7ef" stroke="#2e7d4f"/>
+  <text x="800" y="285" text-anchor="middle" font-size="11" fill="#1f5736">том postgres-data</text>
+
+  <!-- test services -->
+  <rect x="360" y="360" width="550" height="200" rx="10" fill="#fdf6ec" stroke="#d98324" stroke-width="1.6" stroke-dasharray="7 4"/>
+  <text x="635" y="384" text-anchor="middle" font-size="12.8" font-weight="bold" fill="#8a5114">Вспомогательные контейнеры — только для автономного тестирования</text>
+
+  <rect x="390" y="404" width="230" height="130" rx="9" fill="#fff" stroke="#34495e" stroke-width="1.4"/>
+  <text x="505" y="430" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2d3d">mmis-db</text>
+  <text x="505" y="452" text-anchor="middle" font-size="12" fill="#33475b">MS SQL Server</text>
+  <text x="505" y="478" text-anchor="middle" font-size="11.5" fill="#5a6b7b">имитация систем учёта вуза</text>
+  <text x="505" y="495" text-anchor="middle" font-size="11.5" fill="#5a6b7b">(«Нагрузка ВУЗа», ММИС)</text>
+
+  <rect x="650" y="404" width="230" height="130" rx="9" fill="#fff" stroke="#34495e" stroke-width="1.4"/>
+  <text x="765" y="430" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2d3d">ad-dc</text>
+  <text x="765" y="452" text-anchor="middle" font-size="12" fill="#33475b">Samba AD DC</text>
+  <text x="765" y="478" text-anchor="middle" font-size="11.5" fill="#5a6b7b">имитация службы каталогов</text>
+  <text x="765" y="495" text-anchor="middle" font-size="11.5" fill="#5a6b7b">для аутентификации</text>
+
+  <!-- arrows -->
+  <line x1="140" y1="100" x2="140" y2="178" stroke="#34495e" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="196" y="142" text-anchor="middle" font-size="11.5" fill="#34495e">HTTP</text>
+  <line x1="300" y1="232" x2="378" y2="232" stroke="#34495e" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="339" y="222" text-anchor="middle" font-size="11" fill="#5a6b7b">/api, /hubs</text>
+  <line x1="610" y1="240" x2="688" y2="240" stroke="#34495e" stroke-width="1.6" marker-end="url(#a)"/>
+  <line x1="505" y1="310" x2="505" y2="402" stroke="#34495e" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#a)"/>
+  <line x1="560" y1="310" x2="730" y2="402" stroke="#34495e" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#a)"/>
+
+  <text x="490" y="606" text-anchor="middle" font-size="11.5" fill="#7a8694">Порядок запуска координируется проверками работоспособности (healthcheck); конфигурация — через переменные окружения</text>
+</svg>

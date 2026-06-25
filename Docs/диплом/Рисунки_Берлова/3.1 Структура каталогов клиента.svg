@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="520" viewBox="0 0 840 520" font-family="Consolas, 'Courier New', monospace">
+  <rect width="840" height="520" fill="#ffffff"/>
+  <rect x="20" y="20" width="800" height="480" rx="8" fill="#f7f9fb" stroke="#34495e" stroke-width="1.4"/>
+
+  <text x="44" y="54" font-size="15" font-weight="bold" fill="#2c3e50">Frontend/</text>
+  <g font-size="14" fill="#33475b">
+    <text x="44" y="86"><tspan fill="#1f6f43" font-weight="bold">├─ src/</tspan></text>
+    <text x="80" y="110">│   <tspan fill="#2c5d8a" font-weight="bold">├─ api/</tspan>  http.ts, модули ресурсов, типы, session.ts</text>
+    <text x="80" y="134">│   <tspan fill="#2c5d8a" font-weight="bold">├─ stores/</tspan>  session · realtime · lookups (Pinia)</text>
+    <text x="80" y="158">│   <tspan fill="#2c5d8a" font-weight="bold">├─ composables/</tspan>  useToast, уведомления, async-состояния</text>
+    <text x="80" y="182">│   <tspan fill="#2c5d8a" font-weight="bold">├─ components/</tspan>  ScheduleTab, TimeGrid, BaseButton…</text>
+    <text x="80" y="206">│   <tspan fill="#2c5d8a" font-weight="bold">├─ views/</tspan>  страницы (LoginView)</text>
+    <text x="80" y="230">│   <tspan fill="#2c5d8a" font-weight="bold">├─ router/</tspan>  index.ts (маршруты, контроль доступа)</text>
+    <text x="80" y="254">│   ├─ App.vue</text>
+    <text x="80" y="278">│   └─ main.ts</text>
+    <text x="44" y="310">├─ package.json</text>
+    <text x="44" y="334">├─ vite.config.ts</text>
+    <text x="44" y="358">├─ <tspan fill="#9b59b6" font-weight="bold">Dockerfile</tspan>  (многоэтапная сборка)</text>
+    <text x="44" y="382">└─ <tspan fill="#9b59b6" font-weight="bold">nginx.conf</tspan>  (SPA, прокси /api и /hubs)</text>
+  </g>
+  <text x="420" y="446" text-anchor="middle" font-size="12.5" fill="#7a8694" font-family="Segoe UI, Arial, sans-serif">Исходный код разделён на слои-подкаталоги; типы данных разделяются между слоем доступа и компонентами</text>
+</svg>

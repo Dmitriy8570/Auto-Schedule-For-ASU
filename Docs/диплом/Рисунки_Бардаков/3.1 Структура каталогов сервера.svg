@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="520" viewBox="0 0 820 520" font-family="Consolas, 'Courier New', monospace">
+  <rect width="820" height="520" fill="#ffffff"/>
+  <rect x="20" y="20" width="780" height="480" rx="8" fill="#f7f9fb" stroke="#34495e" stroke-width="1.4"/>
+
+  <text x="44" y="56" font-size="15" font-weight="bold" fill="#2c3e50">backend-auto-schedule.slnx</text>
+
+  <g font-size="14" fill="#33475b">
+    <text x="44" y="88"><tspan fill="#1f6f43" font-weight="bold">├─ Domain/</tspan></text>
+    <text x="80" y="112">│    university · workload · schedule · calendar · constraints</text>
+
+    <text x="44" y="140"><tspan fill="#1f6f43" font-weight="bold">├─ Application/</tspan></text>
+    <text x="80" y="164">│   <tspan fill="#1f6f43" font-weight="bold">├─ Common/</tspan>  команды, запросы, валидаторы, DTO</text>
+    <text x="80" y="188">│   <tspan fill="#1f6f43" font-weight="bold">├─ Solver/</tspan>  Model · Builder · Solving · Mapping · Compaction</text>
+    <text x="80" y="212">│   └─ порты-интерфейсы (репозитории, провайдер данных…)</text>
+
+    <text x="44" y="240"><tspan fill="#1f6f43" font-weight="bold">├─ Infrastructure/</tspan></text>
+    <text x="80" y="264">│   <tspan fill="#1f6f43" font-weight="bold">├─ Data/</tspan>  конфигурации EF Core, миграции</text>
+    <text x="80" y="288">│   <tspan fill="#1f6f43" font-weight="bold">├─ Mmis/</tspan>  интеграция с системами учёта</text>
+    <text x="80" y="312">│   <tspan fill="#1f6f43" font-weight="bold">├─ Auth/</tspan>  LDAP-аутентификация, выпуск JWT</text>
+    <text x="80" y="336">│   <tspan fill="#1f6f43" font-weight="bold">├─ Schedule/Generation/</tspan>  фоновые службы</text>
+    <text x="80" y="360">│   └─ <tspan fill="#1f6f43" font-weight="bold">Seed/</tspan>  наполнение справочников</text>
+
+    <text x="44" y="388"><tspan fill="#1f6f43" font-weight="bold">├─ API/</tspan></text>
+    <text x="80" y="412">│    Controllers · ScheduleHub · обработчики исключений · Program.cs</text>
+
+    <text x="44" y="440"><tspan fill="#9b59b6" font-weight="bold">└─ Schedule.DevSolver.Tests/</tspan></text>
+    <text x="80" y="464">     модульные и интеграционные тесты (xUnit)</text>
+  </g>
+</svg>

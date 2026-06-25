@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="820" viewBox="0 0 1060 820" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#5a6b7b"/></marker>
+  </defs>
+  <rect width="1060" height="820" fill="#ffffff"/>
+
+  <!-- group backgrounds -->
+  <rect x="30" y="44" width="480" height="306" rx="9" fill="#eef5fb" stroke="#b9cee2"/>
+  <text x="46" y="68" font-size="15" font-weight="bold" fill="#2c5d8a">Организационная структура</text>
+  <rect x="550" y="44" width="480" height="306" rx="9" fill="#eef5fb" stroke="#b9cee2"/>
+  <text x="566" y="68" font-size="15" font-weight="bold" fill="#2c5d8a">Аудиторный фонд</text>
+  <rect x="30" y="366" width="1000" height="192" rx="9" fill="#fff5e9" stroke="#e6c79b"/>
+  <text x="46" y="390" font-size="15" font-weight="bold" fill="#8a5114">Учебная нагрузка</text>
+  <rect x="30" y="576" width="330" height="222" rx="9" fill="#eaf7ef" stroke="#aed8be"/>
+  <text x="46" y="600" font-size="15" font-weight="bold" fill="#1f6f43">Календарь</text>
+  <rect x="378" y="576" width="320" height="222" rx="9" fill="#f3ecf9" stroke="#cdb6e0"/>
+  <text x="394" y="600" font-size="15" font-weight="bold" fill="#6f3f95">Расписание</text>
+  <rect x="716" y="576" width="314" height="222" rx="9" fill="#fdecec" stroke="#e6b3b3"/>
+  <text x="732" y="600" font-size="15" font-weight="bold" fill="#a02b2b">Ограничения и журналы</text>
+
+  <!-- ===== connectors (short, orthogonal) ===== -->
+  <g stroke="#5a6b7b" stroke-width="1.5" fill="none" marker-end="url(#ar)">
+    <!-- org -->
+    <path d="M270,128 V143 H145 V156"/>
+    <path d="M270,128 V143 H380 V156"/>
+    <path d="M145,204 V230"/>
+    <path d="M380,204 V230"/>
+    <path d="M380,278 V300"/>
+    <!-- facilities -->
+    <path d="M665,130 V170"/>
+    <path d="M910,130 V170"/>
+    <path d="M820,194 H755"/>
+    <!-- workload around Curriculum -->
+    <path d="M410,428 H440"/>
+    <path d="M410,512 V466 H440"/>
+    <path d="M210,512 H250"/>
+    <path d="M700,428 H660"/>
+    <path d="M700,512 H682 V466 H660"/>
+    <!-- lesson -> curriculum -->
+    <path d="M545,612 V492"/>
+    <!-- calendar -->
+    <path d="M185,635 H215"/>
+    <path d="M282,658 V676 H117 V694"/>
+    <path d="M185,716 H215"/>
+  </g>
+
+  <!-- ===== entity boxes ===== -->
+  <g font-size="14" fill="#1f2d3d" text-anchor="middle">
+    <!-- org -->
+    <rect x="180" y="82" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="270" y="110">Institute</text>
+    <rect x="55" y="156" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="145" y="184">Department</text>
+    <rect x="290" y="156" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="380" y="184">Degree</text>
+    <rect x="55" y="230" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="145" y="258">Teacher</text>
+    <rect x="290" y="230" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="380" y="258">Course</text>
+    <rect x="290" y="300" width="180" height="42" rx="6" fill="#fff" stroke="#34495e"/><text x="380" y="326">Group</text>
+    <text x="62" y="314" text-anchor="start" font-size="11.5" font-style="italic" fill="#7a8694">Group: подгруппы —</text>
+    <text x="62" y="330" text-anchor="start" font-size="11.5" font-style="italic" fill="#7a8694">самоссылка; смена, число</text>
+
+    <!-- facilities -->
+    <rect x="575" y="84" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="665" y="112">Building</text>
+    <rect x="820" y="84" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="910" y="112">Equipment</text>
+    <rect x="575" y="170" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="665" y="198">Classroom</text>
+    <rect x="820" y="170" width="180" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="910" y="192">Equipment</text><text x="910" y="208" font-size="11.5">Room</text>
+    <text x="582" y="240" text-anchor="start" font-size="11.5" font-style="italic" fill="#7a8694">Classroom: вместимость, оснащение;</text>
+    <text x="582" y="256" text-anchor="start" font-size="11.5" font-style="italic" fill="#7a8694">EquipmentRoom: Classroom ↔ Equipment</text>
+
+    <!-- workload -->
+    <rect x="50" y="468" width="160" height="44" rx="6" fill="#fff" stroke="#34495e"/><text x="130" y="495">StreamGroups</text>
+    <rect x="250" y="406" width="160" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="330" y="434">Subject</text>
+    <rect x="250" y="490" width="160" height="44" rx="6" fill="#fff" stroke="#34495e"/><text x="330" y="517">AcademicStream</text>
+    <rect x="440" y="404" width="220" height="88" rx="6" fill="#fdf0db" stroke="#8a5114" stroke-width="2"/>
+      <text x="550" y="430" font-weight="bold">Curriculum</text>
+      <text x="550" y="452" font-size="11.5">препод. · дисц. · поток · тип</text>
+      <text x="550" y="470" font-size="11" font-style="italic" fill="#8a6a3a">→ Teacher, предпочт. корпус,</text>
+      <text x="550" y="484" font-size="11" font-style="italic" fill="#8a6a3a">оборудование (NeededEquipment)</text>
+    <rect x="700" y="406" width="175" height="46" rx="6" fill="#fdf0db" stroke="#8a5114" stroke-width="2"/><text x="787" y="427" font-weight="bold">WeekWorkload</text><text x="787" y="444" font-size="10.5">ось модели солвера</text>
+    <rect x="700" y="490" width="175" height="44" rx="6" fill="#fff" stroke="#34495e"/><text x="787" y="517">SemesterWorkload</text>
+    <text x="888" y="430" text-anchor="start" font-size="11.5" font-style="italic" fill="#8a6a3a">StreamGroups:</text>
+    <text x="888" y="446" text-anchor="start" font-size="11.5" font-style="italic" fill="#8a6a3a">Stream ↔ Group</text>
+
+    <!-- calendar -->
+    <rect x="50" y="612" width="135" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="117" y="640">Semester</text>
+    <rect x="215" y="612" width="135" height="46" rx="6" fill="#fff" stroke="#34495e"/><text x="282" y="640">Week</text>
+    <rect x="50" y="694" width="135" height="44" rx="6" fill="#fff" stroke="#34495e"/><text x="117" y="721">WeekDay</text>
+    <rect x="215" y="694" width="135" height="44" rx="6" fill="#fff" stroke="#34495e"/><text x="282" y="721">TimeSlot</text>
+
+    <!-- schedule -->
+    <rect x="400" y="616" width="270" height="80" rx="6" fill="#f0e6f8" stroke="#6f3f95" stroke-width="2"/>
+      <text x="535" y="642" font-weight="bold">Lesson</text>
+      <text x="535" y="663" font-size="11.5">поток · аудитория · слот · план</text>
+      <text x="535" y="681" font-size="11" font-style="italic" fill="#6a4a8f">версия: Draft / Current</text>
+    <rect x="400" y="712" width="270" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="535" y="737">GenerationRun</text>
+
+    <!-- constraints -->
+    <rect x="730" y="616" width="288" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="874" y="641">TeacherAvailability  → Teacher</text>
+    <rect x="730" y="662" width="288" height="40" rx="6" fill="#fff" stroke="#34495e"/><text x="874" y="687">ClassroomAvailability  → Classroom</text>
+    <rect x="730" y="708" width="288" height="38" rx="6" fill="#fff" stroke="#34495e"/><text x="874" y="732">ConstraintConfig — веса штрафов</text>
+    <rect x="730" y="752" width="288" height="38" rx="6" fill="#fff" stroke="#34495e"/><text x="874" y="776">SemesterLog · WeekLog → нагрузка</text>
+  </g>
+
+  <text x="530" y="812" text-anchor="middle" font-size="11.5" fill="#7a8694">Линиями показаны связи внутри групп; межгрупповые ассоциации указаны в блоках курсивом (→ …)</text>
+</svg>

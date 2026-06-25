@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="660" viewBox="0 0 880 660" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#34495e"/>
+    </marker>
+  </defs>
+  <rect width="880" height="660" fill="#ffffff"/>
+
+  <!-- input -->
+  <rect x="190" y="26" width="500" height="56" rx="6" fill="#eaf2fb" stroke="#34495e" stroke-width="1.5"/>
+  <text x="440" y="49" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f2d3d">Данные недели</text>
+  <text x="440" y="69" text-anchor="middle" font-size="12.5" fill="#33475b">нагрузка, аудитории, слоты, занятые ресурсы, мягкие якоря</text>
+  <line x1="440" y1="82" x2="440" y2="106" stroke="#34495e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- phase 1 -->
+  <rect x="160" y="108" width="560" height="148" rx="8" fill="#fff4e6" stroke="#d98324" stroke-width="2"/>
+  <text x="440" y="134" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a5114">Фаза 1 — максимальное размещение (best-effort)</text>
+  <line x1="180" y1="146" x2="700" y2="146" stroke="#e6b483" stroke-width="1"/>
+  <text x="440" y="172" text-anchor="middle" font-size="13.5" fill="#5a4326">F&#8321;(x) = &#8722; R · &#931; x &#8594; min &#160;&#160;(награда R за каждое размещённое занятие)</text>
+  <text x="440" y="198" text-anchor="middle" font-size="13.5" fill="#5a4326">ограничение: &#931; x &#8804; (часы недели) / 2</text>
+  <text x="440" y="224" text-anchor="middle" font-size="13" fill="#7a6240">модель упрощена, мягкие критерии опущены — всегда разрешима</text>
+
+  <!-- transfer annotations -->
+  <line x1="440" y1="256" x2="440" y2="300" stroke="#34495e" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="455" y="262" width="320" height="36" rx="5" fill="#f0f4f8" stroke="#9bb0c4" stroke-width="1"/>
+  <text x="615" y="278" text-anchor="middle" font-size="12" fill="#33475b">покрытие c&#7522; &#8594; нижняя граница фазы 2;</text>
+  <text x="615" y="293" text-anchor="middle" font-size="12" fill="#33475b">решение фазы 1 &#8594; подсказка (тёплый старт)</text>
+
+  <!-- phase 2 -->
+  <rect x="160" y="302" width="560" height="148" rx="8" fill="#e9f5ee" stroke="#2e7d4f" stroke-width="2"/>
+  <text x="440" y="328" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5736">Фаза 2 — минимизация неудобства расписания</text>
+  <line x1="180" y1="340" x2="700" y2="340" stroke="#94c4a8" stroke-width="1"/>
+  <text x="440" y="366" text-anchor="middle" font-size="13.5" fill="#28503a">F&#8322;(x) = &#931; p&#8342; · n&#8342;(x) &#8594; min &#160;&#160;(окна, компактность, доступность…)</text>
+  <text x="440" y="392" text-anchor="middle" font-size="13.5" fill="#28503a">ограничение: &#931; x &#8805; c&#7522; &#160;&#160;(закреплённое покрытие)</text>
+  <text x="440" y="418" text-anchor="middle" font-size="13" fill="#3c6b4f">тёплый старт решением фазы 1 — весь бюджет на качество</text>
+
+  <line x1="440" y1="450" x2="440" y2="488" stroke="#34495e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- choose -->
+  <rect x="250" y="490" width="380" height="50" rx="6" fill="#f4f6f8" stroke="#34495e" stroke-width="1.5"/>
+  <text x="440" y="510" text-anchor="middle" font-size="12.8" fill="#1f2d3d">Если фаза 2 не хуже фазы 1 по числу занятий —</text>
+  <text x="440" y="528" text-anchor="middle" font-size="12.8" fill="#1f2d3d">результат недели берётся из фазы 2, иначе из фазы 1</text>
+
+  <line x1="440" y1="540" x2="440" y2="576" stroke="#34495e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- post + write -->
+  <rect x="250" y="578" width="380" height="58" rx="6" fill="#eaf2fb" stroke="#34495e" stroke-width="1.5"/>
+  <text x="440" y="601" text-anchor="middle" font-size="13" fill="#1f2d3d">Пост-уплотнение окон в пределах недели</text>
+  <text x="440" y="621" text-anchor="middle" font-size="13" fill="#1f2d3d">→ запись недели в БД (транзакция SERIALIZABLE)</text>
+</svg>

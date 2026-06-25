@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="440" viewBox="0 0 820 440" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="820" height="440" fill="#ffffff"/>
+
+  <!-- host -->
+  <rect x="40" y="36" width="740" height="380" rx="10" fill="#f4f7fa" stroke="#34495e" stroke-width="1.6"/>
+  <text x="58" y="60" font-size="14" font-weight="bold" fill="#2c3e50">Хост (сервер университета)</text>
+
+  <!-- containers -->
+  <g>
+    <rect x="68" y="78" width="216" height="180" rx="8" fill="#eaf2fb" stroke="#2c5d8a" stroke-width="1.6"/>
+    <text x="176" y="102" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f3a57">Контейнер</text>
+    <text x="176" y="122" text-anchor="middle" font-size="12.5" fill="#2c5d8a">Клиентское приложение</text>
+    <rect x="88" y="138" width="176" height="100" rx="6" fill="#ffffff" stroke="#34495e"/>
+    <text x="176" y="166" text-anchor="middle" font-size="12.5" fill="#33475b">Vue (SPA) + Nginx</text>
+    <text x="176" y="206" text-anchor="middle" font-size="11.5" fill="#7a8694">приложение</text>
+    <text x="176" y="222" text-anchor="middle" font-size="11.5" fill="#7a8694">+ зависимости</text>
+
+    <rect x="302" y="78" width="216" height="180" rx="8" fill="#eaf2fb" stroke="#2c5d8a" stroke-width="1.6"/>
+    <text x="410" y="102" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f3a57">Контейнер</text>
+    <text x="410" y="122" text-anchor="middle" font-size="12.5" fill="#2c5d8a">Серверная часть</text>
+    <rect x="322" y="138" width="176" height="100" rx="6" fill="#ffffff" stroke="#34495e"/>
+    <text x="410" y="166" text-anchor="middle" font-size="12.5" fill="#33475b">ASP.NET Core (.NET)</text>
+    <text x="410" y="206" text-anchor="middle" font-size="11.5" fill="#7a8694">приложение</text>
+    <text x="410" y="222" text-anchor="middle" font-size="11.5" fill="#7a8694">+ зависимости</text>
+
+    <rect x="536" y="78" width="216" height="180" rx="8" fill="#eaf7ef" stroke="#1f6f43" stroke-width="1.6"/>
+    <text x="644" y="102" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f5736">Контейнер</text>
+    <text x="644" y="122" text-anchor="middle" font-size="12.5" fill="#1f6f43">База данных</text>
+    <rect x="556" y="138" width="176" height="100" rx="6" fill="#ffffff" stroke="#34495e"/>
+    <text x="644" y="166" text-anchor="middle" font-size="12.5" fill="#33475b">PostgreSQL</text>
+    <text x="644" y="206" text-anchor="middle" font-size="11.5" fill="#7a8694">СУБД</text>
+    <text x="644" y="222" text-anchor="middle" font-size="11.5" fill="#7a8694">+ зависимости</text>
+  </g>
+
+  <!-- docker engine -->
+  <rect x="68" y="276" width="684" height="44" rx="6" fill="#cfe0f0" stroke="#2c5d8a" stroke-width="1.4"/>
+  <text x="410" y="303" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f3a57">Docker Engine</text>
+
+  <!-- OS -->
+  <rect x="68" y="332" width="684" height="44" rx="6" fill="#dfe6ed" stroke="#34495e" stroke-width="1.4"/>
+  <text x="410" y="359" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2c3e50">Операционная система (общее ядро)</text>
+
+  <text x="410" y="404" text-anchor="middle" font-size="12" fill="#7a8694">Контейнеры изолированы, используют общее ядро ОС и существенно легче виртуальных машин</text>
+</svg>
